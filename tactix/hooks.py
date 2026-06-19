@@ -1,8 +1,8 @@
 app_name = "tactix"
 app_title = "Tactix"
-app_publisher = "StakLogic"
-app_description = "Task and Project Management"
-app_email = "staklogic@gmail.com"
+app_publisher = "CodeVenturers"
+app_description = "Opera"
+app_email = "codeventurers@gmail.com"
 app_license = "mit"
 
 # Apps
@@ -27,6 +27,7 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/tactix/css/tactix.css"
 # app_include_js = "/assets/tactix/js/tactix.js"
+app_include_js = "/assets/tactix/js/desk_restrict.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/tactix/css/tactix.css"
@@ -91,6 +92,9 @@ app_license = "mit"
 # before_uninstall = "tactix.uninstall.before_uninstall"
 # after_uninstall = "tactix.uninstall.after_uninstall"
 
+after_migrate = "tactix.setup.after_migrate"
+
+
 # Integration Setup
 # ------------------
 # To set up dependencies/integrations with other apps
@@ -129,42 +133,28 @@ app_license = "mit"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Task": "tactix.overrides.CustomTask"
+}
 
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Task": {
+		"validate": "tactix.crud_events.update_task",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"tactix.tasks.all"
-# 	],
-# 	"daily": [
-# 		"tactix.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"tactix.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"tactix.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"tactix.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily_maintenance": [
+		"tactix.crud_events.set_tasks_as_overdue",
+	],
+}
 
 # Testing
 # -------
@@ -247,3 +237,16 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+
+website_route_rules = [
+    {"from_route": "/tactix/<path:app_path>", "to_route": "tactix"},
+]
+
+add_to_apps_screen = [
+	{
+		"name": "tactix",
+		"logo": "/assets/tactix/frontend/tactix_icon.png",
+		"title": "Tactix",
+		"route": "/tactix",
+	}
+]

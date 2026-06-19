@@ -1,0 +1,137 @@
+@media (max-width: 767px) {
+	[data-headlessui-state] [role="dialog"],
+	[data-headlessui-state] [role="dialog"] > div,
+	body > [data-headlessui-portal] [role="dialog"],
+	body > [data-headlessui-portal] [role="dialog"] > div {
+		max-width: 100vw !important;
+		width: 100vw !important;
+		min-width: 100vw !important;
+		max-height: 100vh !important;
+		height: 100vh !important;
+		margin: 0 !important;
+		border-radius: 0 !important;
+		overflow-y: auto !important;
+	}
+
+	[role="dialog"] [class*="max-w-"],
+	[role="dialog"] [class*="sm:max-w-"],
+	[role="dialog"] [class*="md:max-w-"],
+	[role="dialog"] [class*="lg:max-w-"],
+	[role="dialog"] [class*="xl:max-w-"],
+	[role="dialog"] [class*="2xl:max-w-"],
+	[role="dialog"] [class*="3xl:max-w-"],
+	[role="dialog"] [class*="4xl:max-w-"],
+	[role="dialog"] [class*="5xl:max-w-"],
+	[role="dialog"] [class*="6xl:max-w-"],
+	[role="dialog"] [class*="7xl:max-w-"] {
+		max-width: 100vw !important;
+		width: 100vw !important;
+	}
+
+	[role="dialog"] .grid.grid-cols-3,
+	[role="dialog"] .grid.grid-cols-2,
+	[role="dialog"] .grid.grid-cols-1.md\:grid-cols-3,
+	[role="dialog"] .grid.grid-cols-1.md\:grid-cols-2,
+	[role="dialog"] .md\:grid-cols-3,
+	[role="dialog"] .md\:grid-cols-2 {
+		grid-template-columns: 1fr !important;
+	}
+
+	[role="dialog"] .space-y-6.py-2 {
+		padding: 8px !important;
+	}
+
+	[role="dialog"] .space-y-6 {
+		gap: 10px !important;
+	}
+
+	[role="dialog"] .space-y-4 {
+		gap: 8px !important;
+	}
+
+	[role="dialog"] .border.rounded-lg.bg-white.shadow-sm.overflow-hidden {
+		min-height: 120px !important;
+	}
+
+	[role="dialog"] .editor-container {
+		min-height: 100px !important;
+	}
+
+	[role="dialog"] .prose-sm.max-w-none.p-6 {
+		padding: 10px !important;
+	}
+
+	[role="dialog"] .min-h-\[200px\] {
+		min-height: 100px !important;
+	}
+
+	[role="dialog"] table {
+		display: block !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	[role="dialog"] .px-4.py-2 {
+		padding: 6px !important;
+	}
+
+	body > [data-headlessui-portal] .rounded-xl,
+	body > [data-headlessui-portal] .rounded-2xl,
+	body > [data-headlessui-portal] .rounded-lg {
+		border-radius: 0 !important;
+	}
+
+	body > [data-headlessui-portal] .sm\:my-8,
+	body > [data-headlessui-portal] .my-8 {
+		margin-top: 0 !important;
+		margin-bottom: 0 !important;
+	}
+
+	body > [data-headlessui-portal] .sm\:p-6,
+	body > [data-headlessui-portal] .p-6 {
+		padding: 10px !important;
+	}
+
+	body > [data-headlessui-portal] .sm\:mx-auto {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+	}
+
+	body > [data-headlessui-portal] .overflow-hidden {
+		overflow-y: auto !important;
+		max-height: 100vh !important;
+	}
+
+	[role="dialog"] header,
+	[role="dialog"] [class*="dialog-header"] {
+		position: sticky !important;
+		top: 0;
+		z-index: 10;
+		background: white !important;
+	}
+
+	[role="dialog"] footer,
+	[role="dialog"] [class*="dialog-footer"],
+	[role="dialog"] [class*="actions"] {
+		position: sticky !important;
+		bottom: 0;
+		z-index: 10;
+		background: white !important;
+		padding: 8px !important;
+		border-top: 1px solid #e2e8f0;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+	[role="dialog"] [class*="4xl:max-w-"],
+	[role="dialog"] [class*="5xl:max-w-"],
+	[role="dialog"] [class*="6xl:max-w-"],
+	[role="dialog"] [class*="7xl:max-w-"] {
+		max-width: 90vw !important;
+	}
+
+	[role="dialog"] .grid.grid-cols-3,
+	[role="dialog"] .md\:grid-cols-3 {
+		grid-template-columns: repeat(2, 1fr) !important;
+	}
+}

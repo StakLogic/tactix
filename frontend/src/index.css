@@ -1,0 +1,25 @@
+@import "./assets/Inter/inter.css";
+@import "frappe-ui/style.css";
+@import "./mobile-responsive/index.css";
+
+/* Ensure dialogs/modal overlays appear above all app elements (e.g., sidebars, headers) */
+[role="dialog"] {
+	z-index: 99999 !important;
+}
+
+/* Fallback for dialog wrappers that may not use role attribute */
+.fui-dialog,
+.frappe-dialog,
+.dialog,
+.fui-overlay {
+	z-index: 99999 !important;
+}
+
+/* Keep autocomplete/select popovers above dialogs so dropdowns are usable inside modals */
+[data-radix-popper-content-wrapper],
+[data-reka-popper-content-wrapper],
+.PopoverContent,
+.bg-surface-modal,
+.ticket-modal-autocomplete {
+	z-index: 100005 !important;
+}
