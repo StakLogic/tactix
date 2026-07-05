@@ -8,6 +8,7 @@ import CalendarDays from "~icons/lucide/calendar-days"
 import CheckSquare from "~icons/lucide/check-square"
 import Clock from "~icons/lucide/clock"
 import Database from "~icons/lucide/database"
+import FolderOpen from "~icons/lucide/folder-open"
 import GitPullRequest from "~icons/lucide/git-pull-request"
 // Icons
 import LayoutDashboard from "~icons/lucide/layout-dashboard"
@@ -69,7 +70,7 @@ const crmSidebar = computed(() => {
 	let sidebarItems = []
 
 	if (isTicketRaiser && !isAdmin) {
-		// TIER 1: Ticket Raiser only sees Tickets
+		// TIER 1: Ticket Raiser only sees Tickets and Files Explorer
 		sidebarItems = [
 			{
 				label: "Tickets",
@@ -77,6 +78,13 @@ const crmSidebar = computed(() => {
 				to: "/tickets",
 				onClick: () => navigateTo("/tickets"),
 				isActive: route.path === "/tickets",
+			},
+			{
+				label: "Drive",
+				icon: FolderOpen,
+				to: "/drive",
+				onClick: () => navigateTo("/drive"),
+				isActive: route.path === "/drive" || route.path.startsWith("/drive/"),
 			},
 		]
 	} else {
@@ -116,6 +124,13 @@ const crmSidebar = computed(() => {
 				to: "/contributions",
 				onClick: () => navigateTo("/contributions"),
 				isActive: route.path === "/contributions",
+			},
+			{
+				label: "Drive",
+				icon: FolderOpen,
+				to: "/drive",
+				onClick: () => navigateTo("/drive"),
+				isActive: route.path === "/drive" || route.path.startsWith("/drive/"),
 			},
 			{
 				label: "Timesheets",

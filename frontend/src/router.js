@@ -76,6 +76,12 @@ const routes = [
 				name: "Contributions",
 				component: () => import("@/pages/Contributions.vue"),
 			},
+
+			{
+				path: "drive/:folderPath*",
+				name: "Drive",
+				component: () => import("@/pages/Drive.vue"),
+			},
 		],
 	},
 ]
