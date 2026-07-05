@@ -777,20 +777,15 @@ const columns = [
 	},
 ]
 
-// Helper to rename Gubbu77 to Indrajith(TL)
 function processPRs(prs) {
 	if (!prs) return []
 	return prs.map((pr) => {
-		if (pr?.user && pr.user.login === "Gubbu77") {
 			return {
 				...pr,
 				user: {
 					...pr.user,
-					login: "Indrajith",
 				},
 			}
-		}
-		return pr
 	})
 }
 
@@ -840,7 +835,7 @@ onMounted(() => {
 			id,
 			title: data.title,
 			repo: data.repo,
-			author: data.author === "Gubbu77" ? "Indrajith" : data.author,
+			author: data.author,
 			number: data.number,
 			titleText: data.title_text,
 			url: data.url,
