@@ -4,6 +4,71 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 def after_migrate():
 	create_tactix_roles()
 	create_custom_fields(get_custom_fields(), ignore_validate=True)
+	setup_role_permissions()
+
+
+def setup_role_permissions():
+	# System Manager Permissions
+	for doctype in ["Task", "Project", "Tactix Ticket", "Tactix Customer", "Tactix Department", "Task Assigned To", "Tactix Ticket Attachment"]:
+		grant_custom_permission(doctype, "System Manager", {
+			"read": 1, "write": 1, "create": 1, "delete": 1,
+			"share": 1, "export": 1, "print": 1, "email": 1,
+			"report": 1, "if_owner": 0
+		})
+
+	# Employee Permissions
+	grant_custom_permission("Task", "Employee", {
+		"read": 1, "write": 1, "create": 1, "delete": 1,
+		"share": 1, "export": 1, "print": 1, "email": 1,
+		"report": 1, "if_owner": 1  # Only If Creator (handles assignment and creation access)
+	})
+
+	grant_custom_permission("Tactix Ticket", "Employee", {
+		"read": 1, "write": 1, "create": 1, "delete": 1,
+		"share": 1, "export": 1, "print": 1, "email": 1,
+		"report": 1, "if_owner": 1  # Only If Creator / Assigned
+	})
+
+	grant_custom_permission("Project", "Employee", {
+		"read": 1, "write": 0, "create": 0, "delete": 0,
+		"share": 1, "export": 0, "print": 1, "email": 1,
+		"report": 1, "if_owner": 0
+	})
+
+	grant_custom_permission("Tactix Customer", "Employee", {
+		"read": 1, "write": 0, "create": 0, "delete": 0,
+		"share": 1, "export": 0, "print": 1, "email": 1,
+		"report": 1, "if_owner": 0
+	})
+
+	grant_custom_permission("Tactix Department", "Employee", {
+		"read": 1, "write": 0, "create": 0, "delete": 0,
+		"share": 1, "export": 0, "print": 1, "email": 1,
+		"report": 1, "if_owner": 0
+	})
+
+
+def grant_custom_permission(doctype, role, perm_dict):
+	if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role}):
+		doc = frappe.get_doc({
+			"doctype": "Custom DocPerm",
+			"parent": doctype,
+			"parenttype": "DocType",
+			"parentfield": "permissions",
+			"role": role,
+			"permlevel": 0,
+			**perm_dict
+		})
+		doc.insert(ignore_permissions=True)
+	else:
+		# Update existing Custom DocPerm if it exists
+		docname = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": role}, "name")
+		if docname:
+			doc = frappe.get_doc("Custom DocPerm", docname)
+			doc.update(perm_dict)
+			doc.save(ignore_permissions=True)
+	
+	frappe.clear_cache(doctype=doctype)
 
 
 def create_tactix_roles():

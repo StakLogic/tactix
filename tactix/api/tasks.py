@@ -2,6 +2,12 @@ import frappe
 import json
 from frappe.utils import strip_html, now_datetime, time_diff_in_seconds, flt, today
 from frappe.desk.form.assign_to import add
+from frappe.model.db_query import DatabaseQuery
+
+
+def count_doctype(doctype, filters=None, or_filters=None):
+	res = DatabaseQuery(doctype).execute(filters=filters, or_filters=or_filters, fields=["count(*) as total_count"])
+	return res[0].get("total_count") if res else 0
 
 
 def _normalize_task_filters(filters):
@@ -26,14 +32,25 @@ def _normalize_task_filters(filters):
 def get_tasks(filters={}, start=0, page_length=20):
 	filters = _normalize_task_filters(filters)
 
+	user = frappe.session.user
+	roles = frappe.get_roles(user)
+	or_filters = None
+	if "Employee" in roles and "System Manager" not in roles:
+		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": user}, pluck="parent") or [""]
+		or_filters = [
+			["name", "in", assigned_tasks],
+			["owner", "=", user],
+			["assigned_by", "=", user]
+		]
+
 	# Get total count matching current filters (before pagination slice)
-	total_count = frappe.db.count("Task", filters=filters or {})
+	total_count = count_doctype("Task", filters=filters or {}, or_filters=or_filters)
 
 	start = int(start)
 	page_length = int(page_length)
 
-	# Use get_all for the main task list
-	tasks = frappe.get_all(
+	# Use get_list for the main task list
+	tasks = frappe.get_list(
 		"Task",
 		fields=[
 			"name", "subject", "project", "priority", "expected_time", "owner", "is_overdue", "department",
@@ -41,6 +58,7 @@ def get_tasks(filters={}, start=0, page_length=20):
 			"security_impact"
 		],
 		filters=filters or {},
+		or_filters=or_filters,
 		order_by="modified desc",
 		limit_start=start,
 		limit_page_length=page_length
@@ -83,21 +101,34 @@ def get_task_summary(filters={}):
 	in_progress_review_filters = dict(base_filters, status="Pending Review")
 	completed_filters = dict(base_filters, status="Completed")
 	overdue_filters = dict(base_filters, is_overdue=True)
-	project_rows = frappe.get_all(
+	
+	user = frappe.session.user
+	roles = frappe.get_roles(user)
+	or_filters = None
+	if "Employee" in roles and "System Manager" not in roles:
+		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": user}, pluck="parent") or [""]
+		or_filters = [
+			["name", "in", assigned_tasks],
+			["owner", "=", user],
+			["assigned_by", "=", user]
+		]
+
+	project_rows = frappe.get_list(
 		"Task",
 		fields=["project"],
 		filters=base_filters,
+		or_filters=or_filters,
 	)
 	active_projects_count = len({row.project for row in project_rows if row.project})
 
 	return {
-		"total": frappe.db.count("Task", filters=base_filters),
-		"open": frappe.db.count("Task", filters=open_filters),
-		"working": frappe.db.count("Task", filters=in_progress_working_filters),
-		"pending_review": frappe.db.count("Task", filters=in_progress_review_filters),
-		"in_progress": frappe.db.count("Task", filters=in_progress_working_filters) + frappe.db.count("Task", filters=in_progress_review_filters),
-		"completed": frappe.db.count("Task", filters=completed_filters),
-		"overdue": frappe.db.count("Task", filters=overdue_filters),
+		"total": count_doctype("Task", filters=base_filters, or_filters=or_filters),
+		"open": count_doctype("Task", filters=open_filters, or_filters=or_filters),
+		"working": count_doctype("Task", filters=in_progress_working_filters, or_filters=or_filters),
+		"pending_review": count_doctype("Task", filters=in_progress_review_filters, or_filters=or_filters),
+		"in_progress": count_doctype("Task", filters=in_progress_working_filters, or_filters=or_filters) + count_doctype("Task", filters=in_progress_review_filters, or_filters=or_filters),
+		"completed": count_doctype("Task", filters=completed_filters, or_filters=or_filters),
+		"overdue": count_doctype("Task", filters=overdue_filters, or_filters=or_filters),
 		"active_projects": active_projects_count,
 	}
 
@@ -364,6 +395,17 @@ def assign_tasks(task, assigned_users, removed_users):
 	}
 	add(args)
 
+	if task.tactix_ticket:
+		ticket_args = {
+			"assign_to": assigned_users,
+			"doctype": "Tactix Ticket",
+			"name": task.tactix_ticket,
+			"description": task.subject,
+		}
+		add(ticket_args)
+
 	if removed_users:
 		for user in removed_users:
 			frappe.db.delete("ToDo", {"reference_type": "Task", "reference_name": task.name, "allocated_to": user})
+			if task.tactix_ticket:
+				frappe.db.delete("ToDo", {"reference_type": "Tactix Ticket", "reference_name": task.tactix_ticket, "allocated_to": user})

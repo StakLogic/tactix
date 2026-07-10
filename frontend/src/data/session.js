@@ -59,6 +59,7 @@ export const session = reactive({
 	tactixDepartment: computed(() => session.userInfo.data.tactix_department),
 	isTactixDeptHead: computed(() => session.userInfo.data.is_department_head),
 	userImage: computed(() => session.userInfo.data.user_image),
+	roles: computed(() => session.userInfo.data.roles || []),
 	user: sessionUser(),
 	userFullName: getSessionCookies().get("full_name") || "",
 	isLoggedIn: computed(() => !!session.user),

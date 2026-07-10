@@ -26,7 +26,8 @@ def get_user_info():
 		"tactix_customer": user_details.get("tactix_customer"),
 		"tactix_department": user_details.get("tactix_department"),
 		"is_department_head": is_department_head,
-		"user_image": user_details.get("user_image")
+		"user_image": user_details.get("user_image"),
+		"roles": roles
 	}
 
 

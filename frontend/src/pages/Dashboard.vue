@@ -297,11 +297,7 @@ function formatLeaveDates(fromDate, toDate) {
 }
 
 const taskFilters = computed(() => {
-	const f = {}
-	if (!session.isAdmin) {
-		f.assigned_to = session.user
-	}
-	return f
+	return {}
 })
 
 const tasks = createResource({

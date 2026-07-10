@@ -1,6 +1,12 @@
 import frappe
 from frappe import _
 import json
+from frappe.model.db_query import DatabaseQuery
+
+
+def count_doctype(doctype, filters=None, or_filters=None):
+	res = DatabaseQuery(doctype).execute(filters=filters, or_filters=or_filters, fields=["count(*) as total_count"])
+	return res[0].get("total_count") if res else 0
 
 
 def _normalize_ticket_filters(filters):
@@ -13,16 +19,56 @@ def _normalize_ticket_filters(filters):
 def get_tickets(filters=None, start=0, page_length=20):
 	"""Fetch tickets based on filters and search query."""
 	filters = _normalize_ticket_filters(filters)
+
+	user = frappe.session.user
+	roles = frappe.get_roles(user)
+	or_filters = None
+	if "System Manager" not in roles:
+		user_details = frappe.db.get_value("User", user, ["tactix_customer", "tactix_department"], as_dict=True) or {}
+		customer = user_details.get("tactix_customer")
+		department = user_details.get("tactix_department")
+
+		if "Tactix Ticket Raiser" in roles:
+			if customer:
+				filters["customer"] = customer
+			if department:
+				filters["department"] = department
+
+		or_filters = []
+		if "Employee" in roles:
+			assigned_tickets = frappe.db.get_all("ToDo", {
+				"reference_type": "Tactix Ticket",
+				"allocated_to": user,
+				"status": "Open"
+			}, pluck="reference_name") or [""]
+			or_filters.append(["name", "in", assigned_tickets])
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
+
+		if "Tactix Ticket Raiser" in roles:
+			is_dept_head = False
+			if department:
+				is_dept_head = bool(frappe.db.exists("Tactix Department", {"name": department, "department_head": user}))
+			
+			if is_dept_head and department:
+				or_filters.append(["department", "=", department])
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
+
+		if not or_filters:
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
 	
 	# Get total count matching current filters (before pagination slice)
-	total_count = frappe.db.count("Tactix Ticket", filters=filters or {})
+	total_count = count_doctype("Tactix Ticket", filters=filters or {}, or_filters=or_filters)
 
 	start = int(start)
 	page_length = int(page_length)
 
-	tickets = frappe.db.get_list(
+	tickets = frappe.get_list(
 		"Tactix Ticket",
 		filters=filters or {},
+		or_filters=or_filters,
 		fields=[
 			"name", "subject", "raised_by", "status", "department",
 			"priority", "ticket_type", "opening_date", "description",
@@ -54,6 +100,45 @@ def get_tickets(filters=None, start=0, page_length=20):
 def get_ticket_summary(filters=None):
 	filters = _normalize_ticket_filters(filters)
 
+	user = frappe.session.user
+	roles = frappe.get_roles(user)
+	or_filters = None
+	if "System Manager" not in roles:
+		user_details = frappe.db.get_value("User", user, ["tactix_customer", "tactix_department"], as_dict=True) or {}
+		customer = user_details.get("tactix_customer")
+		department = user_details.get("tactix_department")
+
+		if "Tactix Ticket Raiser" in roles:
+			if customer:
+				filters["customer"] = customer
+			if department:
+				filters["department"] = department
+
+		or_filters = []
+		if "Employee" in roles:
+			assigned_tickets = frappe.db.get_all("ToDo", {
+				"reference_type": "Tactix Ticket",
+				"allocated_to": user,
+				"status": "Open"
+			}, pluck="reference_name") or [""]
+			or_filters.append(["name", "in", assigned_tickets])
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
+
+		if "Tactix Ticket Raiser" in roles:
+			is_dept_head = False
+			if department:
+				is_dept_head = bool(frappe.db.exists("Tactix Department", {"name": department, "department_head": user}))
+			
+			if is_dept_head and department:
+				or_filters.append(["department", "=", department])
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
+
+		if not or_filters:
+			or_filters.append(["owner", "=", user])
+			or_filters.append(["raised_by_user", "=", user])
+
 	base_filters = dict(filters)
 	open_filters = dict(base_filters, status="Open")
 	replied_filters = dict(base_filters, status="Replied")
@@ -62,12 +147,12 @@ def get_ticket_summary(filters=None):
 	urgent_filters = dict(base_filters, priority="Urgent")
 
 	return {
-		"total": frappe.db.count("Tactix Ticket", filters=base_filters),
-		"open": frappe.db.count("Tactix Ticket", filters=open_filters),
-		"replied": frappe.db.count("Tactix Ticket", filters=replied_filters),
-		"resolved": frappe.db.count("Tactix Ticket", filters=resolved_filters),
-		"closed": frappe.db.count("Tactix Ticket", filters=closed_filters),
-		"urgent": frappe.db.count("Tactix Ticket", filters=urgent_filters),
+		"total": count_doctype("Tactix Ticket", filters=base_filters, or_filters=or_filters),
+		"open": count_doctype("Tactix Ticket", filters=open_filters, or_filters=or_filters),
+		"replied": count_doctype("Tactix Ticket", filters=replied_filters, or_filters=or_filters),
+		"resolved": count_doctype("Tactix Ticket", filters=resolved_filters, or_filters=or_filters),
+		"closed": count_doctype("Tactix Ticket", filters=closed_filters, or_filters=or_filters),
+		"urgent": count_doctype("Tactix Ticket", filters=urgent_filters, or_filters=or_filters),
 	}
 
 @frappe.whitelist()

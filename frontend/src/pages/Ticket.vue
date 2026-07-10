@@ -91,9 +91,8 @@
 
 		<select 
 		  v-model="selectedFilters.customer"
-		  :disabled="isTicketRaiser"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200',
+			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.customer !== ''
 			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -105,9 +104,8 @@
 
 		<select 
 		  v-model="selectedFilters.department"
-		  :disabled="isTicketRaiser"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200',
+			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.department !== ''
 			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -135,9 +133,8 @@
 
 		<select 
 		  v-model="selectedFilters.raised_by"
-		  :disabled="isTicketRaiser && !isTactixDeptHead"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200',
+			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.raised_by !== ''
 			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -387,11 +384,11 @@
 				v-model="ticketForm.customer"
 				placeholder="Client"
 			  />
-			 <FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions"  :disabled="isTicketRaiser"/>
+			 <FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions" :disabled="isFieldDisabled"/>
 			</div>
 			<div class="space-y-4">
 			  <div class="grid grid-cols-2 gap-4">
-				<FormControl label="Type" type="select" :options="['Bug', 'Support', 'Technical']" v-model="ticketForm.ticket_type" :disabled="isTicketRaiser"/>
+				<FormControl label="Type" type="select" :options="['Bug', 'Support', 'Technical']" v-model="ticketForm.ticket_type"/>
 				<FormControl label="Priority" type="select" :options="['Low', 'Medium', 'High', 'Urgent']" v-model="ticketForm.priority" />
 			  </div>
 			  <FormControl
@@ -524,7 +521,7 @@
 								<h2 class="font-extrabold text-slate-900 text-lg mt-2 truncate max-w-[420px]">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex gap-2 shrink-0">
-								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm" :disabled="isTicketRaiser">Create Task</Button>
+								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm">Create Task</Button>
 								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm">Save</Button>
 								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600">
 									<IconX class="w-4 h-4"/>
@@ -541,9 +538,9 @@
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
-									<FormControl label="Customer" type="select" :options="customerFilterOptions" v-model="ticketForm.customer" :disabled="isTicketRaiser" class="!mb-0 shadow-sm" />
-									<FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions"  :disabled="isTicketRaiser" class="!mb-0 shadow-sm" />
-									<FormControl label="Department" type="select" v-model="ticketForm.department" :options="departmentFilterOptions" :disabled="isTicketRaiser" class="!mb-0 shadow-sm" />
+									<FormControl label="Customer" type="select" :options="customerFilterOptions" v-model="ticketForm.customer" class="!mb-0 shadow-sm" />
+									<FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+									<FormControl label="Department" type="select" v-model="ticketForm.department" :options="departmentFilterOptions" class="!mb-0 shadow-sm" />
 								</div>
 							</div>
 							
@@ -568,8 +565,7 @@
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
 										:content="ticketForm.resolution_details"
 										@change="(val) => (ticketForm.resolution_details = val)"
-										:fixed-menu="true" 
-										:disabled="isTicketRaiser"
+										:fixed-menu="true"
 									/>
 								</div>
 							</div>
@@ -664,10 +660,10 @@
 			  <FormControl type="number" label="Expected Time (In Hrs)" v-model="newTask.expected_time" />
 			</div>
 			<div class="space-y-4">
-			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResourceTask.data" />
+			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResourceTask.data" :disabled="isTaskFieldDisabled" />
 			   	<label class="block text-xs text-ink-gray-5">Assigned To</label>
 				<MultiSelect
-					:options="session.isAdmin ? userResourceTask.data : [{label: session.userFullName, value: session.user}]"
+					:options="isTaskFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResourceTask.data"
 					v-model="newTask.assigned_to"
 				>
 					<template #footer="{ clearAll, selectAll }">
@@ -908,6 +904,27 @@ async function executeBulkDelete() {
 
 const isAdmin = session.isAdmin
 const isTicketRaiser = session.isTicketRaiser
+const isEmployeeOnly = computed(() => {
+	const userRoles = session.roles || []
+	return userRoles.includes("Employee") && !session.isAdmin
+})
+
+const isCreator = computed(() => {
+	if (!isEditMode.value) return true
+	return ticketForm.owner === session.user || ticketForm.raised_by === session.user
+})
+
+const isFieldDisabled = computed(() => {
+	return isEmployeeOnly.value && !isCreator.value
+})
+
+const isTaskCreatorOrOwner = computed(() => {
+	return ticketForm.owner === session.user || ticketForm.raised_by === session.user
+})
+
+const isTaskFieldDisabled = computed(() => {
+	return isEmployeeOnly.value && !isTaskCreatorOrOwner.value
+})
 const ticketCustomerId = session.ticketCustomerId
 const tactixDepartment = session.tactixDepartment
 const isTactixDeptHead = session.isTactixDeptHead
@@ -915,9 +932,9 @@ const isTactixDeptHead = session.isTactixDeptHead
 const selectedFilters = reactive({
 	status: "",
 	priority: "",
-	customer: isTicketRaiser && ticketCustomerId ? ticketCustomerId : "",
-	raised_by: isTicketRaiser && !isTactixDeptHead ? session.user : "",
-	department: tactixDepartment ? tactixDepartment : "",
+	customer: "",
+	raised_by: "",
+	department: "",
 })
 
 /* RESOURCES */
@@ -1427,6 +1444,7 @@ function openTaskCreateDialog(ticket) {
 		...initialForm,
 		attachments: [],
 		assigned_by: session.user,
+		assigned_to: isTaskFieldDisabled.value ? [session.user] : [],
 	})
 
 	newTask.project = ticket.customer || ""
@@ -1485,33 +1503,16 @@ const columns = [
 
 const hasActiveFilters = computed(() => {
 	if (searchQuery.value) return true
-
-	return Object.entries(selectedFilters).some(([key, value]) => {
-		if (key === "raised_by" && isTicketRaiser && !isTactixDeptHead) {
-			return false // Ignore this filter for non-admins
-		}
-		if (key === "customer" && isTicketRaiser && ticketCustomerId) {
-			return false // Ignore this filter for non-admins
-		}
-		if (key === "department" && isTicketRaiser && tactixDepartment) {
-			return false // Ignore this filter for non-admins
-		}
-		return value !== ""
-	})
+	return Object.values(selectedFilters).some((value) => value !== "")
 })
 
 const resetFilters = () => {
 	searchQuery.value = ""
 	selectedFilters.status = ""
 	selectedFilters.priority = ""
-	if (isTactixDeptHead) {
-		selectedFilters.raised_by = ""
-	}
-	if (isAdmin) {
-		selectedFilters.raised_by = ""
-		selectedFilters.customer = ""
-		selectedFilters.department = ""
-	}
+	selectedFilters.raised_by = ""
+	selectedFilters.customer = ""
+	selectedFilters.department = ""
 }
 
 function filterByStat(label) {
@@ -1757,10 +1758,8 @@ const socket = useSocket()
 function onTicketRaised(payload) {
 	if (!payload) return
 	// If a new ticket is raised, reload tickets and summary to reflect change in real time
-	if (!session.isTicketRaiser) {
-		tickets.reload()
-		ticketsSummaryResource.reload()
-	}
+	tickets.reload()
+	ticketsSummaryResource.reload()
 }
 
 onMounted(() => {

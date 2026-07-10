@@ -194,7 +194,6 @@
 		<div class="w-32 shrink-0">
 			<Autocomplete
 			  ref="assignedToAutocomplete"
-			  :disabled="!session.isAdmin"
 			  :options="userResource?.data || []"
 			  :modelValue="selectedFilters.assigned_to"
 			  @update:modelValue="val => selectedFilters.assigned_to = val?.value || val || ''"
@@ -203,10 +202,9 @@
 			  <template #target>
 				<button
 				  type="button"
-				  :disabled="!session.isAdmin"
 				  @click="() => assignedToAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border disabled:opacity-50 disabled:cursor-not-allowed',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
 					selectedFilters.assigned_to !== ''
 					  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[#061d43]/20'
 					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
@@ -545,10 +543,10 @@
 			  <FormControl type="date" label="Deadline" v-model="newTask.exp_end_date" />
 			</div>
 			<div class="space-y-4">
-			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResource.data" />
+			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResource.data" :disabled="isFieldDisabled" />
 			   	<label class="block text-xs text-ink-gray-5">Assigned To</label>
 				<MultiSelect
-					:options="session.isAdmin ? userResource.data : [{label: session.userFullName, value: session.user}]"
+					:options="isFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResource.data"
 					v-model="newTask.assigned_to"
 				>
 					<template #footer="{ clearAll, selectAll }">
@@ -738,7 +736,8 @@
 						<div class="space-y-6">
 							<input 
 								v-model="newTask.subject" 
-								class="text-3xl font-black text-slate-900 w-full border-none focus:ring-0 p-0 placeholder-slate-300 mb-2 bg-transparent" 
+								:disabled="isFieldDisabled"
+								class="text-3xl font-black text-slate-900 w-full border-none focus:ring-0 p-0 placeholder-slate-300 mb-2 bg-transparent disabled:opacity-75 disabled:cursor-not-allowed" 
 								placeholder="Task Subject..."
 							/>
 							
@@ -942,29 +941,30 @@
 						</DetailItem>
 
 						<DetailItem label="Project">
-							<FormControl type="select" :options="projectResource.data" v-model="newTask.project" class="!mb-0 shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="select" :options="projectResource.data" v-model="newTask.project" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
 						</DetailItem>
 
 						<DetailItem label="Department">
-							<FormControl type="select" :options="departmentResource.data" v-model="newTask.department" class="!mb-0 shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="select" :options="departmentResource.data" v-model="newTask.department" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
 						</DetailItem>
 
 						<DetailItem label="Priority">
-							<FormControl type="select" :options="priorityOptions" v-model="newTask.priority" class="!mb-0 shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="select" :options="priorityOptions" v-model="newTask.priority" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
 						</DetailItem>
 						
 						<DetailItem label="Security Impact">
-							<FormControl type="select" :options="securityImpactOptions" v-model="newTask.security_impact" class="!mb-0 shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="select" :options="securityImpactOptions" v-model="newTask.security_impact" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
 						</DetailItem>
 
 						<DetailItem label="Assigned By">
-							<FormControl type="select" v-model="newTask.assigned_by" :options="userResource.data" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="select" v-model="newTask.assigned_by" :options="userResource.data" :disabled="isFieldDisabled"/>
 						</DetailItem>
 
 						<DetailItem label="Assigned To">
 							<MultiSelect
-								:options="session.isAdmin ? userResource.data : [{label: session.userFullName, value: session.user}]"
+								:options="isFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResource.data"
 								v-model="newTask.assigned_to"
+								:disabled="isFieldDisabled"
 							>
 								<template #footer="{ clearAll, selectAll }">
 									<div class="flex justify-between my-2">
@@ -991,7 +991,7 @@
 						</DetailItem>
 
 						<DetailItem label="Deadline">
-							<FormControl type="date" v-model="newTask.exp_end_date" class="shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user" />
+							<FormControl type="date" v-model="newTask.exp_end_date" class="shadow-sm" :disabled="isFieldDisabled" />
 						</DetailItem>
 
 						<DetailItem label="Completed By" v-if="newTask.completed_by">
@@ -999,7 +999,7 @@
 						</DetailItem>
 
 						<DetailItem label="Expected Time (In Hrs)">
-							<FormControl type="number" v-model="newTask.expected_time" class="shadow-sm" :disabled="!session.isAdmin && newTask.owner !== session.user"/>
+							<FormControl type="number" v-model="newTask.expected_time" class="shadow-sm" :disabled="isFieldDisabled"/>
 						</DetailItem>
 
 						<div class="pt-4 border-t border-slate-200">
@@ -1588,6 +1588,20 @@ async function executeBulkDelete() {
 
 const socket = useSocket()
 
+const isEmployeeOnly = computed(() => {
+	const userRoles = session.roles || []
+	return userRoles.includes("Employee") && !session.isAdmin
+})
+
+const isCreator = computed(() => {
+	if (!isEditMode.value) return true
+	return newTask.owner === session.user || newTask.assigned_by === session.user
+})
+
+const isFieldDisabled = computed(() => {
+	return isEmployeeOnly.value && !isCreator.value
+})
+
 const DetailItem = (props, { slots }) => {
 	return h("div", { class: "space-y-1.5" }, [
 		h(
@@ -1605,7 +1619,7 @@ const selectedFilters = reactive({
 	status: "",
 	priority: "",
 	assigned_by: "",
-	assigned_to: !session.isAdmin ? session.user : "",
+	assigned_to: "",
 	deadline: "",
 })
 
@@ -1846,10 +1860,7 @@ const taskFilters = computed(() => {
 
 const hasActiveFilters = computed(() => {
 	if (searchQuery.value) return true
-	return Object.entries(selectedFilters).some(([key, value]) => {
-		if (key === "assigned_to" && !session.isAdmin) return false
-		return value !== ""
-	})
+	return Object.values(selectedFilters).some((value) => value !== "")
 })
 
 function clearFilters() {
@@ -1859,7 +1870,7 @@ function clearFilters() {
 	selectedFilters.status = ""
 	selectedFilters.priority = ""
 	selectedFilters.assigned_by = ""
-	if (session.isAdmin) selectedFilters.assigned_to = ""
+	selectedFilters.assigned_to = ""
 	selectedFilters.deadline = ""
 }
 
@@ -2227,6 +2238,7 @@ function openCreateDialog() {
 		...initialForm,
 		attachments: [],
 		assigned_by: session.user,
+		assigned_to: isFieldDisabled.value ? [session.user] : [],
 	})
 	showCreateDialog.value = true
 }
