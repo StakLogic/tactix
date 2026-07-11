@@ -74,7 +74,7 @@
 			v-else
 			variant="solid"
 			class="!text-xs !px-5 !h-9 !shadow-md transition-all"
-			style="background-color: #061d43; box-shadow: 0 4px 6px -1px #061d4333;"
+			style="background-color: var(--primary-color); box-shadow: 0 4px 6px -1px var(--primary-color-shadow);"
 			@click="openCreateDialog"
 		>
 			<template #prefix><IconPlus class="w-4 h-4" /></template>
@@ -102,7 +102,7 @@
 				  :class="[
 					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
 					selectedFilters.project !== ''
-					  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[#061d43]/20'
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
 					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
 				  ]"
 				>
@@ -128,7 +128,7 @@
 				  :class="[
 					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
 					selectedFilters.department !== ''
-					  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[#061d43]/20'
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
 					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
 				  ]"
 				>
@@ -144,7 +144,7 @@
 		  :class="[
 			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.status !== ''
-			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
+			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
 		  ]"
 		>
@@ -157,7 +157,7 @@
 		  :class="[
 			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.priority !== ''
-			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
+			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
 		  ]"
 		>
@@ -180,7 +180,7 @@
 				  :class="[
 					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
 					selectedFilters.assigned_by !== ''
-					  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[#061d43]/20'
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
 					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
 				  ]"
 				>
@@ -206,7 +206,7 @@
 				  :class="[
 					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
 					selectedFilters.assigned_to !== ''
-					  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[#061d43]/20'
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
 					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
 				  ]"
 				>
@@ -222,7 +222,7 @@
 		  :class="[
 			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
 			selectedFilters.deadline !== ''
-			  ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
+			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
 		  ]"
 		>

@@ -1108,67 +1108,67 @@ const filteredFiles = computed(() => {
 </script>
 
 <style scoped>
-/* Scoped brand color overrides for primary theme #061d43 */
+/* Scoped brand color overrides for primary theme var(--primary-color) */
 .text-indigo-600,
 .\!text-indigo-600,
 .group:hover .group-hover\:text-indigo-600,
 .hover\:text-indigo-600:hover {
-  color: #061d43 !important;
+  color: var(--primary-color) !important;
 }
 
 .bg-indigo-600,
 .\!bg-indigo-600 {
-  background-color: #061d43 !important;
+  background-color: var(--primary-color) !important;
 }
 
 .hover\:bg-indigo-700:hover,
 .hover\:\!bg-indigo-700:hover {
-  background-color: #04142f !important;
+  background-color: var(--primary-color-hover) !important;
 }
 
 .border-indigo-500,
 .group:hover .group-hover\:border-indigo-300,
 .group:hover .group-hover\:border-indigo-200 {
-  border-color: #061d43 !important;
+  border-color: var(--primary-color) !important;
 }
 
 .ring-indigo-500,
 .focus\:ring-indigo-500:focus {
-  --tw-ring-color: #061d43 !important;
+  --tw-ring-color: var(--primary-color) !important;
 }
 
 .focus\:border-indigo-500:focus {
-  border-color: #061d43 !important;
+  border-color: var(--primary-color) !important;
 }
 
 .text-indigo-700 {
-  color: #061d43 !important;
+  color: var(--primary-color) !important;
 }
 
 .bg-indigo-50 {
-  background-color: rgba(6, 29, 67, 0.05) !important;
+  background-color: var(--primary-color-shadow-light) !important;
 }
 
 .hover\:bg-indigo-50:hover {
-  background-color: rgba(6, 29, 67, 0.1) !important;
+  background-color: var(--primary-color-shadow) !important;
 }
 
 .border-indigo-100 {
-  border-color: rgba(6, 29, 67, 0.15) !important;
+  border-color: var(--primary-color-shadow-light) !important;
 }
 
 .from-indigo-600.to-indigo-500,
 .bg-gradient-to-tr.from-indigo-500.to-blue-600 {
-  background-image: linear-gradient(to top right, #061d43, #0b2e69) !important;
+  background-image: linear-gradient(to top right, var(--primary-color), var(--primary-color-hover)) !important;
 }
 
 .bg-gradient-to-r.from-indigo-500.to-indigo-600 {
-  background-image: linear-gradient(to right, #061d43, #0b2e69) !important;
+  background-image: linear-gradient(to right, var(--primary-color), var(--primary-color-hover)) !important;
 }
 
 .shadow-indigo-200,
 .shadow-indigo-500\/20 {
-  --tw-shadow-color: rgba(6, 29, 67, 0.15) !important;
+  --tw-shadow-color: var(--primary-color-shadow) !important;
 }
 
 /* Dark mode overrides for file category backgrounds */

@@ -2,6 +2,14 @@
 @import "frappe-ui/style.css";
 @import "./mobile-responsive/index.css";
 
+:root {
+	--primary-color: #000000;
+	--primary-color-hover: #000000;
+	--primary-color-shadow: rgba(0, 181, 255, 0.2);
+	--primary-color-shadow-light: rgba(0, 181, 255, 0.1);
+}
+
+
 /* Ensure dialogs/modal overlays appear above all app elements (e.g., sidebars, headers) */
 [role="dialog"] {
 	z-index: 99999 !important;
