@@ -52,6 +52,20 @@ def setup_role_permissions():
 	})
 
 
+	# Ticket User
+	grant_custom_permission("Tactix Ticket", "Tactix Ticket Raiser", {
+		"read": 1, "write": 1, "create": 1,
+	})
+
+	grant_custom_permission("Tactix Customer", "Tactix Ticket Raiser", {
+		"read": 1, "write": 1, "create": 1,
+	})
+
+	grant_custom_permission("Tactix Department", "Tactix Ticket Raiser", {
+		"read": 1, "write": 1, "create": 1,
+	})
+
+
 def grant_custom_permission(doctype, role, perm_dict):
 	if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role}):
 		doc = frappe.get_doc({

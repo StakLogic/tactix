@@ -546,7 +546,7 @@
 			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResource.data" :disabled="isFieldDisabled" />
 			   	<label class="block text-xs text-ink-gray-5">Assigned To</label>
 				<MultiSelect
-					:options="isFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResource.data"
+					:options="assignedToOptions"
 					v-model="newTask.assigned_to"
 				>
 					<template #footer="{ clearAll, selectAll }">
@@ -962,7 +962,7 @@
 
 						<DetailItem label="Assigned To">
 							<MultiSelect
-								:options="isFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResource.data"
+								:options="assignedToOptions"
 								v-model="newTask.assigned_to"
 								:disabled="isFieldDisabled"
 							>
@@ -1602,6 +1602,22 @@ const isFieldDisabled = computed(() => {
 	return isEmployeeOnly.value && !isCreator.value
 })
 
+const assignedToOptions = computed(() => {
+	if (isFieldDisabled.value) {
+		return [{ label: session.userFullName || session.user, value: session.user }]
+	}
+	if (isEmployeeOnly.value) {
+		return [
+			{
+				label: session.userFullName || session.user,
+				value: session.user,
+				image: session.userImage || "",
+			},
+		]
+	}
+	return userResource.data || []
+})
+
 const DetailItem = (props, { slots }) => {
 	return h("div", { class: "space-y-1.5" }, [
 		h(
@@ -1699,14 +1715,8 @@ const columns = [
 ]
 
 // Resources
-const userResource = createListResource({
-	doctype: "User",
-	fields: ["name", "full_name", "user_image"],
-	filters: {
-		enabled: 1,
-		name: ["not in", ["Administrator", "Guest"]],
-		tactix_customer: ["=", ""],
-	},
+const userResource = createResource({
+	url: "tactix.api.generic.get_users_excluding_ticket_users",
 	auto: true,
 	transform: (users) =>
 		users.map((u) => ({
@@ -1714,7 +1724,6 @@ const userResource = createListResource({
 			value: u.name,
 			image: u.user_image || "",
 		})),
-	pageLength: 10000,
 })
 
 function getUserAvatarImage(userName) {

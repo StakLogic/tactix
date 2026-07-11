@@ -24,6 +24,7 @@ const router = useRouter()
 // Correct Role Logic
 const isAdmin = session.isAdmin
 const isTicketRaiser = session.isTicketRaiser
+const isEmployee = session.isEmployee
 
 function toggleTheme() {
 	const currentTheme = document.documentElement.getAttribute("data-theme")
@@ -66,10 +67,10 @@ const crmSidebar = computed(() => {
 	})
 
 	// 2. Build Sidebar Navigation Sections
-	let sidebarItems = []
+	let sidebarItems: any[] = []
 
 	if (isTicketRaiser && !isAdmin) {
-		// TIER 1: Ticket Raiser only sees Tickets and Files Explorer
+		// TIER 1: Ticket Raiser only sees Tickets
 		sidebarItems = [
 			{
 				label: "Tickets",
@@ -78,16 +79,9 @@ const crmSidebar = computed(() => {
 				onClick: () => navigateTo("/tickets"),
 				isActive: route.path === "/tickets",
 			},
-			{
-				label: "Drive",
-				icon: FolderOpen,
-				to: "/drive",
-				onClick: () => navigateTo("/drive"),
-				isActive: route.path === "/drive" || route.path.startsWith("/drive/"),
-			},
 		]
-	} else {
-		// TIER 2: Standard User Items
+	} else if (isEmployee || isAdmin) {
+		// TIER 2: Standard Employee / Admin items
 		sidebarItems = [
 			{
 				label: "Dashboard",

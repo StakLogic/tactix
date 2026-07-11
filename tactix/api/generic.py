@@ -31,3 +31,44 @@ def get_user_info():
 	}
 
 
+@frappe.whitelist()
+def get_users_excluding_ticket_users():
+	# Get all users and their roles
+	users_roles = frappe.db.get_all(
+		"Has Role",
+		filters={"parenttype": "User"},
+		fields=["parent", "role"]
+	)
+	
+	# Group roles by user
+	user_roles_map = {}
+	for d in users_roles:
+		user_roles_map.setdefault(d.parent, []).append(d.role)
+	
+	exclude_users = ["Administrator", "Guest"]
+	for user, roles in user_roles_map.items():
+		if "Tactix Ticket Raiser" in roles and not ("System Manager" in roles or "Employee" in roles):
+			exclude_users.append(user)
+
+	# Also exclude if they have a customer assigned
+	customer_users = [
+		d.name for d in frappe.db.get_all(
+			"User",
+			filters={"tactix_customer": ["is", "set"]},
+			fields=["name"]
+		)
+	]
+	exclude_users = list(set(exclude_users + customer_users))
+
+	users = frappe.db.get_all(
+		"User",
+		filters={
+			"enabled": 1,
+			"name": ["not in", exclude_users]
+		},
+		fields=["name", "full_name", "user_image"]
+	)
+	return users
+
+
+

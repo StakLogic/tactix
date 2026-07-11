@@ -116,9 +116,35 @@ router.beforeEach(async (to, from, next) => {
 		return
 	}
 
-	// prevent ticket raiser accessing dashboard
-	if (session.isTicketRaiser && to.path === "/dashboard") {
-		next("/tickets")
+	// Roles based Access Control
+	const isSystemManager = session.isAdmin
+	const isEmployee = session.isEmployee
+	const isTicketRaiser = session.isTicketRaiser
+
+	const pathParts = to.path.split("/").filter(Boolean)
+	const resource = pathParts[0] || "" // e.g. "dashboard", "tasks", "tickets", etc.
+
+	if (isSystemManager) {
+		next()
+		return
+	}
+
+	if (isEmployee) {
+		const allowed = ["dashboard", "tasks", "tickets", "contributions", "drive", "timesheets", "performance", "settings"]
+		if (allowed.includes(resource) || resource === "") {
+			next()
+		} else {
+			next("/dashboard")
+		}
+		return
+	}
+
+	if (isTicketRaiser) {
+		if (resource === "tickets" || resource === "settings" || resource === "") {
+			next()
+		} else {
+			next("/tickets")
+		}
 		return
 	}
 
