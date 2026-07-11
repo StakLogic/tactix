@@ -29,7 +29,6 @@ function initMobileMenu() {
 		"/dashboard": "Dashboard",
 		"/tasks": "Tasks",
 		"/tickets": "Tickets",
-		"/leave-applications": "Leave Applications",
 		"/timesheets": "Timesheets",
 		"/performance": "Performance",
 		"/data-sources": "Data Sources",

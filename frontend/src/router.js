@@ -41,11 +41,6 @@ const routes = [
 				component: () => import("@/pages/Tasks.vue"),
 			},
 
-			{
-				path: "leave-applications",
-				name: "Leave Applications",
-				component: () => import("@/pages/LeaveApplication.vue"),
-			},
 
 			{
 				path: "timesheets",

@@ -4,7 +4,6 @@ import { computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
 import BarChart3 from "~icons/lucide/bar-chart-3"
-import CalendarDays from "~icons/lucide/calendar-days"
 import CheckSquare from "~icons/lucide/check-square"
 import Clock from "~icons/lucide/clock"
 import Database from "~icons/lucide/database"
@@ -110,13 +109,6 @@ const crmSidebar = computed(() => {
 				to: "/tickets",
 				onClick: () => navigateTo("/tickets"),
 				isActive: route.path === "/tickets",
-			},
-			{
-				label: "Leave Applications",
-				icon: CalendarDays,
-				to: "/leave-applications",
-				onClick: () => navigateTo("/leave-applications"),
-				isActive: route.path === "/leave-applications",
 			},
 			{
 				label: "Contributions",

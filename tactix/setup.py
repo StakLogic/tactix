@@ -9,7 +9,11 @@ def after_migrate():
 
 def setup_role_permissions():
 	# System Manager Permissions
-	for doctype in ["Task", "Project", "Tactix Ticket", "Tactix Customer", "Tactix Department", "Task Assigned To", "Tactix Ticket Attachment"]:
+	for doctype in [
+		"Task", "Project", "Tactix Ticket", "Tactix Customer", "Tactix Department",
+		"Task Assigned To", "Tactix Ticket Attachment", "Github Settings",
+		"Tactix Pull Request"
+	]:
 		grant_custom_permission(doctype, "System Manager", {
 			"read": 1, "write": 1, "create": 1, "delete": 1,
 			"share": 1, "export": 1, "print": 1, "email": 1,
@@ -20,13 +24,13 @@ def setup_role_permissions():
 	grant_custom_permission("Task", "Employee", {
 		"read": 1, "write": 1, "create": 1, "delete": 1,
 		"share": 1, "export": 1, "print": 1, "email": 1,
-		"report": 1, "if_owner": 1  # Only If Creator (handles assignment and creation access)
+		"report": 1, "if_owner": 0  # Only If Creator (handles assignment and creation access)
 	})
 
 	grant_custom_permission("Tactix Ticket", "Employee", {
 		"read": 1, "write": 1, "create": 1, "delete": 1,
 		"share": 1, "export": 1, "print": 1, "email": 1,
-		"report": 1, "if_owner": 1  # Only If Creator / Assigned
+		"report": 1, "if_owner": 0  # Only If Creator / Assigned
 	})
 
 	grant_custom_permission("Project", "Employee", {

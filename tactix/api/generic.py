@@ -31,37 +31,3 @@ def get_user_info():
 	}
 
 
-@frappe.whitelist()
-def get_upcoming_leaves(from_date=None, to_date=None):
-	from frappe.utils import getdate, add_days
-
-	today_val = getdate()
-	
-	if from_date:
-		start_val = getdate(from_date)
-	else:
-		start_val = today_val
-
-	if to_date:
-		end_val = getdate(to_date)
-	else:
-		end_val = add_days(start_val, 7)
-
-	leaves = frappe.db.get_all(
-		"Tactix Leave Application",
-		filters={
-			"status": ["in", ["Approved", "Pending"]],
-			"from_date": ["<=", end_val],
-			"to_date": [">=", start_val]
-		},
-		fields=["name", "user", "from_date", "to_date", "remarks", "posting_date", "status"],
-		order_by="from_date asc"
-	)
-
-	for leave in leaves:
-		user_details = frappe.db.get_value("User", leave.user, ["full_name", "user_image"], as_dict=True) or {}
-		leave["full_name"] = user_details.get("full_name") or leave.user
-		leave["user_image"] = user_details.get("user_image") or ""
-
-	return leaves
-
