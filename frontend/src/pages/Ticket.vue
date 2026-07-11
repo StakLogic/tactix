@@ -1250,9 +1250,19 @@ const departmentFilterOptions = computed(() =>
 		"department",
 	]),
 )
-const raisedByFilterOptions = computed(() =>
-	normalizeOptions(userResource.data, ["name"]),
-)
+const raisedByFilterOptions = computed(() => {
+	if (session.isTicketRaiser) {
+		const currentUserName = session.userFullName || session.user
+		return [
+			{
+				label: currentUserName,
+				value: session.user,
+				image: session.userImage || "",
+			},
+		]
+	}
+	return normalizeOptions(userResource.data, ["name"])
+})
 const customerFilterSelectOptions = computed(() => [
 	{ label: "Client", value: "" },
 	...customerFilterOptions.value,

@@ -32,36 +32,61 @@ def get_user_info():
 
 
 @frappe.whitelist()
-def get_upcoming_leaves(from_date=None, to_date=None):
-	from frappe.utils import getdate, add_days
-
-	today_val = getdate()
-	
-	if from_date:
-		start_val = getdate(from_date)
-	else:
-		start_val = today_val
-
-	if to_date:
-		end_val = getdate(to_date)
-	else:
-		end_val = add_days(start_val, 7)
-
-	leaves = frappe.db.get_all(
-		"Tactix Leave Application",
-		filters={
-			"status": ["in", ["Approved", "Pending"]],
-			"from_date": ["<=", end_val],
-			"to_date": [">=", start_val]
-		},
-		fields=["name", "user", "from_date", "to_date", "remarks", "posting_date", "status"],
-		order_by="from_date asc"
+def get_users_excluding_ticket_users():
+	# Get all users and their roles
+	users_roles = frappe.db.get_all(
+		"Has Role",
+		filters={"parenttype": "User"},
+		fields=["parent", "role"]
 	)
+	
+	# Group roles by user
+	user_roles_map = {}
+	for d in users_roles:
+		user_roles_map.setdefault(d.parent, []).append(d.role)
+	
+	exclude_users = ["Administrator", "Guest"]
+	for user, roles in user_roles_map.items():
+		if "Tactix Ticket Raiser" in roles and not ("System Manager" in roles or "Employee" in roles):
+			exclude_users.append(user)
 
-	for leave in leaves:
-		user_details = frappe.db.get_value("User", leave.user, ["full_name", "user_image"], as_dict=True) or {}
-		leave["full_name"] = user_details.get("full_name") or leave.user
-		leave["user_image"] = user_details.get("user_image") or ""
+	# Also exclude if they have a customer assigned
+	customer_users = [
+		d.name for d in frappe.db.get_all(
+			"User",
+			filters={"tactix_customer": ["is", "set"]},
+			fields=["name"]
+		)
+	]
+	exclude_users = list(set(exclude_users + customer_users))
 
-	return leaves
+	users = frappe.db.get_all(
+		"User",
+		filters={
+			"enabled": 1,
+			"name": ["not in", exclude_users]
+		},
+		fields=["name", "full_name", "user_image"]
+	)
+	return users
 
+
+from werkzeug.exceptions import HTTPException
+from werkzeug.utils import redirect as wz_redirect
+
+class RedirectException(HTTPException):
+	def __init__(self, location, code=302):
+		super().__init__()
+		self.response = wz_redirect(location, code=code)
+
+
+def restrict_desk_access():
+	if not frappe.request:
+		return
+
+	path = frappe.request.path or ""
+	if path.startswith("/app") or path == "/app":
+		if frappe.session.user != "Guest":
+			roles = frappe.get_roles(frappe.session.user)
+			if "System Manager" not in roles:
+				raise RedirectException("/tactix/?restricted=1")

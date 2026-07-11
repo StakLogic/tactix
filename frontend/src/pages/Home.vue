@@ -800,8 +800,6 @@ async function handleNotificationClick(notification) {
 			router.push({ path: `/tasks/${docName}` })
 		} else if (docType === "Ticket") {
 			router.push({ path: `/tickets/${docName}` })
-		} else if (docType === "Leave Application") {
-			router.push({ path: "/leave-applications", query: { name: docName } })
 		}
 	}
 }
