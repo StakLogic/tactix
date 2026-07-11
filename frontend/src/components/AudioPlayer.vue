@@ -181,7 +181,7 @@ onUnmounted(() => {
 				@click="togglePlay"
 				type="button"
 				class="w-9 h-9 flex items-center justify-center text-white rounded-full transition-transform active:scale-95 shadow cursor-pointer shrink-0"
-				:style="{ backgroundColor: isPlaying ? '#061d43' : '#061d43', hover: '#061d43' }"
+				:style="{ backgroundColor: 'var(--primary-color)', hover: 'var(--primary-color-hover)' }"
 			>
 				<!-- Play SVG Icon -->
 				<svg v-if="!isPlaying" class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24">
@@ -207,7 +207,7 @@ onUnmounted(() => {
 						:style="{ height: `${h}px` }"
 						:class="[
 							'w-[3px] rounded-full transition-colors pointer-events-none',
-							isBarActive(idx) ? 'bg-[#061d43]' : 'bg-slate-300/80'
+							isBarActive(idx) ? 'bg-[var(--primary-color)]' : 'bg-slate-300/80'
 						]"
 					></div>
 				</div>

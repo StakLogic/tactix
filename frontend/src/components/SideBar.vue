@@ -190,9 +190,9 @@ const crmSidebar = computed(() => {
 
 :deep(nav button.\!bg-surface-selected),
 :deep(nav button.bg-surface-selected) {
-  background-color: #061d43 !important;
+  background-color: var(--primary-color) !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 6px -1px #061d4333, 0 2px 4px -2px #061d4320 !important;
+  box-shadow: 0 4px 6px -1px var(--primary-color-shadow), 0 2px 4px -2px var(--primary-color-shadow-light) !important;
 }
 
 :deep(nav button.\!bg-surface-selected span),

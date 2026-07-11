@@ -87,7 +87,7 @@
             :class="[
               'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer max-w-[200px] transition-all duration-200',
               filters.repo !== ''
-                ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
+                ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
                 : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
             ]"
           >
@@ -101,7 +101,7 @@
             :class="[
               'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer transition-all duration-200',
               filters.status !== 'all'
-                ? 'border-[#061d43] text-[#061d43] bg-blue-50/10 font-black shadow-sm ring-1 ring-[#061d43]/10 focus:ring-2 focus:ring-[#061d43]/20 dark:border-indigo-400 dark:text-indigo-300'
+                ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
                 : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
             ]"
           >
@@ -137,7 +137,7 @@
             ? '!text-white shadow-sm' 
             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
         ]"
-        :style="activeTab === 'list' ? { backgroundColor: '#061d43' } : {}"
+        :style="activeTab === 'list' ? { backgroundColor: 'var(--primary-color)' } : {}"
       >
         <IconGitPullRequest class="w-3.5 h-3.5" />
         All Pull Requests
@@ -150,7 +150,7 @@
             ? '!text-white shadow-sm' 
             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
         ]"
-        :style="activeTab === 'dashboard' ? { backgroundColor: '#061d43' } : {}"
+        :style="activeTab === 'dashboard' ? { backgroundColor: 'var(--primary-color)' } : {}"
       >
         <IconClock class="w-3.5 h-3.5" />
         Analytics Dashboard
