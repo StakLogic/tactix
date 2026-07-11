@@ -159,7 +159,7 @@ const crmSidebar = computed(() => {
 		header: {
 			title: "Tactix",
 			subtitle: session.userFullName || session.user || undefined,
-			logo: "/assets/tactix/frontend/tactix_icon.png",
+			logo: "/assets/tactix/frontend/tactix_logo_highlighted.png",
 			menuItems: menuItems,
 		},
 		sections: [
