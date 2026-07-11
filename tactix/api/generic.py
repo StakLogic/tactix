@@ -71,4 +71,22 @@ def get_users_excluding_ticket_users():
 	return users
 
 
+from werkzeug.exceptions import HTTPException
+from werkzeug.utils import redirect as wz_redirect
 
+class RedirectException(HTTPException):
+	def __init__(self, location, code=302):
+		super().__init__()
+		self.response = wz_redirect(location, code=code)
+
+
+def restrict_desk_access():
+	if not frappe.request:
+		return
+
+	path = frappe.request.path or ""
+	if path.startswith("/app") or path == "/app":
+		if frappe.session.user != "Guest":
+			roles = frappe.get_roles(frappe.session.user)
+			if "System Manager" not in roles:
+				raise RedirectException("/tactix/?restricted=1")
