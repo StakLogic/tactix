@@ -244,6 +244,32 @@
 				</div>
 				</template>
 
+				<template v-if="column.key === 'first_response_time'">
+				<div v-if="row.first_responded_on" class="flex items-center" v-tooltip="formatDateTime(row.first_responded_on)">
+					<Badge 
+						theme="blue" 
+						variant="subtle" 
+						class="font-semibold !px-2.5 !py-1 text-xs shrink-0"
+					>
+						{{ formatDuration(row.first_response_time) }}
+					</Badge>
+				</div>
+				<span v-else class="text-xs text-slate-400 font-medium pl-2">—</span>
+				</template>
+
+				<template v-if="column.key === 'closed_time'">
+				<div v-if="row.closed_on" class="flex items-center" v-tooltip="formatDateTime(row.closed_on)">
+					<Badge 
+						theme="green" 
+						variant="subtle" 
+						class="font-semibold !px-2.5 !py-1 text-xs shrink-0"
+					>
+						{{ formatDuration(row.closed_time) }}
+					</Badge>
+				</div>
+				<span v-else class="text-xs text-slate-400 font-medium pl-2">—</span>
+				</template>
+
 				<template v-if="column.key === 'exp_end_date'">
 				<div class="flex items-center gap-2 text-slate-500 whitespace-nowrap">
 					<IconClock class="w-3.5 h-3.5" v-if="row.exp_end_date"/>
@@ -517,7 +543,15 @@
 					<div class="flex-1 md:w-[40%] md:shrink-0 flex flex-col bg-white min-h-0">
 						<header class="p-4 border-b flex justify-between items-center bg-white shrink-0 shadow-sm z-10">
 							<div>
-								<span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-0.5 uppercase tracking-wider">{{ ticketForm.name }}</span>
+								<div class="flex flex-wrap items-center gap-1.5">
+									<span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-0.5 uppercase tracking-wider">{{ ticketForm.name }}</span>
+									<Badge v-if="ticketForm.first_responded_on" theme="blue" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]" v-tooltip="'First Response: ' + formatDateTime(ticketForm.first_responded_on)">
+										Responded in {{ formatDuration(ticketForm.first_response_time) }}
+									</Badge>
+									<Badge v-if="ticketForm.closed_on" theme="green" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]" v-tooltip="'Closed on: ' + formatDateTime(ticketForm.closed_on)">
+										Closed in {{ formatDuration(ticketForm.closed_time) }}
+									</Badge>
+								</div>
 								<h2 class="font-extrabold text-slate-900 text-lg mt-2 truncate max-w-[420px]">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex gap-2 shrink-0">
@@ -543,6 +577,7 @@
 									<FormControl label="Department" type="select" v-model="ticketForm.department" :options="departmentFilterOptions" class="!mb-0 shadow-sm" />
 								</div>
 							</div>
+
 							
 							<!-- Description Field -->
 							<div class="space-y-2 border-t pt-4">
@@ -1509,6 +1544,8 @@ const columns = [
 	{ label: "Priority", key: "priority", width: "130px", icon: IconBriefcase },
 	{ label: "Raised By", key: "raised_by", width: "300px", icon: IconUser },
 	{ label: "Raised On", key: "creation", width: "200px", icon: IconClock },
+	{ label: "First Response Time", key: "first_response_time", width: "180px", icon: IconClock },
+	{ label: "Closed Time", key: "closed_time", width: "180px", icon: IconClock },
 ]
 
 const hasActiveFilters = computed(() => {
@@ -1556,6 +1593,24 @@ function isCardActive(label) {
 const formatDateTime = (dateStr) => {
 	if (!dateStr) return "—"
 	return dayjs(dateStr).format("MMM D, YYYY h:mm A")
+}
+
+const formatDuration = (seconds) => {
+	if (seconds === null || seconds === undefined || seconds === "") return "—"
+	const totalSeconds = Math.round(seconds)
+	const d = Math.floor(totalSeconds / 86400)
+	const h = Math.floor((totalSeconds % 86400) / 3600)
+	const m = Math.floor((totalSeconds % 3600) / 60)
+	
+	const parts = []
+	if (d > 0) parts.push(`${d}d`)
+	if (h > 0) parts.push(`${h}h`)
+	if (m > 0) parts.push(`${m}m`)
+	if (parts.length === 0) {
+		const s = Math.floor(totalSeconds % 60)
+		if (s > 0) parts.push(`${s}s`)
+	}
+	return parts.join(" ") || "0m"
 }
 
 const kpiStats = computed(() => {
