@@ -102,6 +102,18 @@ class TestTactixTicket(FrappeTestCase):
 		ts.delete()
 		task.delete()
 
+	def test_performance_api(self):
+		from tactix.api.performance import get_performance_data
+		
+		frappe.set_user("Administrator")
+		employee = get_employee_stub()
+		
+		data = get_performance_data(employee=employee, timespan="this_month")
+		self.assertIsNotNone(data)
+		self.assertIn("ticket", data)
+		self.assertIn("task", data)
+		self.assertIn("timesheet", data)
+
 def get_employee_stub():
 	employee = frappe.db.get_value("Employee", {"user_id": "Administrator"})
 	if not employee:
