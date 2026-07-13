@@ -51,3 +51,69 @@ class TestTactixTicket(FrappeTestCase):
 
 		# Clean up
 		doc.delete()
+
+	def test_timesheet_api(self):
+		from tactix.api.timesheet import create_timesheet, get_timesheets, get_timesheet_summary
+		
+		frappe.set_user("Administrator")
+		employee = get_employee_stub()
+		
+		task = frappe.get_doc({
+			"doctype": "Task",
+			"subject": "Test Timesheet Task",
+			"status": "Open"
+		}).insert()
+		
+		import random
+		test_date = frappe.utils.add_to_date(frappe.utils.today(), days=random.randint(100, 10000))
+
+		doc_payload = {
+			"date": test_date,
+			"employee": employee,
+			"time_logs": [
+				{
+					"task": task.name,
+					"hours": 4.5,
+					"activity_type": "Planning",
+					"description": "Planning unit tests"
+				}
+			],
+			"submit": 0
+		}
+		
+		ts_name = create_timesheet(doc_payload)
+		self.assertIsNotNone(ts_name)
+		
+		ts = frappe.get_doc("Timesheet", ts_name)
+		self.assertEqual(ts.employee, employee)
+		self.assertEqual(ts.total_hours, 4.5)
+		self.assertEqual(ts.status, "Draft")
+		self.assertEqual(len(ts.time_logs), 1)
+		self.assertEqual(ts.time_logs[0].task, task.name)
+		self.assertEqual(ts.time_logs[0].hours, 4.5)
+		
+		res_list = get_timesheets(filters={"name": ts_name})
+		self.assertEqual(res_list.get("total_count"), 1)
+		
+		res_summary = get_timesheet_summary(filters={"name": ts_name})
+		self.assertEqual(res_summary.get("total_hours"), 4.5)
+		self.assertEqual(res_summary.get("draft_count"), 1)
+		
+		ts.delete()
+		task.delete()
+
+def get_employee_stub():
+	employee = frappe.db.get_value("Employee", {"user_id": "Administrator"})
+	if not employee:
+		employee = frappe.db.get_value("Employee", {})
+	if not employee:
+		emp_doc = frappe.get_doc({
+			"doctype": "Employee",
+			"employee_name": "Administrator",
+			"user_id": "Administrator",
+			"company": frappe.db.get_single_value("Global Defaults", "default_company") or "Test Company",
+			"status": "Active"
+		})
+		emp_doc.insert(ignore_permissions=True)
+		employee = emp_doc.name
+	return employee
