@@ -698,7 +698,7 @@
 			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResourceTask.data" :disabled="isTaskFieldDisabled" />
 			   	<label class="block text-xs text-ink-gray-5">Assigned To</label>
 				<MultiSelect
-					:options="isTaskFieldDisabled ? [{ label: session.userFullName, value: session.user }] : userResourceTask.data"
+					:options="assignedToOptionsTask"
 					v-model="newTask.assigned_to"
 				>
 					<template #footer="{ clearAll, selectAll }">
@@ -959,6 +959,22 @@ const isTaskCreatorOrOwner = computed(() => {
 
 const isTaskFieldDisabled = computed(() => {
 	return isEmployeeOnly.value && !isTaskCreatorOrOwner.value
+})
+
+const assignedToOptionsTask = computed(() => {
+	if (isTaskFieldDisabled.value) {
+		return [{ label: session.userFullName || session.user, value: session.user }]
+	}
+	if (isEmployeeOnly.value) {
+		return [
+			{
+				label: session.userFullName || session.user,
+				value: session.user,
+				image: session.userImage || "",
+			},
+		]
+	}
+	return userResourceTask.data || []
 })
 const ticketCustomerId = session.ticketCustomerId
 const tactixDepartment = session.tactixDepartment
@@ -1489,7 +1505,7 @@ function openTaskCreateDialog(ticket) {
 		...initialForm,
 		attachments: [],
 		assigned_by: session.user,
-		assigned_to: isTaskFieldDisabled.value ? [session.user] : [],
+		assigned_to: (isTaskFieldDisabled.value || isEmployeeOnly.value) ? [session.user] : [],
 	})
 
 	newTask.project = ticket.customer || ""
