@@ -6,6 +6,25 @@ from frappe.model.document import Document
 
 
 class TactixTicket(Document):
+	def before_save(self):
+		from frappe.utils import now_datetime, get_datetime
+
+		# Record first response time
+		if not self.is_new() and self.status != "Open" and not self.first_responded_on:
+			self.first_responded_on = now_datetime()
+			creation = self.creation or now_datetime()
+			self.first_response_time = (get_datetime(self.first_responded_on) - get_datetime(creation)).total_seconds()
+
+		# Record closed time
+		if self.status == "Closed":
+			if not self.closed_on:
+				self.closed_on = now_datetime()
+				creation = self.creation or now_datetime()
+				self.closed_time = (get_datetime(self.closed_on) - get_datetime(creation)).total_seconds()
+		else:
+			self.closed_on = None
+			self.closed_time = 0
+
 	def after_insert(self):
 		# Fetch all users with "Support Team" role
 		support_team_members = frappe.get_all("Has Role", filters={"role": "Support Team"}, fields=["parent"])

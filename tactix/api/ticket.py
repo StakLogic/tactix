@@ -73,6 +73,7 @@ def get_tickets(filters=None, start=0, page_length=20):
 			"name", "subject", "raised_by", "status", "department",
 			"priority", "ticket_type", "opening_date", "description",
 			"customer", "agent_group", "resolution_details", "creation",
+			"first_response_time", "first_responded_on", "closed_on", "closed_time",
 		],
 		order_by="creation desc",
 		limit_start=start,

@@ -47,6 +47,8 @@
   "opening_time",
   "resolution_date",
   "resolution_time",
+  "closed_on",
+  "closed_time",
   "user_resolution_time",
   "reference_tab",
   "additional_info",
@@ -313,6 +315,18 @@
    "fieldname": "resolution_time",
    "fieldtype": "Duration",
    "label": "Resolution Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "closed_on",
+   "fieldtype": "Datetime",
+   "label": "Closed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "closed_time",
+   "fieldtype": "Duration",
+   "label": "Closed Time",
    "read_only": 1
   },
   {

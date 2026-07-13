@@ -14,30 +14,59 @@
 			</div>
 		</div>
 
-		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-			<Card v-for="stat in statsConfig" :key="stat.label" class="!shadow-sm border border-slate-100 bg-white hover:border-slate-200 transition-colors">
-				<div class="flex flex-col gap-1">
-					<span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{{ stat.label }}</span>
-					<div class="flex items-center justify-between">
-						<div class="text-3xl font-bold text-slate-900">
-							<template v-if="tasks.loading">
-								<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-							</template>
-							<span v-else>{{ stat.value }}</span>
-						</div>
-						<div :class="`p-2 rounded-lg ${stat.bg} ${stat.color}`">
-							<component :is="stat.icon" class="w-5 h-5" />
+		<!-- Section: Task Overview -->
+		<div class="space-y-2">
+			<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Task Overview</label>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				<Card v-for="stat in taskStatsConfig" :key="stat.label" class="!shadow-sm border border-slate-100 bg-white hover:border-slate-200 transition-colors">
+					<div class="flex flex-col gap-1">
+						<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ stat.label }}</span>
+						<div class="flex items-center justify-between mt-1">
+							<div class="text-xl font-black text-slate-900 truncate">
+								<template v-if="stat.loading">
+									<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+								</template>
+								<span v-else>{{ stat.value }}</span>
+							</div>
+							<div :class="`p-2 rounded-lg ${stat.bg} ${stat.color} flex-shrink-0`">
+								<component :is="stat.icon" class="w-5 h-5" />
+							</div>
 						</div>
 					</div>
-				</div>
-			</Card>
+				</Card>
+			</div>
+		</div>
+
+		<!-- Section: Performance & Time Tracking -->
+		<div class="space-y-2 pt-2">
+			<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Performance & Time Tracking</label>
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<Card v-for="stat in performanceStatsConfig" :key="stat.label" class="!shadow-sm border border-slate-100 bg-white hover:border-slate-200 transition-colors">
+					<div class="flex flex-col gap-1">
+						<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ stat.label }}</span>
+						<div class="flex items-center justify-between mt-1">
+							<div class="text-xl font-black text-slate-900 truncate">
+								<template v-if="stat.loading">
+									<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+								</template>
+								<span v-else>{{ stat.value }}</span>
+							</div>
+							<div :class="`p-2 rounded-lg ${stat.bg} ${stat.color} flex-shrink-0`">
+								<component :is="stat.icon" class="w-5 h-5" />
+							</div>
+						</div>
+					</div>
+				</Card>
+			</div>
 		</div>
 
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 			<div class="lg:col-span-8">
 				<Card title="Recent Activity" class="!shadow-sm border border-slate-100 h-full">
 					<div class="space-y-1 mt-4">
-						<div v-if="tasks.loading" class="flex justify-center"><LoadingIndicator /></div>
+						<div v-if="tasks.loading" class="flex justify-center py-8">
+							<div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+						</div>
 						
 						<div v-for="task in recentTasks" :key="task.name" 
 							class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors group border-b border-transparent last:border-0 cursor-pointer"
@@ -126,6 +155,7 @@ import IconCheckCircle from "~icons/lucide/check-circle"
 import IconClock from "~icons/lucide/clock"
 import IconList from "~icons/lucide/list"
 import IconRefresh from "~icons/lucide/refresh-cw"
+import IconShieldAlert from "~icons/lucide/shield-alert"
 import { session } from "../data/session"
 
 const taskFilters = computed(() => {
@@ -155,6 +185,24 @@ const taskSummary = createResource({
 		overdue: 0,
 		active_projects: 0,
 	},
+})
+
+const timesheetsSummary = createResource({
+	url: "tactix.api.timesheet.get_timesheet_summary",
+	auto: true,
+	params: {
+		filters: { timespan: "this_week" }
+	},
+	initialData: { total_hours: 0 }
+})
+
+const performanceResource = createResource({
+	url: "tactix.api.performance.get_performance_data",
+	auto: true,
+	params: {
+		timespan: "this_month"
+	},
+	initialData: {}
 })
 
 const userResource = createListResource({
@@ -187,13 +235,14 @@ const activeProjectsCount = computed(
 	() => taskSummary.data?.active_projects || 0,
 )
 
-const statsConfig = computed(() => [
+const taskStatsConfig = computed(() => [
 	{
 		label: "Active Projects",
 		value: activeProjectsCount.value,
 		icon: IconBriefcase,
 		color: "text-blue-600",
 		bg: "bg-blue-50",
+		loading: tasks.loading,
 	},
 	{
 		label: "Total Tasks",
@@ -201,6 +250,7 @@ const statsConfig = computed(() => [
 		icon: IconList,
 		color: "text-indigo-600",
 		bg: "bg-indigo-50",
+		loading: tasks.loading,
 	},
 	{
 		label: "In Progress",
@@ -208,6 +258,7 @@ const statsConfig = computed(() => [
 		icon: IconClock,
 		color: "text-orange-600",
 		bg: "bg-orange-50",
+		loading: tasks.loading,
 	},
 	{
 		label: "Completed",
@@ -215,12 +266,59 @@ const statsConfig = computed(() => [
 		icon: IconCheckCircle,
 		color: "text-green-600",
 		bg: "bg-green-50",
+		loading: tasks.loading,
+	},
+])
+
+const performanceStatsConfig = computed(() => [
+	{
+		label: "Hours Logged (This Week)",
+		value: `${timesheetsSummary.data?.total_hours?.toFixed(1) || '0.0'} hrs`,
+		icon: IconClock,
+		color: "text-emerald-600",
+		bg: "bg-emerald-50",
+		loading: timesheetsSummary.loading,
+	},
+	{
+		label: "Initial Response SLA",
+		value: getSLARatingText(performanceResource.data?.ticket?.avg_response_time),
+		icon: IconShieldAlert,
+		color: getSLARatingColorClass(performanceResource.data?.ticket?.avg_response_time),
+		bg: getSLARatingBgClass(performanceResource.data?.ticket?.avg_response_time),
+		loading: performanceResource.loading,
 	},
 ])
 
 function reloadDashboardData() {
 	tasks.reload()
 	taskSummary.reload()
+	timesheetsSummary.reload()
+	performanceResource.reload()
+}
+
+function getSLARatingText(seconds) {
+	if (!seconds || seconds <= 0) return "No Score"
+	const hrs = seconds / 3600
+	if (hrs < 2) return "A+ Elite"
+	if (hrs < 8) return "A Fast"
+	if (hrs < 24) return "B Compliant"
+	return "C Warning"
+}
+
+function getSLARatingColorClass(seconds) {
+	if (!seconds || seconds <= 0) return "text-slate-500"
+	const hrs = seconds / 3600
+	if (hrs < 8) return "text-green-600"
+	if (hrs < 24) return "text-blue-600"
+	return "text-orange-600"
+}
+
+function getSLARatingBgClass(seconds) {
+	if (!seconds || seconds <= 0) return "bg-slate-50"
+	const hrs = seconds / 3600
+	if (hrs < 8) return "bg-green-50"
+	if (hrs < 24) return "bg-blue-50"
+	return "bg-orange-50"
 }
 
 const recentTasks = computed(() => [...(tasks.data?.tasks || [])].slice(0, 5))
