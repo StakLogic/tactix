@@ -31,6 +31,188 @@ def _normalize_timespan(timespan):
 		
 	return start_date, end_date
 
+def get_employee_github_username(employee):
+	if not employee:
+		return None
+	github_username = None
+	try:
+		github_username = frappe.db.get_value("Employee", employee, "github_username")
+	except Exception:
+		pass
+		
+	if github_username:
+		return github_username
+		
+	# Fallback fuzzy mapping
+	emp_details = frappe.db.get_value("Employee", employee, ["employee_name", "user_id"], as_dict=True)
+	if emp_details:
+		name = emp_details.get("employee_name")
+		email = emp_details.get("user_id")
+		
+		# Try email prefix
+		if email:
+			email_prefix = email.split("@")[0].lower()
+			if frappe.db.exists("Tactix Pull Request", {"author_login": ["like", f"%{email_prefix}%"]}):
+				matched = frappe.db.get_value("Tactix Pull Request", {"author_login": ["like", f"%{email_prefix}%"]}, "author_login")
+				if matched:
+					return matched
+					
+		# Try slugified employee name
+		if name:
+			slug = name.lower().replace(" ", "-")
+			if frappe.db.exists("Tactix Pull Request", {"author_login": ["like", f"%{slug}%"]}):
+				matched = frappe.db.get_value("Tactix Pull Request", {"author_login": ["like", f"%{slug}%"]}, "author_login")
+				if matched:
+					return matched
+					
+			slug_no_dash = name.lower().replace(" ", "")
+			if frappe.db.exists("Tactix Pull Request", {"author_login": ["like", f"%{slug_no_dash}%"]}):
+				matched = frappe.db.get_value("Tactix Pull Request", {"author_login": ["like", f"%{slug_no_dash}%"]}, "author_login")
+				if matched:
+					return matched
+					
+	return None
+
+def _get_timeline_data(timespan, start_date, end_date, prs, tasks, tickets, timesheets):
+	import datetime
+	
+	labels = []
+	pr_series = []
+	task_series = []
+	ticket_series = []
+	hour_series = []
+	
+	# Determine start and end date objects
+	today_dt = getdate(today())
+	if not start_date:
+		start_dt = add_days(today_dt, -180)
+		end_dt = today_dt
+		grouping = "month"
+	else:
+		start_dt = getdate(start_date)
+		end_dt = getdate(end_date)
+		delta = (end_dt - start_dt).days
+		if delta <= 1:
+			grouping = "hour"
+		elif delta <= 14:
+			grouping = "day"
+		elif delta <= 60:
+			grouping = "day"
+		else:
+			grouping = "month"
+			
+	# Initialize buckets
+	buckets = {}
+	if grouping == "hour":
+		for h in range(24):
+			buckets[f"{h:02d}:00"] = {"prs": 0, "tasks": 0, "tickets": 0, "hours": 0.0}
+			labels.append(f"{h:02d}:00")
+	elif grouping == "day":
+		curr = start_dt
+		while curr <= end_dt:
+			date_str = curr.strftime("%Y-%m-%d")
+			label_str = curr.strftime("%b %d")
+			buckets[date_str] = {"prs": 0, "tasks": 0, "tickets": 0, "hours": 0.0}
+			labels.append(label_str)
+			curr += datetime.timedelta(days=1)
+	elif grouping == "month":
+		curr = start_dt.replace(day=1)
+		while curr <= end_dt:
+			month_str = curr.strftime("%Y-%m")
+			label_str = curr.strftime("%b %Y")
+			buckets[month_str] = {"prs": 0, "tasks": 0, "tickets": 0, "hours": 0.0}
+			labels.append(label_str)
+			if curr.month == 12:
+				curr = curr.replace(year=curr.year + 1, month=1)
+			else:
+				curr = curr.replace(month=curr.month + 1)
+
+	# Helper to get bucket key
+	def get_key(dt_val):
+		if not dt_val or isinstance(dt_val, (int, float)):
+			return None
+		if isinstance(dt_val, str):
+			if "T" in dt_val:
+				dt_val = dt_val.split("T")[0]
+			elif " " in dt_val:
+				dt_val = dt_val.split(" ")[0]
+			dt_val = getdate(dt_val)
+		elif isinstance(dt_val, datetime.datetime):
+			dt_val = dt_val.date()
+			
+		if grouping == "hour":
+			if isinstance(dt_val, datetime.date) and not isinstance(dt_val, datetime.datetime):
+				return "12:00"
+			return f"{dt_val.hour:02d}:00"
+		elif grouping == "day":
+			return dt_val.strftime("%Y-%m-%d")
+		elif grouping == "month":
+			return dt_val.strftime("%Y-%m")
+		return None
+
+	for pr in prs:
+		k = get_key(pr.get("github_created_at"))
+		if k in buckets:
+			buckets[k]["prs"] += 1
+			
+	for task in tasks:
+		dt = task.get("completed_datetime") or task.get("creation")
+		k = get_key(dt)
+		if k in buckets:
+			buckets[k]["tasks"] += 1
+			
+	for ticket in tickets:
+		dt = ticket.get("creation")
+		k = get_key(dt)
+		if k in buckets:
+			buckets[k]["tickets"] += 1
+			
+	for ts in timesheets:
+		k = get_key(ts.get("start_date"))
+		if k in buckets:
+			buckets[k]["hours"] += flt(ts.get("total_hours"))
+
+	# Flatten to lists matching labels order
+	if grouping == "hour":
+		for h in range(24):
+			key = f"{h:02d}:00"
+			b = buckets[key]
+			pr_series.append(b["prs"])
+			task_series.append(b["tasks"])
+			ticket_series.append(b["tickets"])
+			hour_series.append(b["hours"])
+	elif grouping == "day":
+		curr = start_dt
+		while curr <= end_dt:
+			key = curr.strftime("%Y-%m-%d")
+			b = buckets[key]
+			pr_series.append(b["prs"])
+			task_series.append(b["tasks"])
+			ticket_series.append(b["tickets"])
+			hour_series.append(b["hours"])
+			curr += datetime.timedelta(days=1)
+	elif grouping == "month":
+		curr = start_dt.replace(day=1)
+		while curr <= end_dt:
+			key = curr.strftime("%Y-%m")
+			b = buckets[key]
+			pr_series.append(b["prs"])
+			task_series.append(b["tasks"])
+			ticket_series.append(b["tickets"])
+			hour_series.append(b["hours"])
+			if curr.month == 12:
+				curr = curr.replace(year=curr.year + 1, month=1)
+			else:
+				curr = curr.replace(month=curr.month + 1)
+
+	return {
+		"labels": labels,
+		"prs": pr_series,
+		"tasks": task_series,
+		"tickets": ticket_series,
+		"hours": hour_series
+	}
+
 @frappe.whitelist()
 def get_performance_data(employee=None, timespan=None):
 	"""Get compiled metrics and breakdowns for Performance Dashboard."""
@@ -67,7 +249,7 @@ def get_performance_data(employee=None, timespan=None):
 	tickets = frappe.get_list(
 		"Tactix Ticket",
 		filters=ticket_filters,
-		fields=["first_response_time", "closed_time", "status"]
+		fields=["first_response_time", "closed_time", "status", "creation"]
 	)
 	
 	total_tickets = len(tickets)
@@ -92,7 +274,7 @@ def get_performance_data(employee=None, timespan=None):
 		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": employee_user_id}, pluck="parent") or [""]
 		task_filters["name"] = ["in", assigned_tasks]
 		
-	tasks = frappe.get_list("Task", filters=task_filters, fields=["status", "is_overdue"])
+	tasks = frappe.get_list("Task", filters=task_filters, fields=["status", "is_overdue", "completed_datetime", "creation"])
 	
 	total_tasks = len(tasks)
 	completed_tasks = sum(1 for t in tasks if t.status == "Completed")
@@ -132,6 +314,38 @@ def get_performance_data(employee=None, timespan=None):
 			act = d.activity_type or "Execution"
 			activity_breakdown[act] = activity_breakdown.get(act, 0.0) + flt(d.hours)
 
+	# --- 4. GITHUB PERFORMANCE ---
+	pr_filters = {}
+	if start_date:
+		pr_filters["github_created_at"] = [">=", start_date]
+	if end_date:
+		pr_filters["github_created_at"] = ["<=", f"{end_date}T23:59:59Z"]
+		
+	github_username = None
+	if employee:
+		github_username = get_employee_github_username(employee)
+		if github_username:
+			pr_filters["author_login"] = github_username
+		else:
+			pr_filters["author_login"] = "___non_existent_user___"
+			
+	prs = frappe.get_all(
+		"Tactix Pull Request",
+		filters=pr_filters,
+		fields=["github_id", "title", "state", "is_merged", "github_created_at", "comments_count", "repository_url"]
+	)
+	
+	total_prs = len(prs)
+	merged_prs = sum(1 for p in prs if p.is_merged)
+	open_prs = sum(1 for p in prs if p.state == "open")
+	closed_prs = sum(1 for p in prs if p.state == "closed" and not p.is_merged)
+	comments_count = sum(p.comments_count or 0 for p in prs)
+	repos_count = len(set(p.repository_url for p in prs if p.repository_url))
+	
+	merged_rate = (merged_prs / total_prs * 100) if total_prs > 0 else 0.0
+
+	timeline_data = _get_timeline_data(timespan, start_date, end_date, prs, tasks, tickets, timesheets)
+
 	return {
 		"ticket": {
 			"total": total_tickets,
@@ -150,5 +364,16 @@ def get_performance_data(employee=None, timespan=None):
 			"active_days": active_days,
 			"avg_daily_hours": avg_daily_hours,
 			"activities": activity_breakdown
-		}
+		},
+		"github": {
+			"total_prs": total_prs,
+			"merged_prs": merged_prs,
+			"open_prs": open_prs,
+			"closed_prs": closed_prs,
+			"merged_rate": merged_rate,
+			"comments_count": comments_count,
+			"repos_count": repos_count,
+			"username": github_username
+		},
+		"timeline": timeline_data
 	}

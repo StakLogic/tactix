@@ -780,12 +780,12 @@ const columns = [
 function processPRs(prs) {
 	if (!prs) return []
 	return prs.map((pr) => {
-			return {
-				...pr,
-				user: {
-					...pr.user,
-				},
-			}
+		return {
+			...pr,
+			user: {
+				...pr.user,
+			},
+		}
 	})
 }
 
@@ -859,13 +859,16 @@ function fetchPullRequests() {
 async function simulatePRRaised() {
 	simulating.value = true
 	try {
-		const res = await fetch("/api/method/tactix.api.github.simulate_pr_raised", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-Frappe-CSRF-Token": window.csrf_token,
+		const res = await fetch(
+			"/api/method/tactix.api.github.simulate_pr_raised",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Frappe-CSRF-Token": window.csrf_token,
+				},
 			},
-		})
+		)
 		if (!res.ok) {
 			throw new Error(`Simulation request failure: status ${res.status}`)
 		}

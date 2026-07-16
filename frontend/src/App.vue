@@ -25,24 +25,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from "vue"
 
 const showRestrictedAlert = ref(false)
 
 onMounted(() => {
-  const urlParams = new URLSearchParams(window.location.search)
-  if (urlParams.has('restricted')) {
-    showRestrictedAlert.value = true
-    
-    // Clean up url parameters so restricted=1 is hidden
-    const newUrl = window.location.pathname
-    window.history.replaceState({}, document.title, newUrl)
-    
-    // Auto hide after 6 seconds
-    setTimeout(() => {
-      showRestrictedAlert.value = false
-    }, 6000)
-  }
+	const urlParams = new URLSearchParams(window.location.search)
+	if (urlParams.has("restricted")) {
+		showRestrictedAlert.value = true
+
+		// Clean up url parameters so restricted=1 is hidden
+		const newUrl = window.location.pathname
+		window.history.replaceState({}, document.title, newUrl)
+
+		// Auto hide after 6 seconds
+		setTimeout(() => {
+			showRestrictedAlert.value = false
+		}, 6000)
+	}
 })
 </script>
 

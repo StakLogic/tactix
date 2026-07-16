@@ -946,7 +946,9 @@ const isEmployeeOnly = computed(() => {
 
 const isCreator = computed(() => {
 	if (!isEditMode.value) return true
-	return ticketForm.owner === session.user || ticketForm.raised_by === session.user
+	return (
+		ticketForm.owner === session.user || ticketForm.raised_by === session.user
+	)
 })
 
 const isFieldDisabled = computed(() => {
@@ -954,7 +956,9 @@ const isFieldDisabled = computed(() => {
 })
 
 const isTaskCreatorOrOwner = computed(() => {
-	return ticketForm.owner === session.user || ticketForm.raised_by === session.user
+	return (
+		ticketForm.owner === session.user || ticketForm.raised_by === session.user
+	)
 })
 
 const isTaskFieldDisabled = computed(() => {
@@ -963,7 +967,9 @@ const isTaskFieldDisabled = computed(() => {
 
 const assignedToOptionsTask = computed(() => {
 	if (isTaskFieldDisabled.value) {
-		return [{ label: session.userFullName || session.user, value: session.user }]
+		return [
+			{ label: session.userFullName || session.user, value: session.user },
+		]
 	}
 	if (isEmployeeOnly.value) {
 		return [
@@ -1505,7 +1511,8 @@ function openTaskCreateDialog(ticket) {
 		...initialForm,
 		attachments: [],
 		assigned_by: session.user,
-		assigned_to: (isTaskFieldDisabled.value || isEmployeeOnly.value) ? [session.user] : [],
+		assigned_to:
+			isTaskFieldDisabled.value || isEmployeeOnly.value ? [session.user] : [],
 	})
 
 	newTask.project = ticket.customer || ""
@@ -1560,7 +1567,12 @@ const columns = [
 	{ label: "Priority", key: "priority", width: "130px", icon: IconBriefcase },
 	{ label: "Raised By", key: "raised_by", width: "300px", icon: IconUser },
 	{ label: "Raised On", key: "creation", width: "200px", icon: IconClock },
-	{ label: "First Response Time", key: "first_response_time", width: "180px", icon: IconClock },
+	{
+		label: "First Response Time",
+		key: "first_response_time",
+		width: "180px",
+		icon: IconClock,
+	},
 	{ label: "Closed Time", key: "closed_time", width: "180px", icon: IconClock },
 ]
 
@@ -1617,7 +1629,7 @@ const formatDuration = (seconds) => {
 	const d = Math.floor(totalSeconds / 86400)
 	const h = Math.floor((totalSeconds % 86400) / 3600)
 	const m = Math.floor((totalSeconds % 3600) / 60)
-	
+
 	const parts = []
 	if (d > 0) parts.push(`${d}d`)
 	if (h > 0) parts.push(`${h}h`)

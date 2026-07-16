@@ -639,44 +639,39 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue"
-import { useRouter, useRoute } from "vue-router"
-import {
-  Button,
-  Avatar,
-  LoadingIndicator,
-  createResource
-} from "frappe-ui"
-import { session } from "../data/session"
 import dayjs from "dayjs"
+import { Avatar, Button, LoadingIndicator, createResource } from "frappe-ui"
+import { computed, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import { session } from "../data/session"
 
-// Icons
-import IconFolderOpen from "~icons/lucide/folder-open"
-import IconFolder from "~icons/lucide/folder"
-import IconFolderPlus from "~icons/lucide/folder-plus"
+import IconAlertCircle from "~icons/lucide/alert-circle"
+import IconArrowLeft from "~icons/lucide/arrow-left"
+import IconBriefcase from "~icons/lucide/briefcase"
+import IconCheck from "~icons/lucide/check"
+import IconChevronRight from "~icons/lucide/chevron-right"
+import IconDownload from "~icons/lucide/download"
 import IconFile from "~icons/lucide/file"
-import IconFileText from "~icons/lucide/file-text"
+import IconFileArchive from "~icons/lucide/file-archive"
+import IconFileAudio from "~icons/lucide/file-audio"
 import IconFileImage from "~icons/lucide/file-image"
 import IconFileSpreadsheet from "~icons/lucide/file-spreadsheet"
+import IconFileText from "~icons/lucide/file-text"
 import IconFileVideo from "~icons/lucide/file-video"
-import IconFileAudio from "~icons/lucide/file-audio"
-import IconFileArchive from "~icons/lucide/file-archive"
-import IconDownload from "~icons/lucide/download"
-import IconTrash2 from "~icons/lucide/trash-2"
-import IconUploadCloud from "~icons/lucide/upload-cloud"
-import IconArrowLeft from "~icons/lucide/arrow-left"
-import IconSearch from "~icons/lucide/search"
-import IconChevronRight from "~icons/lucide/chevron-right"
-import IconAlertCircle from "~icons/lucide/alert-circle"
-import IconX from "~icons/lucide/x"
-import IconCheck from "~icons/lucide/check"
-import IconRefreshCcw from "~icons/lucide/refresh-ccw"
+import IconFolder from "~icons/lucide/folder"
+// Icons
+import IconFolderOpen from "~icons/lucide/folder-open"
+import IconFolderPlus from "~icons/lucide/folder-plus"
+import IconHome from "~icons/lucide/home"
 import IconInfo from "~icons/lucide/info"
-import IconBriefcase from "~icons/lucide/briefcase"
-import IconTicket from "~icons/lucide/ticket"
 import IconLayoutGrid from "~icons/lucide/layout-grid"
 import IconList from "~icons/lucide/list"
-import IconHome from "~icons/lucide/home"
+import IconRefreshCcw from "~icons/lucide/refresh-ccw"
+import IconSearch from "~icons/lucide/search"
+import IconTicket from "~icons/lucide/ticket"
+import IconTrash2 from "~icons/lucide/trash-2"
+import IconUploadCloud from "~icons/lucide/upload-cloud"
+import IconX from "~icons/lucide/x"
 
 const router = useRouter()
 const route = useRoute()
@@ -709,401 +704,439 @@ const uploadingFileName = ref("")
 
 // Path Parts Helper for Breadcrumbs
 const rawPathParts = computed(() => {
-  if (currentPath.value === "/") return []
-  return currentPath.value.split("/").filter((x) => x !== "")
+	if (currentPath.value === "/") return []
+	return currentPath.value.split("/").filter((x) => x !== "")
 })
 
 // Strips unique database suffixes
 function getCleanName(name) {
-  if (name && name.includes("__")) {
-    return name.split("__")[0]
-  }
-  return name
+	if (name && name.includes("__")) {
+		return name.split("__")[0]
+	}
+	return name
 }
 
 // Current Folder Friendly Name Helper
 const currentPathName = computed(() => {
-  const parts = rawPathParts.value
-  if (parts.length === 0) return "Home"
-  return getCleanName(parts[parts.length - 1])
+	const parts = rawPathParts.value
+	if (parts.length === 0) return "Home"
+	return getCleanName(parts[parts.length - 1])
 })
 
 // Check if uploading is allowed in current directory
 const uploadAllowed = computed(() => {
-  const p = currentPath.value
-  if (p === "/" || p === "/Clients" || p === "/Departments") {
-    return false
-  }
-  return true
+	const p = currentPath.value
+	if (p === "/" || p === "/Clients" || p === "/Departments") {
+		return false
+	}
+	return true
 })
 
 const dbFolder = ref("Home")
 
 // API resources - using the dedicated drive API module
 const folderContentsResource = createResource({
-  url: "tactix.api.drive.get_folder_contents",
-  onSuccess(data) {
-    folders.value = data.folders || []
-    files.value = data.files || []
-    currentPath.value = data.current_path || "/"
-    dbFolder.value = data.db_folder || "Home"
-  }
+	url: "tactix.api.drive.get_folder_contents",
+	onSuccess(data) {
+		folders.value = data.folders || []
+		files.value = data.files || []
+		currentPath.value = data.current_path || "/"
+		dbFolder.value = data.db_folder || "Home"
+	},
 })
 
 const deleteFileResource = createResource({
-  url: "tactix.api.drive.delete_explorer_file"
+	url: "tactix.api.drive.delete_explorer_file",
 })
 
 const createFolderResource = createResource({
-  url: "tactix.api.drive.create_explorer_folder"
+	url: "tactix.api.drive.create_explorer_folder",
 })
 
 async function createFolder() {
-  if (!newFolderName.value || !newFolderName.value.trim()) return
-  creatingFolder.value = true
-  try {
-    await createFolderResource.submit({
-      path: currentPath.value,
-      folder_name: newFolderName.value.trim()
-    })
-    showToast(`Folder "${newFolderName.value}" created successfully`, "success")
-    newFolderName.value = ""
-    showNewFolderModal.value = false
-    loadPathContents(currentPath.value)
-  } catch (err) {
-    showToast(err.message || "Failed to create folder", "error")
-  } finally {
-    creatingFolder.value = false
-  }
+	if (!newFolderName.value || !newFolderName.value.trim()) return
+	creatingFolder.value = true
+	try {
+		await createFolderResource.submit({
+			path: currentPath.value,
+			folder_name: newFolderName.value.trim(),
+		})
+		showToast(`Folder "${newFolderName.value}" created successfully`, "success")
+		newFolderName.value = ""
+		showNewFolderModal.value = false
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		showToast(err.message || "Failed to create folder", "error")
+	} finally {
+		creatingFolder.value = false
+	}
 }
 
 // Reload folder contents when path changes (uses resource.fetch for instant updates)
 function loadPathContents(path) {
-  loading.value = true
-  selectedItem.value = null // reset details selection
-  folderContentsResource.fetch({ path }).then(() => {
-    loading.value = false
-  }).catch((err) => {
-    loading.value = false
-    showToast(err.message || "Failed to load directory items", "error")
-  })
+	loading.value = true
+	selectedItem.value = null // reset details selection
+	folderContentsResource
+		.fetch({ path })
+		.then(() => {
+			loading.value = false
+		})
+		.catch((err) => {
+			loading.value = false
+			showToast(err.message || "Failed to load directory items", "error")
+		})
 }
 
 function fetchPath(path) {
-  const clean = path.startsWith("/") ? path.slice(1) : path
-  router.push(`/drive/${clean}`)
+	const clean = path.startsWith("/") ? path.slice(1) : path
+	router.push(`/drive/${clean}`)
 }
 
 function refresh() {
-  loadPathContents(currentPath.value)
+	loadPathContents(currentPath.value)
 }
 
 // Watch the route parameters to fetch folder contents dynamically
 watch(
-  () => route.params.folderPath,
-  (newVal) => {
-    let path = "/"
-    if (newVal) {
-      path = Array.isArray(newVal) ? "/" + newVal.join("/") : "/" + newVal
-    }
-    currentPath.value = path
-    loadPathContents(path)
-  },
-  { immediate: true }
+	() => route.params.folderPath,
+	(newVal) => {
+		let path = "/"
+		if (newVal) {
+			path = Array.isArray(newVal) ? "/" + newVal.join("/") : "/" + newVal
+		}
+		currentPath.value = path
+		loadPathContents(path)
+	},
+	{ immediate: true },
 )
 
 // Folder themed classes based on folder categories
 function getFolderIconGradientClass(folderPath) {
-  if (folderPath?.startsWith("/Shared")) {
-    return "bg-gradient-to-tr from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/10"
-  }
-  if (folderPath?.startsWith("/Clients")) {
-    return "bg-gradient-to-tr from-indigo-500 to-blue-600 text-white shadow-md shadow-blue-500/10"
-  }
-  if (folderPath?.startsWith("/Departments")) {
-    return "bg-gradient-to-tr from-emerald-400 to-teal-500 text-white shadow-md shadow-blue-500/10"
-  }
-  return "bg-gradient-to-tr from-slate-400 to-slate-500 text-white shadow-md shadow-slate-500/10"
+	if (folderPath?.startsWith("/Shared")) {
+		return "bg-gradient-to-tr from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/10"
+	}
+	if (folderPath?.startsWith("/Clients")) {
+		return "bg-gradient-to-tr from-indigo-500 to-blue-600 text-white shadow-md shadow-blue-500/10"
+	}
+	if (folderPath?.startsWith("/Departments")) {
+		return "bg-gradient-to-tr from-emerald-400 to-teal-500 text-white shadow-md shadow-blue-500/10"
+	}
+	return "bg-gradient-to-tr from-slate-400 to-slate-500 text-white shadow-md shadow-slate-500/10"
 }
 
 function getFolderTagClass(folderPath) {
-  if (folderPath.startsWith("/Shared")) {
-    return "bg-amber-50 border-amber-100 text-amber-700 font-bold"
-  }
-  if (folderPath.startsWith("/Clients")) {
-    return "bg-indigo-50 border-indigo-100 text-indigo-700 font-bold"
-  }
-  if (folderPath.startsWith("/Departments")) {
-    return "bg-emerald-50 border-emerald-100 text-emerald-700 font-bold"
-  }
-  return "bg-slate-50 border-slate-150 text-slate-700 font-bold"
+	if (folderPath.startsWith("/Shared")) {
+		return "bg-amber-50 border-amber-100 text-amber-700 font-bold"
+	}
+	if (folderPath.startsWith("/Clients")) {
+		return "bg-indigo-50 border-indigo-100 text-indigo-700 font-bold"
+	}
+	if (folderPath.startsWith("/Departments")) {
+		return "bg-emerald-50 border-emerald-100 text-emerald-700 font-bold"
+	}
+	return "bg-slate-50 border-slate-150 text-slate-700 font-bold"
 }
 
 function getFolderTypeLabel(folderPath) {
-  if (folderPath.startsWith("/Shared")) return "Shared"
-  if (folderPath.startsWith("/Clients")) return "Client"
-  if (folderPath.startsWith("/Departments")) return "Dept"
-  return "Subfolder"
+	if (folderPath.startsWith("/Shared")) return "Shared"
+	if (folderPath.startsWith("/Clients")) return "Client"
+	if (folderPath.startsWith("/Departments")) return "Dept"
+	return "Subfolder"
 }
 
 function getFileIconBg(filename) {
-  if (!filename) return "bg-slate-50"
-  const ext = filename.split(".").pop().toLowerCase()
-  if (["pdf"].includes(ext)) return "bg-rose-50 border border-rose-100"
-  if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) return "bg-sky-50 border border-sky-100"
-  if (["xls", "xlsx", "csv", "ods"].includes(ext)) return "bg-emerald-50 border border-emerald-100"
-  if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return "bg-purple-50 border border-purple-100"
-  if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return "bg-amber-50 border border-amber-100"
-  if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "bg-orange-50 border border-orange-100"
-  return "bg-indigo-50/50 border border-indigo-100/50"
+	if (!filename) return "bg-slate-50"
+	const ext = filename.split(".").pop().toLowerCase()
+	if (["pdf"].includes(ext)) return "bg-rose-50 border border-rose-100"
+	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
+		return "bg-sky-50 border border-sky-100"
+	if (["xls", "xlsx", "csv", "ods"].includes(ext))
+		return "bg-emerald-50 border border-emerald-100"
+	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext))
+		return "bg-purple-50 border border-purple-100"
+	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext))
+		return "bg-amber-50 border border-amber-100"
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
+		return "bg-orange-50 border border-orange-100"
+	return "bg-indigo-50/50 border border-indigo-100/50"
 }
 
 // Navigation functions
 function selectItem(item) {
-  selectedItem.value = item
+	selectedItem.value = item
 }
 
 // Navigate back up a level
 function navigateUp() {
-  const path = currentPath.value
-  if (path === "/") return
-  const parts = path.split("/").filter((x) => x !== "")
-  parts.pop()
-  const parent = "/" + parts.join("/")
-  fetchPath(parent)
+	const path = currentPath.value
+	if (path === "/") return
+	const parts = path.split("/").filter((x) => x !== "")
+	parts.pop()
+	const parent = "/" + parts.join("/")
+	fetchPath(parent)
 }
 
 // Navigate to breadcrumb trail point
 function navigateToBreadcrumb(idx) {
-  const parts = rawPathParts.value.slice(0, idx + 1)
-  const target = "/" + parts.join("/")
-  fetchPath(target)
+	const parts = rawPathParts.value.slice(0, idx + 1)
+	const target = "/" + parts.join("/")
+	fetchPath(target)
 }
 
 // CSRF token provider
 function getCsrfToken() {
-  if (window.csrf_token) return window.csrf_token
-  const cookies = new URLSearchParams(document.cookie.split("; ").join("&"))
-  return cookies.get("system_csrf_token") || ""
+	if (window.csrf_token) return window.csrf_token
+	const cookies = new URLSearchParams(document.cookie.split("; ").join("&"))
+	return cookies.get("system_csrf_token") || ""
 }
 
 // Dropzone drag-and-drop
 function handleDrop(e) {
-  dragActive.value = false
-  if (!uploadAllowed.value) return
-  const filesList = e.dataTransfer.files
-  if (filesList && filesList.length > 0) {
-    uploadFiles(filesList)
-  }
+	dragActive.value = false
+	if (!uploadAllowed.value) return
+	const filesList = e.dataTransfer.files
+	if (filesList && filesList.length > 0) {
+		uploadFiles(filesList)
+	}
 }
 
 function handleFileSelect(e) {
-  const filesList = e.target.files
-  if (filesList && filesList.length > 0) {
-    uploadFiles(filesList)
-  }
+	const filesList = e.target.files
+	if (filesList && filesList.length > 0) {
+		uploadFiles(filesList)
+	}
 }
 
 // File upload handler
 async function uploadFiles(filesList) {
-  const path = currentPath.value
-  let doctype = "File"
-  let docname = "Company Shared"
+	const path = currentPath.value
+	let doctype = "File"
+	let docname = "Company Shared"
 
-  if (path.startsWith("/Clients/")) {
-    doctype = "Tactix Customer"
-    const parts = path.split("/").filter((x) => x)
-    docname = parts[1]
-  } else if (path.startsWith("/Departments/")) {
-    doctype = "Tactix Department"
-    const parts = path.split("/").filter((x) => x)
-    docname = parts[1]
-  } else if (path.startsWith("/Shared")) {
-    doctype = "User"
-    docname = "Administrator"
-  }
+	if (path.startsWith("/Clients/")) {
+		doctype = "Tactix Customer"
+		const parts = path.split("/").filter((x) => x)
+		docname = parts[1]
+	} else if (path.startsWith("/Departments/")) {
+		doctype = "Tactix Department"
+		const parts = path.split("/").filter((x) => x)
+		docname = parts[1]
+	} else if (path.startsWith("/Shared")) {
+		doctype = "User"
+		docname = "Administrator"
+	}
 
-  uploading.value = true
+	uploading.value = true
 
-  for (let i = 0; i < filesList.length; i++) {
-    const fileObj = filesList[i]
-    uploadingFileName.value = fileObj.name
-    uploadProgress.value = 10
+	for (let i = 0; i < filesList.length; i++) {
+		const fileObj = filesList[i]
+		uploadingFileName.value = fileObj.name
+		uploadProgress.value = 10
 
-    const formData = new FormData()
-    formData.append("file", fileObj)
-    formData.append("is_private", 0)
-    formData.append("doctype", doctype)
-    formData.append("docname", docname)
-    formData.append("folder", dbFolder.value || "Home")
+		const formData = new FormData()
+		formData.append("file", fileObj)
+		formData.append("is_private", 0)
+		formData.append("doctype", doctype)
+		formData.append("docname", docname)
+		formData.append("folder", dbFolder.value || "Home")
 
-    try {
-      const csrfToken = getCsrfToken()
-      uploadProgress.value = 40
+		try {
+			const csrfToken = getCsrfToken()
+			uploadProgress.value = 40
 
-      const response = await fetch("/api/method/upload_file", {
-        method: "POST",
-        headers: {
-          "X-Frappe-CSRF-Token": csrfToken,
-        },
-        body: formData,
-      })
+			const response = await fetch("/api/method/upload_file", {
+				method: "POST",
+				headers: {
+					"X-Frappe-CSRF-Token": csrfToken,
+				},
+				body: formData,
+			})
 
-      if (!response.ok) {
-        throw new Error("File upload failed.")
-      }
+			if (!response.ok) {
+				throw new Error("File upload failed.")
+			}
 
-      uploadProgress.value = 100
-      showToast(`Successfully uploaded "${fileObj.name}"`, "success")
-    } catch (err) {
-      showToast(`Failed uploading "${fileObj.name}"`, "error")
-    }
-  }
+			uploadProgress.value = 100
+			showToast(`Successfully uploaded "${fileObj.name}"`, "success")
+		} catch (err) {
+			showToast(`Failed uploading "${fileObj.name}"`, "error")
+		}
+	}
 
-  // Done uploads, clean up states
-  uploading.value = false
-  uploadingFileName.value = ""
-  uploadProgress.value = 0
+	// Done uploads, clean up states
+	uploading.value = false
+	uploadingFileName.value = ""
+	uploadProgress.value = 0
 
-  // Reload current folder contents directly
-  loadPathContents(currentPath.value)
+	// Reload current folder contents directly
+	loadPathContents(currentPath.value)
 }
 
 // Delete Handlers
 function promptDelete(file) {
-  deleteConfirm.value = {
-    show: true,
-    file
-  }
+	deleteConfirm.value = {
+		show: true,
+		file,
+	}
 }
 
 async function confirmDelete() {
-  if (!deleteConfirm.value.file) return
-  const fileName = deleteConfirm.value.file.name
-  deleteConfirm.value.show = false
-  loading.value = true
+	if (!deleteConfirm.value.file) return
+	const fileName = deleteConfirm.value.file.name
+	deleteConfirm.value.show = false
+	loading.value = true
 
-  try {
-    await deleteFileResource.submit({ file_name: fileName })
-    showToast("File deleted successfully", "success")
-    loadPathContents(currentPath.value)
-  } catch (err) {
-    loading.value = false
-    showToast(err.message || "Failed to delete file", "error")
-  }
+	try {
+		await deleteFileResource.submit({ file_name: fileName })
+		showToast("File deleted successfully", "success")
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		loading.value = false
+		showToast(err.message || "Failed to delete file", "error")
+	}
 }
 
 // Redirect client to ticket or task view page
 function redirectOrigin(file) {
-  if (file.source === "Ticket") {
-    router.push(`/tickets/${file.source_name}`)
-  } else if (file.source === "Task") {
-    router.push(`/tasks/${file.source_name}`)
-  }
+	if (file.source === "Ticket") {
+		router.push(`/tickets/${file.source_name}`)
+	} else if (file.source === "Task") {
+		router.push(`/tasks/${file.source_name}`)
+	}
 }
 
 // Toast helper
 function showToast(message, type = "success") {
-  toast.value = {
-    show: true,
-    message,
-    type
-  }
-  setTimeout(() => {
-    toast.value.show = false
-  }, 5000)
+	toast.value = {
+		show: true,
+		message,
+		type,
+	}
+	setTimeout(() => {
+		toast.value.show = false
+	}, 5000)
 }
 
 // Byte Formatter
 function formatBytes(bytes) {
-  if (!bytes) return "0 B"
-  const k = 1024
-  const sizes = ["Bytes", "KB", "MB", "GB"]
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+	if (!bytes) return "0 B"
+	const k = 1024
+	const sizes = ["Bytes", "KB", "MB", "GB"]
+	const i = Math.floor(Math.log(bytes) / Math.log(k))
+	return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
 // Date Formatter
 function formatDate(creation) {
-  if (!creation) return ""
-  return dayjs(creation).format("MMM DD, YYYY")
+	if (!creation) return ""
+	return dayjs(creation).format("MMM DD, YYYY")
 }
 
 // File extension color maps
 function getFileIconColor(filename) {
-  if (!filename) return "text-slate-400"
-  const ext = filename.split(".").pop().toLowerCase()
-  if (["pdf"].includes(ext)) return "text-rose-500"
-  if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) return "text-sky-500"
-  if (["xls", "xlsx", "csv", "ods"].includes(ext)) return "text-emerald-500"
-  if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return "text-purple-500"
-  if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return "text-amber-500"
-  if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "text-orange-500"
-  return "text-indigo-400"
+	if (!filename) return "text-slate-400"
+	const ext = filename.split(".").pop().toLowerCase()
+	if (["pdf"].includes(ext)) return "text-rose-500"
+	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
+		return "text-sky-500"
+	if (["xls", "xlsx", "csv", "ods"].includes(ext)) return "text-emerald-500"
+	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext))
+		return "text-purple-500"
+	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext))
+		return "text-amber-500"
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "text-orange-500"
+	return "text-indigo-400"
 }
 
 // Dynamic File Icon Selector based on extension
 function getFileIcon(filename) {
-  if (!filename) return IconFile
-  const ext = filename.split(".").pop().toLowerCase()
-  if (["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext)) return IconFileText
-  if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) return IconFileImage
-  if (["xls", "xlsx", "csv", "ods"].includes(ext)) return IconFileSpreadsheet
-  if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return IconFileVideo
-  if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return IconFileAudio
-  if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return IconFileArchive
-  return IconFile
+	if (!filename) return IconFile
+	const ext = filename.split(".").pop().toLowerCase()
+	if (["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext))
+		return IconFileText
+	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
+		return IconFileImage
+	if (["xls", "xlsx", "csv", "ods"].includes(ext)) return IconFileSpreadsheet
+	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return IconFileVideo
+	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return IconFileAudio
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return IconFileArchive
+	return IconFile
 }
 
 // Source Color Badges Class
 function getSourceBadgeClass(source) {
-  if (source === "Direct" || source === "Shared") return "bg-indigo-50 text-indigo-700 border border-indigo-100"
-  if (source === "Ticket") return "bg-sky-50 text-sky-700 border border-sky-100"
-  if (source === "Task") return "bg-purple-50 text-purple-700 border border-purple-100"
-  return "bg-slate-100 text-slate-700"
+	if (source === "Direct" || source === "Shared")
+		return "bg-indigo-50 text-indigo-700 border border-indigo-100"
+	if (source === "Ticket") return "bg-sky-50 text-sky-700 border border-sky-100"
+	if (source === "Task")
+		return "bg-purple-50 text-purple-700 border border-purple-100"
+	return "bg-slate-100 text-slate-700"
 }
 
 // Deletable condition calculator
 function isDeletable(file) {
-  if (!session.isTicketRaiser) return true
-  if (file.owner === session.user) return true
-  if (file.source === "Direct" && file.source_name === session.userInfo.tactix_customer) return true
-  return false
+	if (!session.isTicketRaiser) return true
+	if (file.owner === session.user) return true
+	if (
+		file.source === "Direct" &&
+		file.source_name === session.userInfo.tactix_customer
+	)
+		return true
+	return false
 }
 
 // Computes filtered files
 const filteredFiles = computed(() => {
-  let list = files.value
+	let list = files.value
 
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    list = list.filter((f) => f.file_name.toLowerCase().includes(q))
-  }
+	if (searchQuery.value) {
+		const q = searchQuery.value.toLowerCase()
+		list = list.filter((f) => f.file_name.toLowerCase().includes(q))
+	}
 
-  if (fileTypeFilter.value !== "All") {
-    list = list.filter((f) => {
-      const ext = f.file_name.split(".").pop().toLowerCase()
-      if (fileTypeFilter.value === "Documents") {
-        return ["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext)
-      }
-      if (fileTypeFilter.value === "Images") {
-        return ["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)
-      }
-      if (fileTypeFilter.value === "Audio/Video") {
-        return ["mp3", "wav", "mp4", "webm", "mkv", "mov"].includes(ext)
-      }
-      if (fileTypeFilter.value === "Others") {
-        return !["pdf", "doc", "docx", "txt", "rtf", "odt", "png", "jpg", "jpeg", "gif", "svg", "webp", "mp3", "wav", "mp4", "webm", "mkv", "mov"].includes(ext)
-      }
-      return true
-    })
-  }
+	if (fileTypeFilter.value !== "All") {
+		list = list.filter((f) => {
+			const ext = f.file_name.split(".").pop().toLowerCase()
+			if (fileTypeFilter.value === "Documents") {
+				return ["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext)
+			}
+			if (fileTypeFilter.value === "Images") {
+				return ["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)
+			}
+			if (fileTypeFilter.value === "Audio/Video") {
+				return ["mp3", "wav", "mp4", "webm", "mkv", "mov"].includes(ext)
+			}
+			if (fileTypeFilter.value === "Others") {
+				return ![
+					"pdf",
+					"doc",
+					"docx",
+					"txt",
+					"rtf",
+					"odt",
+					"png",
+					"jpg",
+					"jpeg",
+					"gif",
+					"svg",
+					"webp",
+					"mp3",
+					"wav",
+					"mp4",
+					"webm",
+					"mkv",
+					"mov",
+				].includes(ext)
+			}
+			return true
+		})
+	}
 
-  if (sourceFilter.value !== "All") {
-    list = list.filter((f) => f.source === sourceFilter.value)
-  }
+	if (sourceFilter.value !== "All") {
+		list = list.filter((f) => f.source === sourceFilter.value)
+	}
 
-  return list
+	return list
 })
 </script>
 

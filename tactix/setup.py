@@ -186,5 +186,13 @@ def get_custom_fields():
 				"options":"Tactix Department",
 				"insert_after":"tactix_customer",
 			},
+		],
+		"Employee":[
+			{
+				"fieldname": "github_username",
+				"label": "GitHub Username",
+				"fieldtype": "Data",
+				"insert_after": "user_id"
+			}
 		]
 	}
