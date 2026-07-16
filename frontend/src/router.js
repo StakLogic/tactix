@@ -41,7 +41,6 @@ const routes = [
 				component: () => import("@/pages/Tasks.vue"),
 			},
 
-
 			{
 				path: "timesheets",
 				name: "Timesheets",
@@ -130,7 +129,16 @@ router.beforeEach(async (to, from, next) => {
 	}
 
 	if (isEmployee) {
-		const allowed = ["dashboard", "tasks", "tickets", "contributions", "drive", "timesheets", "performance", "settings"]
+		const allowed = [
+			"dashboard",
+			"tasks",
+			"tickets",
+			"contributions",
+			"drive",
+			"timesheets",
+			"performance",
+			"settings",
+		]
 		if (allowed.includes(resource) || resource === "") {
 			next()
 		} else {

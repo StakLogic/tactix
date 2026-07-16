@@ -1,0 +1,165 @@
+import frappe
+from frappe import _
+
+@frappe.whitelist()
+def get_users_data():
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw(_("Not authorized to manage users."))
+		
+	# 1. Fetch users
+	users = frappe.get_all("User", 
+		fields=["name", "email", "first_name", "last_name", "enabled", "user_image"],
+		filters={"name": ["not in", ["Administrator", "Guest"]]}
+	)
+	
+	# 2. Fetch role assignments
+	user_roles = frappe.get_all("Has Role", fields=["parent", "role"])
+	roles_by_user = {}
+	for ur in user_roles:
+		roles_by_user.setdefault(ur.parent, []).append(ur.role)
+		
+	# 3. Fetch employee mappings (departments)
+	employees = frappe.get_all("Employee", fields=["user_id", "department", "name"])
+	emp_by_user = {e.user_id: e for e in employees if e.user_id}
+	
+	# Assemble user list
+	user_list = []
+	for u in users:
+		uid = u.name
+		user_list.append({
+			"email": u.email,
+			"first_name": u.first_name,
+			"last_name": u.last_name,
+			"enabled": u.enabled,
+			"user_image": u.user_image,
+			"roles": roles_by_user.get(uid, []),
+			"department": emp_by_user.get(uid, {}).get("department") or "",
+			"employee_id": emp_by_user.get(uid, {}).get("name") or ""
+		})
+		
+	# 4. Fetch all active roles
+	all_roles = [r.name for r in frappe.get_all("Role", fields=["name"]) if not r.name.startswith("All") and r.name not in ["Guest", "Administrator"]]
+	
+	# 5. Fetch departments list
+	depts = [d.name for d in frappe.get_all("Department", fields=["name"])]
+	
+	return {
+		"users": user_list,
+		"roles": all_roles,
+		"departments": depts
+	}
+
+@frappe.whitelist()
+def save_user(email, doc_data):
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw(_("Not authorized to manage users."))
+		
+	data = frappe.parse_json(doc_data)
+	is_new = not email
+	
+	first_name = data.get("first_name")
+	last_name = data.get("last_name") or ""
+	enabled = data.get("enabled", 1)
+	roles_list = data.get("roles", [])
+	department = data.get("department")
+	password = data.get("password")
+	
+	if is_new:
+		target_email = data.get("email")
+		if not target_email:
+			frappe.throw(_("Email is required for new users."))
+		if frappe.db.exists("User", target_email):
+			frappe.throw(_("User with email {0} already exists.").format(target_email))
+			
+		user_doc = frappe.get_doc({
+			"doctype": "User",
+			"email": target_email,
+			"first_name": first_name,
+			"last_name": last_name,
+			"enabled": enabled,
+			"send_welcome_email": 0
+		})
+		if password:
+			user_doc.new_password = password
+		user_doc.insert()
+		
+		# Create corresponding Employee
+		emp_doc = frappe.get_doc({
+			"doctype": "Employee",
+			"user_id": target_email,
+			"first_name": first_name,
+			"last_name": last_name,
+			"employee_name": f"{first_name} {last_name}".strip(),
+			"company": "SUPER AI",
+			"department": department,
+			"status": "Active"
+		})
+		emp_doc.insert()
+		
+		# Set Roles
+		user_doc.set("roles", [])
+		for r in roles_list:
+			user_doc.append("roles", {"role": r})
+		user_doc.save()
+		
+	else:
+		target_email = email
+		user_doc = frappe.get_doc("User", target_email)
+		user_doc.first_name = first_name
+		user_doc.last_name = last_name
+		user_doc.enabled = enabled
+		if password:
+			user_doc.new_password = password
+			
+		# Update Roles
+		user_doc.set("roles", [])
+		for r in roles_list:
+			user_doc.append("roles", {"role": r})
+		user_doc.save()
+		
+		# Update corresponding Employee
+		emp_names = frappe.db.get_all("Employee", filters={"user_id": target_email}, pluck="name")
+		if emp_names:
+			emp_doc = frappe.get_doc("Employee", emp_names[0])
+			emp_doc.first_name = first_name
+			emp_doc.last_name = last_name
+			emp_doc.employee_name = f"{first_name} {last_name}".strip()
+			emp_doc.department = department
+			emp_doc.save()
+		else:
+			emp_doc = frappe.get_doc({
+				"doctype": "Employee",
+				"user_id": target_email,
+				"first_name": first_name,
+				"last_name": last_name,
+				"employee_name": f"{first_name} {last_name}".strip(),
+				"company": "SUPER AI",
+				"department": department,
+				"status": "Active"
+			})
+			emp_doc.insert()
+			
+	frappe.db.commit()
+	return {"status": "success", "email": target_email}
+
+@frappe.whitelist()
+def delete_user(email):
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw(_("Not authorized to manage users."))
+		
+	if not email or email in ["Administrator", "Guest"]:
+		frappe.throw(_("Cannot delete system user."))
+		
+	# Delete user
+	frappe.delete_doc("User", email)
+	
+	# Delete corresponding Employee doc
+	emp_names = frappe.db.get_all("Employee", filters={"user_id": email}, pluck="name")
+	for emp in emp_names:
+		frappe.delete_doc("Employee", emp)
+		
+	frappe.db.commit()
+	return {"status": "success"}

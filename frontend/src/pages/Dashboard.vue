@@ -118,14 +118,17 @@
 					</div>
 				</Card>
 
-				<div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-100">
+				<div :class="`rounded-2xl p-6 text-white shadow-lg transition-all duration-300 ${insightThemeClass}`">
 					<h4 class="text-sm font-bold opacity-90 uppercase tracking-wider">System Insights</h4>
-					<p class="mt-3 text-sm leading-relaxed opacity-80">
-						You currently have <b>{{ inProgressCount }}</b> active tasks. 
-						{{ inProgressCount > 5 ? 'Try delegating some items to improve project velocity.' : 'Current workload is well within capacity.' }}
+					<p class="mt-3 text-sm leading-relaxed opacity-85">
+						{{ insightMessage }}
 					</p>
-					<Button variant="ghost" class="mt-4 !text-white !bg-white/10 hover:!bg-white/20 !border-none">
-						View Reports
+					<Button 
+						variant="ghost" 
+						class="mt-4 !text-white !bg-white/10 hover:!bg-white/20 !border-none"
+						@click="$router.push(insightButtonAction.route)"
+					>
+						{{ insightButtonAction.label }}
 					</Button>
 				</div>
 			</div>
@@ -191,18 +194,18 @@ const timesheetsSummary = createResource({
 	url: "tactix.api.timesheet.get_timesheet_summary",
 	auto: true,
 	params: {
-		filters: { timespan: "this_week" }
+		filters: { timespan: "this_week" },
 	},
-	initialData: { total_hours: 0 }
+	initialData: { total_hours: 0 },
 })
 
 const performanceResource = createResource({
 	url: "tactix.api.performance.get_performance_data",
 	auto: true,
 	params: {
-		timespan: "this_month"
+		timespan: "this_month",
 	},
-	initialData: {}
+	initialData: {},
 })
 
 const userResource = createListResource({
@@ -273,7 +276,7 @@ const taskStatsConfig = computed(() => [
 const performanceStatsConfig = computed(() => [
 	{
 		label: "Hours Logged (This Week)",
-		value: `${timesheetsSummary.data?.total_hours?.toFixed(1) || '0.0'} hrs`,
+		value: `${timesheetsSummary.data?.total_hours?.toFixed(1) || "0.0"} hrs`,
 		icon: IconClock,
 		color: "text-emerald-600",
 		bg: "bg-emerald-50",
@@ -281,10 +284,16 @@ const performanceStatsConfig = computed(() => [
 	},
 	{
 		label: "Initial Response SLA",
-		value: getSLARatingText(performanceResource.data?.ticket?.avg_response_time),
+		value: getSLARatingText(
+			performanceResource.data?.ticket?.avg_response_time,
+		),
 		icon: IconShieldAlert,
-		color: getSLARatingColorClass(performanceResource.data?.ticket?.avg_response_time),
-		bg: getSLARatingBgClass(performanceResource.data?.ticket?.avg_response_time),
+		color: getSLARatingColorClass(
+			performanceResource.data?.ticket?.avg_response_time,
+		),
+		bg: getSLARatingBgClass(
+			performanceResource.data?.ticket?.avg_response_time,
+		),
 		loading: performanceResource.loading,
 	},
 ])
@@ -335,6 +344,48 @@ const priorityData = computed(() => {
 		count: tasks.data?.tasks?.filter((t) => t.priority === p).length || 0,
 		color: colors[p],
 	}))
+})
+
+const insightMessage = computed(() => {
+	const overdue = taskSummary.data?.overdue || 0
+	const avgResponse = performanceResource.data?.ticket?.avg_response_time || 0
+	const hrs = avgResponse / 3600
+
+	if (overdue > 0) {
+		return `You have ${overdue} overdue task${overdue > 1 ? "s" : ""}. Consider rescheduling their deadlines to maintain a healthy project timeline.`
+	}
+	if (hrs >= 24) {
+		return "Average first response time is currently slow (SLA Warning). Please check and assign unaddressed customer tickets."
+	}
+	return `You currently have ${inProgressCount.value} active task${inProgressCount.value !== 1 ? "s" : ""}. Current workload is well within capacity.`
+})
+
+const insightThemeClass = computed(() => {
+	const overdue = taskSummary.data?.overdue || 0
+	const avgResponse = performanceResource.data?.ticket?.avg_response_time || 0
+	const hrs = avgResponse / 3600
+
+	if (overdue > 0) {
+		return "bg-red-600 shadow-red-100"
+	}
+	if (hrs >= 24) {
+		return "bg-amber-600 shadow-amber-100"
+	}
+	return "bg-blue-600 shadow-blue-100"
+})
+
+const insightButtonAction = computed(() => {
+	const overdue = taskSummary.data?.overdue || 0
+	const avgResponse = performanceResource.data?.ticket?.avg_response_time || 0
+	const hrs = avgResponse / 3600
+
+	if (overdue > 0) {
+		return { label: "Manage Tasks", route: "/tasks" }
+	}
+	if (hrs >= 24) {
+		return { label: "View Performance", route: "/performance" }
+	}
+	return { label: "View Reports", route: "/performance" }
 })
 
 function getStatusTheme(status) {

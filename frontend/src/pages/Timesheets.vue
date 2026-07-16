@@ -437,36 +437,36 @@
 </template>
 
 <script setup>
+import dayjs from "dayjs"
 import {
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  FormControl,
-  ListHeader,
-  ListHeaderItem,
-  ListRow,
-  ListRowItem,
-  ListRows,
-  ListView,
-  createResource
+	Badge,
+	Button,
+	Card,
+	Dialog,
+	FormControl,
+	ListHeader,
+	ListHeaderItem,
+	ListRow,
+	ListRowItem,
+	ListRows,
+	ListView,
+	createResource,
 } from "frappe-ui"
 import { computed, reactive, ref, watch } from "vue"
-import dayjs from "dayjs"
 
-// Icons
-import IconClock from "~icons/lucide/clock"
+import IconAlertCircle from "~icons/lucide/alert-circle"
 import IconCalendar from "~icons/lucide/calendar"
 import IconCheckCircle from "~icons/lucide/check-circle"
-import IconAlertCircle from "~icons/lucide/alert-circle"
-import IconPlus from "~icons/lucide/plus"
-import IconX from "~icons/lucide/x"
-import IconRefresh from "~icons/lucide/refresh-cw"
-import IconSearch from "~icons/lucide/search"
 import IconChevronLeft from "~icons/lucide/chevron-left"
 import IconChevronRight from "~icons/lucide/chevron-right"
+// Icons
+import IconClock from "~icons/lucide/clock"
 import IconHash from "~icons/lucide/hash"
+import IconPlus from "~icons/lucide/plus"
+import IconRefresh from "~icons/lucide/refresh-cw"
+import IconSearch from "~icons/lucide/search"
 import IconUser from "~icons/lucide/user"
+import IconX from "~icons/lucide/x"
 
 // State variables
 const showCreateDialog = ref(false)
@@ -484,125 +484,133 @@ const viewError = ref("")
 const selectedTimesheet = ref(null)
 
 const parseError = (err) => {
-  if (err.messages && err.messages.length > 0) {
-    return err.messages.map(m => {
-      try {
-        const parsed = JSON.parse(m)
-        return parsed.message || m
-      } catch {
-        return m
-      }
-    }).join("\n")
-  }
-  
-  if (err.exc) {
-    try {
-      const parsed = JSON.parse(err.exc)
-      if (Array.isArray(parsed)) {
-        return parsed.map(item => typeof item === 'string' ? item : item.message).join("\n")
-      }
-    } catch {
-      // Not JSON
-    }
-  }
-  
-  return err.message || "An unexpected error occurred."
+	if (err.messages && err.messages.length > 0) {
+		return err.messages
+			.map((m) => {
+				try {
+					const parsed = JSON.parse(m)
+					return parsed.message || m
+				} catch {
+					return m
+				}
+			})
+			.join("\n")
+	}
+
+	if (err.exc) {
+		try {
+			const parsed = JSON.parse(err.exc)
+			if (Array.isArray(parsed)) {
+				return parsed
+					.map((item) => (typeof item === "string" ? item : item.message))
+					.join("\n")
+			}
+		} catch {
+			// Not JSON
+		}
+	}
+
+	return err.message || "An unexpected error occurred."
 }
 
 // Form states
 const timesheetForm = reactive({
-  date: new Date().toISOString().split("T")[0],
-  employee: "",
-  time_logs: []
+	date: new Date().toISOString().split("T")[0],
+	employee: "",
+	time_logs: [],
 })
 
 // Initialize filters
 const timesheetFilters = computed(() => {
-  const f = {}
-  if (selectedStatus.value) {
-    f.status = selectedStatus.value
-  }
-  if (selectedTimespan.value) {
-    f.timespan = selectedTimespan.value
-  }
-  if (selectedEmployee.value && employeeInfoResource.data?.is_system_manager) {
-    f.employee = selectedEmployee.value
-  }
-  return f
+	const f = {}
+	if (selectedStatus.value) {
+		f.status = selectedStatus.value
+	}
+	if (selectedTimespan.value) {
+		f.timespan = selectedTimespan.value
+	}
+	if (selectedEmployee.value && employeeInfoResource.data?.is_system_manager) {
+		f.employee = selectedEmployee.value
+	}
+	return f
 })
 
 // Columns
 const columns = [
-  { label: "Timesheet ID", key: "name", width: "160px", icon: IconHash },
-  { label: "Date", key: "start_date", width: "160px", icon: IconCalendar },
-  { label: "Employee", key: "employee_name", width: "2.5fr", icon: IconUser },
-  { label: "Total Hours", key: "total_hours", width: "150px", icon: IconClock },
-  { label: "Status", key: "status", width: "130px", icon: IconAlertCircle }
+	{ label: "Timesheet ID", key: "name", width: "160px", icon: IconHash },
+	{ label: "Date", key: "start_date", width: "160px", icon: IconCalendar },
+	{ label: "Employee", key: "employee_name", width: "2.5fr", icon: IconUser },
+	{ label: "Total Hours", key: "total_hours", width: "150px", icon: IconClock },
+	{ label: "Status", key: "status", width: "130px", icon: IconAlertCircle },
 ]
 
 // API Resources
 const timesheets = createResource({
-  url: "tactix.api.timesheet.get_timesheets",
-  initialData: { timesheets: [], total_count: 0 },
-  transform: (data) => {
-    if (Array.isArray(data)) {
-      return { timesheets: data, total_count: data.length }
-    }
-    return data || { timesheets: [], total_count: 0 }
-  }
+	url: "tactix.api.timesheet.get_timesheets",
+	initialData: { timesheets: [], total_count: 0 },
+	transform: (data) => {
+		if (Array.isArray(data)) {
+			return { timesheets: data, total_count: data.length }
+		}
+		return data || { timesheets: [], total_count: 0 }
+	},
 })
 
 const timesheetsSummary = createResource({
-  url: "tactix.api.timesheet.get_timesheet_summary",
-  initialData: {
-    total_hours: 0,
-    submitted_count: 0,
-    draft_count: 0,
-    active_days: 0
-  }
+	url: "tactix.api.timesheet.get_timesheet_summary",
+	initialData: {
+		total_hours: 0,
+		submitted_count: 0,
+		draft_count: 0,
+		active_days: 0,
+	},
 })
 
 const taskOptionsResource = createResource({
-  url: "tactix.api.timesheet.get_tasks_options",
-  initialData: [],
-  auto: true
+	url: "tactix.api.timesheet.get_tasks_options",
+	initialData: [],
+	auto: true,
 })
 
 const employeeInfoResource = createResource({
-  url: "tactix.api.timesheet.get_employee_info",
-  initialData: {},
-  auto: true
+	url: "tactix.api.timesheet.get_employee_info",
+	initialData: {},
+	auto: true,
 })
 
 const employeeOptionsResource = createResource({
-  url: "tactix.api.timesheet.get_employees",
-  initialData: []
+	url: "tactix.api.timesheet.get_employees",
+	initialData: [],
 })
 
-watch(() => employeeInfoResource.data, (val) => {
-  if (val && val.is_system_manager) {
-    employeeOptionsResource.fetch()
-  }
-}, { immediate: true })
+watch(
+	() => employeeInfoResource.data,
+	(val) => {
+		if (val && val.is_system_manager) {
+			employeeOptionsResource.fetch()
+		}
+	},
+	{ immediate: true },
+)
 
 // Methods
 function fetchTimesheets() {
-  timesheets.fetch({
-    filters: timesheetFilters.value,
-    start: (currentPage.value - 1) * pageLength,
-    page_length: pageLength
-  })
+	timesheets.fetch({
+		filters: timesheetFilters.value,
+		start: (currentPage.value - 1) * pageLength,
+		page_length: pageLength,
+	})
 }
 
 function fetchSummary() {
-  timesheetsSummary.fetch({
-    filters: timesheetFilters.value
-  })
+	timesheetsSummary.fetch({
+		filters: timesheetFilters.value,
+	})
 }
 
 function reloadTimesheets() {
-  fetchTimesheets()
-  fetchSummary()
+	fetchTimesheets()
+	fetchSummary()
 }
 
 // Initial fetch
@@ -610,239 +618,248 @@ fetchTimesheets()
 fetchSummary()
 
 // Watch filters
-watch(timesheetFilters, () => {
-  currentPage.value = 1
-  fetchTimesheets()
-  fetchSummary()
-}, { deep: true })
+watch(
+	timesheetFilters,
+	() => {
+		currentPage.value = 1
+		fetchTimesheets()
+		fetchSummary()
+	},
+	{ deep: true },
+)
 
 watch(currentPage, () => {
-  fetchTimesheets()
+	fetchTimesheets()
 })
 
 const totalCount = computed(() => timesheets.data?.total_count || 0)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageLength)))
+const totalPages = computed(() =>
+	Math.max(1, Math.ceil(totalCount.value / pageLength)),
+)
 
 // Form logic
 function addRow() {
-  timesheetForm.time_logs.push({
-    task: "",
-    activity_type: "Execution",
-    hours: 1.0,
-    description: "",
-    is_billable: 0
-  })
+	timesheetForm.time_logs.push({
+		task: "",
+		activity_type: "Execution",
+		hours: 1.0,
+		description: "",
+		is_billable: 0,
+	})
 }
 
 function removeRow(idx) {
-  timesheetForm.time_logs.splice(idx, 1)
+	timesheetForm.time_logs.splice(idx, 1)
 }
 
 const computedTotalHours = computed(() => {
-  return timesheetForm.time_logs.reduce((sum, row) => sum + (parseFloat(row.hours) || 0), 0)
+	return timesheetForm.time_logs.reduce(
+		(sum, row) => sum + (Number.parseFloat(row.hours) || 0),
+		0,
+	)
 })
 
 const isEditMode = ref(false)
 const editTimesheetName = ref("")
 
 function openCreateDialog() {
-  isEditMode.value = false
-  editTimesheetName.value = ""
-  formError.value = ""
-  viewError.value = ""
-  timesheetForm.date = new Date().toISOString().split("T")[0]
-  timesheetForm.employee = employeeInfoResource.data?.name || ""
-  timesheetForm.time_logs = []
-  addRow()
-  showCreateDialog.value = true
+	isEditMode.value = false
+	editTimesheetName.value = ""
+	formError.value = ""
+	viewError.value = ""
+	timesheetForm.date = new Date().toISOString().split("T")[0]
+	timesheetForm.employee = employeeInfoResource.data?.name || ""
+	timesheetForm.time_logs = []
+	addRow()
+	showCreateDialog.value = true
 }
 
 function openEditDialog(timesheetDoc) {
-  isEditMode.value = true
-  editTimesheetName.value = timesheetDoc.name
-  formError.value = ""
-  viewError.value = ""
-  timesheetForm.date = timesheetDoc.start_date
-  timesheetForm.employee = timesheetDoc.employee
-  timesheetForm.time_logs = timesheetDoc.time_logs.map(log => ({
-    task: log.task || "",
-    activity_type: log.activity_type || "Execution",
-    hours: log.hours || 1.0,
-    description: log.description || "",
-    is_billable: log.is_billable || 0
-  }))
-  showCreateDialog.value = true
+	isEditMode.value = true
+	editTimesheetName.value = timesheetDoc.name
+	formError.value = ""
+	viewError.value = ""
+	timesheetForm.date = timesheetDoc.start_date
+	timesheetForm.employee = timesheetDoc.employee
+	timesheetForm.time_logs = timesheetDoc.time_logs.map((log) => ({
+		task: log.task || "",
+		activity_type: log.activity_type || "Execution",
+		hours: log.hours || 1.0,
+		description: log.description || "",
+		is_billable: log.is_billable || 0,
+	}))
+	showCreateDialog.value = true
 }
 
 // Create / Edit timesheet action
 async function saveTimesheet(submitOption = false) {
-  formError.value = ""
-  
-  if (!timesheetForm.date) {
-    formError.value = "Timesheet Date is required."
-    return
-  }
+	formError.value = ""
 
-  if (!timesheetForm.employee) {
-    formError.value = "Employee selection is required."
-    return
-  }
+	if (!timesheetForm.date) {
+		formError.value = "Timesheet Date is required."
+		return
+	}
 
-  if (timesheetForm.time_logs.length === 0) {
-    formError.value = "At least one log entry is required."
-    return
-  }
+	if (!timesheetForm.employee) {
+		formError.value = "Employee selection is required."
+		return
+	}
 
-  for (const log of timesheetForm.time_logs) {
-    if (!log.activity_type) {
-      formError.value = "Activity Type is required for all rows."
-      return
-    }
-    if ((parseFloat(log.hours) || 0) <= 0) {
-      formError.value = "Hours must be greater than zero."
-      return
-    }
-  }
+	if (timesheetForm.time_logs.length === 0) {
+		formError.value = "At least one log entry is required."
+		return
+	}
 
-  saving.value = true
-  try {
-    const payload = {
-      date: timesheetForm.date,
-      employee: timesheetForm.employee,
-      time_logs: timesheetForm.time_logs,
-      submit: submitOption
-    }
-    
-    const url = isEditMode.value 
-      ? "tactix.api.timesheet.edit_timesheet" 
-      : "tactix.api.timesheet.create_timesheet"
-      
-    const params = isEditMode.value
-      ? { name: editTimesheetName.value, doc: payload }
-      : { doc: payload }
-      
-    await createResource({
-      url,
-      params
-    }).submit()
-    
-    showCreateDialog.value = false
-    reloadTimesheets()
-  } catch (err) {
-    formError.value = parseError(err)
-  } finally {
-    saving.value = false
-  }
+	for (const log of timesheetForm.time_logs) {
+		if (!log.activity_type) {
+			formError.value = "Activity Type is required for all rows."
+			return
+		}
+		if ((Number.parseFloat(log.hours) || 0) <= 0) {
+			formError.value = "Hours must be greater than zero."
+			return
+		}
+	}
+
+	saving.value = true
+	try {
+		const payload = {
+			date: timesheetForm.date,
+			employee: timesheetForm.employee,
+			time_logs: timesheetForm.time_logs,
+			submit: submitOption,
+		}
+
+		const url = isEditMode.value
+			? "tactix.api.timesheet.edit_timesheet"
+			: "tactix.api.timesheet.create_timesheet"
+
+		const params = isEditMode.value
+			? { name: editTimesheetName.value, doc: payload }
+			: { doc: payload }
+
+		await createResource({
+			url,
+			params,
+		}).submit()
+
+		showCreateDialog.value = false
+		reloadTimesheets()
+	} catch (err) {
+		formError.value = parseError(err)
+	} finally {
+		saving.value = false
+	}
 }
 
 // View Timesheet
 async function openTimesheetDetails(row) {
-  viewError.value = ""
-  try {
-    const res = await createResource({
-      url: "tactix.api.timesheet.get_timesheet_detail",
-      params: {
-        name: row.name
-      }
-    }).submit()
-    
-    selectedTimesheet.value = res
-    showViewDialog.value = true
-  } catch (err) {
-    console.error("Failed to load timesheet details", err)
-  }
+	viewError.value = ""
+	try {
+		const res = await createResource({
+			url: "tactix.api.timesheet.get_timesheet_detail",
+			params: {
+				name: row.name,
+			},
+		}).submit()
+
+		selectedTimesheet.value = res
+		showViewDialog.value = true
+	} catch (err) {
+		console.error("Failed to load timesheet details", err)
+	}
 }
 
 async function submitTimesheet(name) {
-  viewError.value = ""
-  saving.value = true
-  try {
-    await createResource({
-      url: "frappe.client.submit",
-      params: {
-        doctype: "Timesheet",
-        docname: name
-      }
-    }).submit()
-    showViewDialog.value = false
-    reloadTimesheets()
-  } catch (err) {
-    viewError.value = parseError(err)
-  } finally {
-    saving.value = false
-  }
+	viewError.value = ""
+	saving.value = true
+	try {
+		await createResource({
+			url: "frappe.client.submit",
+			params: {
+				doctype: "Timesheet",
+				docname: name,
+			},
+		}).submit()
+		showViewDialog.value = false
+		reloadTimesheets()
+	} catch (err) {
+		viewError.value = parseError(err)
+	} finally {
+		saving.value = false
+	}
 }
 
 // Dialog definitions
 const dialogOptions = computed(() => {
-  const actions = []
-  const hasSubmitPermission = employeeInfoResource.data?.has_submit_permission
-  
-  if (hasSubmitPermission) {
-    actions.push({
-      label: isEditMode.value ? "Submit Changes" : "Submit Timesheet",
-      variant: "solid",
-      loading: saving.value,
-      onClick: () => saveTimesheet(true)
-    })
-  }
-  
-  actions.push({
-    label: isEditMode.value ? "Save Draft" : "Save as Draft",
-    variant: hasSubmitPermission ? "outline" : "solid",
-    loading: saving.value,
-    onClick: () => saveTimesheet(false)
-  })
-  
-  actions.push({
-    label: "Cancel",
-    variant: "ghost",
-    onClick: () => showCreateDialog.value = false
-  })
-  
-  return {
-    title: isEditMode.value ? "Edit Timesheet" : "Create Timesheet",
-    size: "5xl",
-    actions
-  }
+	const actions = []
+	const hasSubmitPermission = employeeInfoResource.data?.has_submit_permission
+
+	if (hasSubmitPermission) {
+		actions.push({
+			label: isEditMode.value ? "Submit Changes" : "Submit Timesheet",
+			variant: "solid",
+			loading: saving.value,
+			onClick: () => saveTimesheet(true),
+		})
+	}
+
+	actions.push({
+		label: isEditMode.value ? "Save Draft" : "Save as Draft",
+		variant: hasSubmitPermission ? "outline" : "solid",
+		loading: saving.value,
+		onClick: () => saveTimesheet(false),
+	})
+
+	actions.push({
+		label: "Cancel",
+		variant: "ghost",
+		onClick: () => (showCreateDialog.value = false),
+	})
+
+	return {
+		title: isEditMode.value ? "Edit Timesheet" : "Create Timesheet",
+		size: "5xl",
+		actions,
+	}
 })
 
 const viewDialogOptions = computed(() => {
-  const actions = []
-  if (selectedTimesheet.value && selectedTimesheet.value.docstatus === 0) {
-    actions.push({
-      label: "Edit",
-      variant: "outline",
-      onClick: () => {
-        showViewDialog.value = false
-        openEditDialog(selectedTimesheet.value)
-      }
-    })
-    if (selectedTimesheet.value.has_submit_permission) {
-      actions.push({
-        label: "Submit",
-        variant: "solid",
-        theme: "green",
-        loading: saving.value,
-        onClick: () => submitTimesheet(selectedTimesheet.value.name)
-      })
-    }
-  }
-  actions.push({
-    label: "Close",
-    variant: "ghost",
-    onClick: () => showViewDialog.value = false
-  })
-  return {
-    title: `Timesheet Details`,
-    size: "4xl",
-    actions
-  }
+	const actions = []
+	if (selectedTimesheet.value && selectedTimesheet.value.docstatus === 0) {
+		actions.push({
+			label: "Edit",
+			variant: "outline",
+			onClick: () => {
+				showViewDialog.value = false
+				openEditDialog(selectedTimesheet.value)
+			},
+		})
+		if (selectedTimesheet.value.has_submit_permission) {
+			actions.push({
+				label: "Submit",
+				variant: "solid",
+				theme: "green",
+				loading: saving.value,
+				onClick: () => submitTimesheet(selectedTimesheet.value.name),
+			})
+		}
+	}
+	actions.push({
+		label: "Close",
+		variant: "ghost",
+		onClick: () => (showViewDialog.value = false),
+	})
+	return {
+		title: `Timesheet Details`,
+		size: "4xl",
+		actions,
+	}
 })
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return "—"
-  return dayjs(dateStr).format("MMM D, YYYY")
+	if (!dateStr) return "—"
+	return dayjs(dateStr).format("MMM D, YYYY")
 }
 </script>
 

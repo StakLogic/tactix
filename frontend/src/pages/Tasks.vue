@@ -1275,11 +1275,14 @@ function insertAudioIntoEditor(key, fileUrl) {
 	const tiptap = editorRef.value?.editor
 	if (tiptap) {
 		if (savedSelectionPosition.value !== null) {
-			const pos = Math.min(savedSelectionPosition.value, tiptap.state.doc.content.size)
+			const pos = Math.min(
+				savedSelectionPosition.value,
+				tiptap.state.doc.content.size,
+			)
 			tiptap.commands.setTextSelection(pos)
 			savedSelectionPosition.value = null
 		} else {
-			tiptap.commands.focus('end')
+			tiptap.commands.focus("end")
 		}
 		tiptap
 			.chain()
@@ -1295,11 +1298,14 @@ function insertAudioIntoEditor(key, fileUrl) {
 	const frappeEditor = editorRef.value?.editor?.value
 	if (frappeEditor) {
 		if (savedSelectionPosition.value !== null) {
-			const pos = Math.min(savedSelectionPosition.value, frappeEditor.state.doc.content.size)
+			const pos = Math.min(
+				savedSelectionPosition.value,
+				frappeEditor.state.doc.content.size,
+			)
 			frappeEditor.commands.setTextSelection(pos)
 			savedSelectionPosition.value = null
 		} else {
-			frappeEditor.commands.focus('end')
+			frappeEditor.commands.focus("end")
 		}
 		frappeEditor
 			.chain()
@@ -1421,7 +1427,10 @@ function insertTextIntoEditor(key, text) {
 	const tiptap = editorRef.value?.editor
 	if (tiptap) {
 		if (savedSelectionPosition.value !== null) {
-			const pos = Math.min(savedSelectionPosition.value, tiptap.state.doc.content.size)
+			const pos = Math.min(
+				savedSelectionPosition.value,
+				tiptap.state.doc.content.size,
+			)
 			tiptap.commands.setTextSelection(pos)
 			savedSelectionPosition.value = pos + text.length
 		}
@@ -1433,7 +1442,10 @@ function insertTextIntoEditor(key, text) {
 	const frappeEditor = editorRef.value?.editor?.value
 	if (frappeEditor) {
 		if (savedSelectionPosition.value !== null) {
-			const pos = Math.min(savedSelectionPosition.value, frappeEditor.state.doc.content.size)
+			const pos = Math.min(
+				savedSelectionPosition.value,
+				frappeEditor.state.doc.content.size,
+			)
 			frappeEditor.commands.setTextSelection(pos)
 			savedSelectionPosition.value = pos + text.length
 		}
@@ -1604,7 +1616,9 @@ const isFieldDisabled = computed(() => {
 
 const assignedToOptions = computed(() => {
 	if (isFieldDisabled.value) {
-		return [{ label: session.userFullName || session.user, value: session.user }]
+		return [
+			{ label: session.userFullName || session.user, value: session.user },
+		]
 	}
 	if (isEmployeeOnly.value) {
 		return [

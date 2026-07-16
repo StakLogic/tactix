@@ -339,3 +339,34 @@ def simulate_pr_raised():
 		html_url="https://github.com/Teciza-Solutions/tactix/pull/415",
 		pr_number=415
 	)
+
+@frappe.whitelist()
+def get_github_config():
+	"""Get masked token and organization name for UI."""
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw(_("Not authorized to load GitHub settings."))
+		
+	doc = frappe.get_doc("Github Settings")
+	token = doc.get_password("github_token")
+	
+	return {
+		"has_token": bool(token),
+		"organization_name": doc.organization_name or "Teciza-Solutions"
+	}
+
+@frappe.whitelist()
+def save_github_config(token=None, organization_name=None):
+	"""Save token and organization name from UI."""
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw(_("Not authorized to configure GitHub settings."))
+		
+	doc = frappe.get_doc("Github Settings")
+	if token and token != "******":
+		doc.github_token = token
+	if organization_name:
+		doc.organization_name = organization_name
+	doc.save()
+	frappe.db.commit()
+	return {"status": "success"}
