@@ -206,127 +206,46 @@
     </div>
 
     <!-- Create/Edit Modal Dialog -->
-    <div 
-      v-if="modal.show" 
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-4"
-    >
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-6">
-        <div>
-          <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">
-            {{ modal.isEdit ? 'Edit' : 'Create New' }} {{ currentTabLabelSingular }}
-          </h3>
-          <p class="text-xs text-slate-400 font-medium">Fill in the required information below</p>
-        </div>
-
-        <div class="space-y-4">
+    <Dialog v-model="modal.show" :options="dialogOptions">
+      <template #body-content>
+        <div class="space-y-4 py-1.5 text-left">
           <!-- Fields for Project -->
           <template v-if="activeTab === 'project'">
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Project Name *</label>
-              <input 
-                type="text"
-                v-model="modal.form.project_name"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-                placeholder="Enter project name"
-              />
-            </div>
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Company *</label>
-              <select 
-                v-model="modal.form.company"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-              >
-                <option v-for="c in linkOptions.companies" :key="c" :value="c">{{ c }}</option>
-              </select>
-            </div>
+            <FormControl type="text" label="Project Name *" v-model="modal.form.project_name" placeholder="Enter project name" />
+            <FormControl type="select" label="Company *" v-model="modal.form.company" :options="linkOptions.companies" />
           </template>
 
           <!-- Fields for Department -->
           <template v-if="activeTab === 'department'">
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Department Name *</label>
-              <input 
-                type="text"
-                v-model="modal.form.department_name"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-                placeholder="Enter department name"
-              />
-            </div>
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Company *</label>
-              <select 
-                v-model="modal.form.company"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-              >
-                <option v-for="c in linkOptions.companies" :key="c" :value="c">{{ c }}</option>
-              </select>
-            </div>
+            <FormControl type="text" label="Department Name *" v-model="modal.form.department_name" placeholder="Enter department name" />
+            <FormControl type="select" label="Company *" v-model="modal.form.company" :options="linkOptions.companies" />
           </template>
 
           <!-- Fields for Tactix Department -->
           <template v-if="activeTab === 'tactix_dept'">
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Department Name *</label>
-              <input 
-                type="text"
-                v-model="modal.form.department_name"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-                placeholder="Enter department name"
-              />
-            </div>
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Department Head</label>
-              <select 
-                v-model="modal.form.department_head"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500"
-              >
-                <option value="">No Head of Dept</option>
-                <option v-for="u in linkOptions.users" :key="u" :value="u">{{ u }}</option>
-              </select>
-            </div>
+            <FormControl type="text" label="Department Name *" v-model="modal.form.department_name" placeholder="Enter department name" />
+            <FormControl type="select" label="Department Head" v-model="modal.form.department_head" :options="userOptions" />
           </template>
 
           <!-- Fields for Tactix Customer -->
           <template v-if="activeTab === 'tactix_cust'">
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Customer Name / ID *</label>
-              <input 
-                type="text"
-                v-model="modal.form.name"
-                :disabled="modal.isEdit"
-                class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 disabled:opacity-50"
-                placeholder="Enter customer name"
-              />
-            </div>
+            <FormControl type="text" label="Customer Name / ID *" v-model="modal.form.name" :disabled="modal.isEdit" placeholder="Enter customer name" />
           </template>
         </div>
-
-        <!-- Dialog Action buttons -->
-        <div class="flex justify-end gap-2 pt-2">
-          <Button 
-            variant="outline" 
-            class="!text-slate-600 !h-8 !px-3 font-semibold text-xs border border-slate-200 hover:bg-slate-50"
-            @click="modal.show = false"
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="solid" 
-            class="!h-8 !px-3 font-semibold text-xs"
-            :loading="modal.saving"
-            @click="saveRecord"
-          >
-            Save Record
-          </Button>
-        </div>
-      </div>
-    </div>
-
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
-import { Badge, Button, Card, createResource } from "frappe-ui"
+import {
+	Badge,
+	Button,
+	Card,
+	Dialog,
+	FormControl,
+	createResource,
+} from "frappe-ui"
 import { computed, reactive, ref, watch } from "vue"
 
 // Icons
@@ -505,6 +424,11 @@ const linkOptions = reactive({
 	users: [],
 })
 
+const userOptions = computed(() => [
+	{ label: "No Head of Dept", value: "" },
+	...linkOptions.users.map((u) => ({ label: u, value: u })),
+])
+
 async function fetchLinkOptions() {
 	try {
 		const res = await fetch("/api/method/tactix.api.masters.get_link_options")
@@ -549,6 +473,26 @@ const filteredRecords = computed(() => {
 		)
 	})
 })
+
+const dialogOptions = computed(() => ({
+	title: `${modal.isEdit ? "Edit" : "Create New"} ${currentTabLabelSingular.value}`,
+	size: "md",
+	actions: [
+		{
+			label: "Save Record",
+			variant: "solid",
+			loading: modal.saving,
+			onClick: saveRecord,
+		},
+		{
+			label: "Cancel",
+			variant: "ghost",
+			onClick: () => {
+				modal.show = false
+			},
+		},
+	],
+}))
 
 // Modal & Actions Setup
 const modal = reactive({
