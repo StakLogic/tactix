@@ -14,7 +14,7 @@ def get_users_data():
 	)
 	
 	# 2. Fetch role assignments
-	user_roles = frappe.get_all("Has Role", fields=["parent", "role"])
+	user_roles = frappe.get_all("Has Role", filters={"parenttype": "User"}, fields=["parent", "role"])
 	roles_by_user = {}
 	for ur in user_roles:
 		roles_by_user.setdefault(ur.parent, []).append(ur.role)

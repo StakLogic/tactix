@@ -26,8 +26,10 @@ class TactixTicket(Document):
 			self.closed_time = 0
 
 	def after_insert(self):
+		from tactix.api.generic import create_notification_log
+
 		# Fetch all users with "Support Team" role
-		support_team_members = frappe.get_all("Has Role", filters={"role": "Support Team"}, fields=["parent"])
+		support_team_members = frappe.get_all("Has Role", filters={"role": "Support Team", "parenttype": "User"}, fields=["parent"])
 		users = list(set([u.parent for u in support_team_members]))
 		
 		# Publish a real-time event to each connected Support Team member
@@ -43,5 +45,12 @@ class TactixTicket(Document):
 				},
 				user=user,
 				after_commit=True
+			)
+			create_notification_log(
+				for_user=user,
+				subject=f"New Ticket Raised: {self.subject}",
+				document_type="Tactix Ticket",
+				document_name=self.name,
+				from_user=self.raised_by_user
 			)
 

@@ -229,6 +229,42 @@
 				</router-view>
 			</div>
 
+			<!-- Real-time Toast Notifications Container -->
+			<div class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none max-w-sm w-full">
+				<transition-group name="toast">
+					<div 
+						v-for="toast in toastAlerts" 
+						:key="toast.id"
+						class="pointer-events-auto flex items-start gap-3 p-4 rounded-xl border bg-white shadow-xl border-slate-200/80"
+					>
+						<!-- Status Icon / indicator -->
+						<div class="pt-0.5 shrink-0">
+							<span 
+								class="flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px] font-bold"
+								:class="[
+									toast.type === 'pr' ? 'bg-[#8250df]' : (toast.type === 'ticket' ? 'bg-red-500' : 'bg-blue-500')
+								]"
+							>
+								{{ toast.type === 'pr' ? 'PR' : (toast.type === 'ticket' ? '!' : '✓') }}
+							</span>
+						</div>
+						<!-- Content -->
+						<div class="flex-1 min-w-0">
+							<div class="text-xs font-bold text-slate-800">{{ toast.title }}</div>
+							<div class="text-[11px] text-slate-500 mt-0.5 leading-relaxed break-words" v-html="toast.message"></div>
+						</div>
+						<!-- Close Button -->
+						<button 
+							type="button" 
+							@click="toastAlerts = toastAlerts.filter(t => t.id !== toast.id)"
+							class="text-slate-400 hover:text-slate-600 transition-colors border-none bg-transparent cursor-pointer shrink-0"
+						>
+							✕
+						</button>
+					</div>
+				</transition-group>
+			</div>
+
 		</main>
 	</div>
 </template>
@@ -590,20 +626,30 @@ const notificationLogResource = createResource({
 	auto: true,
 	transform: (res) => {
 		const entries = res || []
-		return entries.map((entry) => ({
-			id: entry.name,
-			docname: entry.document_name || "",
-			document_type: entry.document_type || "Task",
-			document_name: entry.document_name || "",
-			action: entry.subject?.toLowerCase().includes("removed")
-				? "removed"
-				: "assigned",
-			title: entry.subject || "Task update",
-			subject: entry.subject || "",
-			assigned_by: entry.from_user || "",
-			read: entry.read === 1 || entry.read === true || entry.read === "1",
-			creation: entry.creation,
-		}))
+		return entries.map((entry) => {
+			let formattedTitle = entry.subject || "Task update"
+			if (entry.document_type === "Pull Request") {
+				formattedTitle = formattedTitle
+					.replace(/New PR (#\d+) raised in (.+?) by (.+)/i, "<strong>New PR Raised:</strong> $1 in <strong>$2</strong> by <strong>$3</strong>")
+			} else if (entry.document_type === "Tactix Ticket" || entry.document_type === "Ticket") {
+				formattedTitle = formattedTitle
+					.replace(/New Ticket Raised: (.+)/i, "<strong>New Ticket Raised:</strong> '$1'")
+			}
+			return {
+				id: entry.name,
+				docname: entry.document_name || "",
+				document_type: entry.document_type || "Task",
+				document_name: entry.document_name || "",
+				action: entry.subject?.toLowerCase().includes("removed")
+					? "removed"
+					: "assigned",
+				title: formattedTitle,
+				subject: entry.subject || "",
+				assigned_by: entry.from_user || "",
+				read: entry.read === 1 || entry.read === true || entry.read === "1",
+				creation: entry.creation,
+			}
+		})
 	},
 })
 
@@ -626,56 +672,37 @@ const unreadNotifications = computed(
 	() => notifications.value.filter((notification) => !notification.read).length,
 )
 
-function normalizeNotification(payload) {
-	const action = payload?.action === "removed" ? "removed" : "assigned"
-	return {
-		id: `${payload?.docname || "task"}-${payload?.action || "assigned"}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-		docname: payload?.docname || "",
-		document_type: payload?.document_type || "Task",
-		document_name: payload?.docname || "",
-		action,
-		title:
-			payload?.title ||
-			(action === "removed" ? "Task Removed" : "Task Assigned"),
-		subject: payload?.subject || "",
-		assigned_by: payload?.assigned_by || "",
-		read: false,
-	}
+const toastAlerts = ref([])
+
+function showToastAlert(title, message, type = "info") {
+	const id = Date.now() + Math.random().toString(16).slice(2, 8)
+	toastAlerts.value.push({ id, title, message, type })
+	setTimeout(() => {
+		toastAlerts.value = toastAlerts.value.filter((t) => t.id !== id)
+	}, 6000)
 }
 
 function onTaskAssignment(payload) {
-	notifications.value.unshift(normalizeNotification(payload))
-	notifications.value = notifications.value.slice(0, 10)
-
-	// Only play sound if the task was assigned by someone else
+	notificationLogResource.reload()
 	if (payload && payload.assigned_by !== session.user) {
 		playNotificationSound()
+		showToastAlert(
+			payload.title || "Task Assigned",
+			payload.subject || "A new task has been assigned to you.",
+			"info"
+		)
 	}
 }
 
 function onPRNotification(payload) {
 	if (!payload) return
-
-	// Play distinct PR alert sound
+	notificationLogResource.reload()
 	playPRNotificationSound()
-
-	// Normalize notification item for PR
-	const newNotification = {
-		id: `pr-notification-${payload.number || Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-		docname: payload.number ? `#${payload.number}` : "",
-		document_type: "Pull Request",
-		document_name: payload.number ? payload.number.toString() : "",
-		action: "raised",
-		title: `<strong>New PR Raised:</strong> '${payload.title_text}' in <strong>${payload.repo}</strong>`,
-		subject: payload.title_text || "",
-		assigned_by: payload.author || "GitHub Webhook",
-		read: false,
-		creation: new Date().toISOString(),
-		is_pr_url: payload.url || "",
-	}
-
-	notifications.value.unshift(newNotification)
-	notifications.value = notifications.value.slice(0, 10)
+	showToastAlert(
+		"New Pull Request Raised",
+		`'${payload.title_text}' in <strong>${payload.repo}</strong> by <strong>${payload.author}</strong>`,
+		"pr"
+	)
 }
 
 function escapeHTML(str) {
@@ -690,73 +717,30 @@ function escapeHTML(str) {
 
 function onTicketRaised(payload) {
 	if (!payload) return
-
-	// Only trigger warning notifications for non-ticket raisers (staff/agents/admins)
 	if (session.isTicketRaiser) return
-
+	notificationLogResource.reload()
 	playWarningNotificationSound()
-
-	const escapedSubject = escapeHTML(payload.subject)
-	const newNotification = {
-		id: `ticket-notification-${payload.name || Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-		docname: payload.name ? `#${payload.name}` : "",
-		document_type: "Ticket",
-		document_name: payload.name || "",
-		action: "raised",
-		title: `<strong>New Ticket Raised:</strong> '${escapedSubject}'`,
-		subject: payload.subject || "",
-		assigned_by: payload.raised_by || "System",
-		read: false,
-		creation: payload.creation || new Date().toISOString(),
-	}
-
-	notifications.value.unshift(newNotification)
-	notifications.value = notifications.value.slice(0, 10)
+	showToastAlert(
+		"New Ticket Raised",
+		`'${escapeHTML(payload.subject)}' raised by <strong>${payload.raised_by || 'System'}</strong>`,
+		"ticket"
+	)
 }
 
 function hydrateNotifications() {
 	const storedNotifications = notificationLogResource.data || []
-	notifications.value = [...storedNotifications, ...notifications.value]
-		.slice(0, 10)
-		.reduce((accumulator, notification) => {
-			const hasId = accumulator.some(
-				(existing) => existing.id === notification.id,
-			)
-			const hasReal =
-				notification.id &&
-				typeof notification.id === "string" &&
-				notification.id.startsWith("task-") &&
-				accumulator.some(
-					(existing) =>
-						existing.id &&
-						typeof existing.id === "string" &&
-						!existing.id.startsWith("task-") &&
-						existing.document_name === notification.document_name &&
-						existing.document_type === notification.document_type,
-				)
-
-			if (!hasId && !hasReal) {
-				if (
-					notification.id &&
-					typeof notification.id === "string" &&
-					!notification.id.startsWith("task-")
-				) {
-					const tempIndex = accumulator.findIndex(
-						(existing) =>
-							existing.id &&
-							typeof existing.id === "string" &&
-							existing.id.startsWith("task-") &&
-							existing.document_name === notification.document_name &&
-							existing.document_type === notification.document_type,
-					)
-					if (tempIndex !== -1) {
-						accumulator.splice(tempIndex, 1)
-					}
-				}
-				accumulator.push(notification)
-			}
-			return accumulator
-		}, [])
+	notifications.value = storedNotifications.map((entry) => ({
+		id: entry.id,
+		docname: entry.docname,
+		document_type: entry.document_type,
+		document_name: entry.document_name,
+		action: entry.action,
+		title: entry.title,
+		subject: entry.subject,
+		assigned_by: entry.assigned_by,
+		read: entry.read,
+		creation: entry.creation,
+	}))
 }
 
 watch(
@@ -877,6 +861,22 @@ onBeforeUnmount(() => {
 .fade-leave-to {
 	opacity: 0;
 	transform: translateY(-4px);
+}
+
+/* Toast Transition */
+.toast-enter-active,
+.toast-leave-active {
+	transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-enter-from {
+	opacity: 0;
+	transform: translateY(24px) scale(0.95);
+}
+
+.toast-leave-to {
+	opacity: 0;
+	transform: translateX(100px) scale(0.95);
 }
 
 /* Custom Scrollbar */

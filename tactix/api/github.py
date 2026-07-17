@@ -220,18 +220,20 @@ def get_contributions(orgs=None):
 @frappe.whitelist()
 def publish_pr_raised_notification(pr_title, repo_name, author_name, html_url, pr_number):
 	"""
-	Publish a real-time notification to all users who have the "Code Reviewer" role.
+	Publish a real-time notification to all users who have the "Code Reviewer" or "System Manager" role.
 	Always includes the current session user for easy testing.
 	"""
-	# 1. Fetch reviewers
-	reviewers = frappe.get_all("Has Role", filters={"role": "Code Reviewer"}, fields=["parent"])
-	reviewer_users = list(set([r.parent for r in reviewers]))
+	# 1. Fetch reviewers and managers
+	reviewers = frappe.get_all("Has Role", filters={"role": "Code Reviewer", "parenttype": "User"}, fields=["parent"])
+	managers = frappe.get_all("Has Role", filters={"role": "System Manager", "parenttype": "User"}, fields=["parent"])
+	reviewer_users = list(set([r.parent for r in reviewers] + [m.parent for m in managers]))
 	
 	# 2. Append current user for test preview convenience
 	if frappe.session.user and frappe.session.user not in reviewer_users:
 		reviewer_users.append(frappe.session.user)
 		
-	# 3. Publish realtime notification
+	# 3. Publish realtime notification and create Notification Log
+	from tactix.api.generic import create_notification_log
 	for user in reviewer_users:
 		frappe.publish_realtime(
 			event="github_pr_notification",
@@ -244,6 +246,13 @@ def publish_pr_raised_notification(pr_title, repo_name, author_name, html_url, p
 				"url": html_url
 			},
 			user=user
+		)
+		create_notification_log(
+			for_user=user,
+			subject=f"New PR #{pr_number} raised in {repo_name} by {author_name}",
+			document_type="Pull Request",
+			document_name=f"PR-{pr_number}",
+			from_user="Administrator"
 		)
 	return {"status": "success", "notified_count": len(reviewer_users)}
 

@@ -90,3 +90,24 @@ def restrict_desk_access():
 			roles = frappe.get_roles(frappe.session.user)
 			if "System Manager" not in roles:
 				raise RedirectException("/tactix/?restricted=1")
+
+
+def create_notification_log(for_user, subject, document_type, document_name, from_user=None):
+	if not from_user:
+		from_user = frappe.session.user
+	if from_user == "Guest":
+		from_user = "Administrator"
+	
+	notification_doc = frappe.get_doc({
+		"doctype": "Notification Log",
+		"for_user": for_user,
+		"from_user": from_user,
+		"subject": subject,
+		"document_type": document_type,
+		"document_name": document_name,
+		"read": 0
+	})
+	notification_doc.insert(ignore_permissions=True)
+	
+	# Trigger standard socket notification for real-time sound/alert reload
+	frappe.publish_realtime("notification", user=for_user)
