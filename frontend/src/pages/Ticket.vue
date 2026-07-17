@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 p-1 pb-1 flex-shrink-0">
+	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 p-2 flex-shrink-0">
 		<Card 
 			v-for="stat in kpiStats" 
 			:key="stat.label" 
@@ -72,11 +72,11 @@
 	  </div>
 
 	  <!-- Bottom Row: Filters -->
-	  <div class="filter-row flex flex-wrap items-center gap-2 w-full">
+	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
 		<select 
 		  v-model="selectedFilters.status"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.status !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -92,7 +92,7 @@
 		<select 
 		  v-model="selectedFilters.customer"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.customer !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -105,7 +105,7 @@
 		<select 
 		  v-model="selectedFilters.department"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.department !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -118,7 +118,7 @@
 		<select 
 		  v-model="selectedFilters.priority"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.priority !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -134,7 +134,7 @@
 		<select 
 		  v-model="selectedFilters.raised_by"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.raised_by !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -147,7 +147,7 @@
 		<Button 
 		  v-if="hasActiveFilters"
 		  variant="ghost" 
-		  class="!text-red-500 hover:!bg-red-50 !px-2 !h-8"
+		  class="!text-red-500 hover:!bg-red-50 !px-2.5 !h-9 shrink-0"
 		  @click="resetFilters"
 		>
 		  <template #prefix><IconX class="w-3.5 h-3.5" /></template>
@@ -156,8 +156,8 @@
 	  </div>
 	</div>
 
-	<div class="flex-1 overflow-hidden px-2 pb-2 flex flex-col min-h-0">
-	  <div class="bg-white rounded-xl border border-slate-800 shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
+	<div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-2 flex flex-col min-h-0">
+	  <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
 		  <ListView
 		  class="h-full flex flex-col min-h-0"
 		  :columns="columns"
@@ -179,7 +179,7 @@
 			  </ListHeaderItem>
 		  </ListHeader>
 
-		  <div class="flex-1 overflow-y-auto custom-scrollbar relative min-h-0">
+		  <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
 		  <ListRows>
 			  <ListRow 
 			  v-slot="{ column, item }" 
@@ -362,6 +362,7 @@
 	</div>
 
 	<Dialog v-model="showBulkDeleteDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Delete Selected Tickets', 
 		size: 'sm',
@@ -378,6 +379,7 @@
 	</Dialog>
 
 	<Dialog v-model="showErrorDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Cannot Delete', 
 		size: 'sm',
@@ -392,7 +394,7 @@
 	  </template>
 	</Dialog>
 
-	<Dialog v-model="showCreateDialog" :options="dialogOptions">
+	<Dialog v-model="showCreateDialog" :disable-outside-click-to-close="true" :options="dialogOptions">
 	  <template #body-content>
 		<div class="space-y-6 py-2">
 		  <p v-if="ticketFormError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -446,7 +448,7 @@
 		<div v-if="showEditTicket" class="fixed inset-0 flex justify-end z-50">
 			<div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="showEditTicket=false"></div>
 			
-			<div class="relative w-full md:w-full h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-hidden">
+			<div class="relative w-full md:max-w-4xl lg:max-w-5xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
 				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30 min-h-0">
 					<div class="flex items-center gap-3 text-slate-500">
 						<div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -456,12 +458,12 @@
 
 				<div v-else class="flex w-full h-full flex-col md:flex-row">
 					<!-- Left Column: Activity (Full Width) -->
-					<div class="h-1/2 md:h-full md:w-[60%] flex flex-col bg-white min-h-0 border-r border-slate-100">
+					<div class="h-[400px] md:h-full md:w-[60%] flex flex-col bg-white min-h-0 border-b md:border-b-0 md:border-r border-slate-100 shrink-0">
 						<header class="p-4 border-b bg-white flex justify-between items-center shrink-0 shadow-sm z-10">
 							<h3 class="text-sm font-bold text-slate-800">Activity</h3>
 						</header>
 						
-						<div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative before:absolute before:inset-y-0 before:left-[40px] before:w-0.5 before:bg-slate-200/50">
+						<div class="flex-grow md:flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative before:absolute before:inset-y-0 before:left-[40px] before:w-0.5 before:bg-slate-200/50">
 							<!-- Timeline Activity Comments -->
 							<div v-for="c in comments.data || []" :key="c.name" class="relative pl-12 group">
 								<!-- Timeline Avatar absolute aligned on the rail line -->
@@ -540,9 +542,9 @@
 					</div>
 
 					<!-- Right Column: Ticket Details Form (40% Width) -->
-					<div class="flex-1 md:w-[40%] md:shrink-0 flex flex-col bg-white min-h-0">
+					<div class="w-full md:w-[40%] md:shrink-0 flex flex-col bg-white min-h-0">
 						<header class="p-4 border-b flex justify-between items-center bg-white shrink-0 shadow-sm z-10">
-							<div>
+							<div class="min-w-0 flex-1 mr-2">
 								<div class="flex flex-wrap items-center gap-1.5">
 									<span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-0.5 uppercase tracking-wider">{{ ticketForm.name }}</span>
 									<Badge v-if="ticketForm.first_responded_on" theme="blue" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]" v-tooltip="'First Response: ' + formatDateTime(ticketForm.first_responded_on)">
@@ -552,18 +554,18 @@
 										Closed in {{ formatDuration(ticketForm.closed_time) }}
 									</Badge>
 								</div>
-								<h2 class="font-extrabold text-slate-900 text-lg mt-2 truncate max-w-[420px]">{{ ticketForm.subject }}</h2>
+								<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-2 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
 							</div>
-							<div class="flex gap-2 shrink-0">
-								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm">Create Task</Button>
-								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm">Save</Button>
-								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600">
+							<div class="flex items-center gap-1.5 shrink-0">
+								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
+								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm !px-2 sm:!px-3 text-xs">Save</Button>
+								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600 !p-1">
 									<IconX class="w-4 h-4"/>
 								</Button>
 							</div>
 						</header>
 
-						<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+						<div class="flex-grow md:flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
@@ -664,6 +666,7 @@
 	</Transition>
 
 	<Dialog v-model="showCreateTaskDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Create Task', 
 		size: '4xl',

@@ -1,14 +1,14 @@
 <template>
   <div class="h-full overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-      <div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
+      <div class="min-w-0">
         <h1 class="text-xl font-black text-slate-900 leading-tight">Master Data & Integrations</h1>
         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Manage system configurations, data sources, and record masters</p>
       </div>
       <Button 
         variant="ghost" 
-        class="!text-slate-600 hover:!bg-slate-100/50"
+        class="!text-slate-600 hover:!bg-slate-100/50 self-start sm:self-auto shrink-0"
         @click="$router.back()"
       >
         <template #prefix><IconArrowLeft class="w-4 h-4" /></template>
@@ -78,10 +78,10 @@
                   />
                 </div>
               </div>
-              <div class="flex items-center gap-2 pt-2">
+              <div class="flex flex-wrap items-center gap-2 pt-2">
                 <Button 
                   variant="solid" 
-                  class="!h-8 !px-3 font-semibold text-xs"
+                  class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center"
                   :loading="saving"
                   @click="saveGithubConfig"
                 >
@@ -89,7 +89,7 @@
                 </Button>
                 <Button 
                   variant="outline" 
-                  class="!text-slate-600 !h-8 !px-3 border border-slate-200 hover:bg-slate-50 font-semibold text-xs"
+                  class="!text-slate-600 !h-8 !px-3 border border-slate-200 hover:bg-slate-50 font-semibold text-xs flex-1 sm:flex-none justify-center"
                   :loading="syncing"
                   @click="syncPRs"
                 >
@@ -126,7 +126,7 @@
       <!-- Tab 2: Masters (Project, Department, Tactix Department, Tactix Customer) -->
       <div v-else class="space-y-4">
         <!-- Controls & Search -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
           <div class="relative w-full sm:max-w-xs">
             <input 
               type="text" 
@@ -139,7 +139,7 @@
           <Button 
             v-if="isAdmin"
             variant="solid" 
-            class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1"
+            class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center"
             @click="openCreateModal"
           >
             <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>

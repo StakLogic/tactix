@@ -30,3 +30,252 @@
 .ticket-modal-autocomplete {
 	z-index: 100005 !important;
 }
+
+/* --- Dark Mode Custom Overrides --- */
+.dark {
+	--primary-color: #3b82f6;
+	--primary-color-hover: #60a5fa;
+	--primary-color-shadow: rgba(59, 130, 246, 0.4);
+	--primary-color-shadow-light: rgba(59, 130, 246, 0.2);
+	background-color: #0f172a !important;
+	color: #f8fafc !important;
+}
+
+/* General Layout backgrounds */
+.dark body {
+	background-color: #0f172a !important;
+	color: #f8fafc !important;
+}
+
+/* Override tailwind background classes */
+.dark .bg-white {
+	background-color: #1e293b !important;
+}
+.dark .bg-slate-50 {
+	background-color: #0f172a !important;
+}
+.dark .bg-slate-50\/50 {
+	background-color: rgba(15, 23, 42, 0.5) !important;
+}
+.dark .bg-\[\#F8FAFC\] {
+	background-color: #0f172a !important;
+}
+.dark .bg-\[\#F8F8F8\] {
+	background-color: #1e293b !important;
+}
+.dark .bg-slate-100 {
+	background-color: #1e293b !important;
+}
+.dark .bg-slate-200 {
+	background-color: #334155 !important;
+}
+.dark .bg-slate-300 {
+	background-color: #475569 !important;
+}
+.dark .bg-\[\#f8fafc\] {
+	background-color: #0f172a !important;
+}
+.dark .bg-white\/80 {
+	background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+/* Specific semantic colored backgrounds */
+.dark .bg-blue-50 {
+	background-color: rgba(59, 130, 246, 0.15) !important;
+}
+.dark .bg-indigo-50 {
+	background-color: rgba(99, 102, 241, 0.15) !important;
+}
+.dark .bg-emerald-50 {
+	background-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .bg-orange-50 {
+	background-color: rgba(249, 115, 22, 0.15) !important;
+}
+.dark .bg-green-50 {
+	background-color: rgba(34, 197, 94, 0.15) !important;
+}
+.dark .bg-red-50 {
+	background-color: rgba(239, 68, 68, 0.15) !important;
+}
+.dark .bg-purple-50 {
+	background-color: rgba(168, 85, 247, 0.15) !important;
+}
+
+/* Text color overrides */
+.dark .text-slate-900 {
+	color: #f8fafc !important;
+}
+.dark .text-slate-800 {
+	color: #f1f5f9 !important;
+}
+.dark .text-slate-700 {
+	color: #e2e8f0 !important;
+}
+.dark .text-slate-600 {
+	color: #cbd5e1 !important;
+}
+.dark .text-slate-500 {
+	color: #94a3b8 !important;
+}
+.dark .text-slate-400 {
+	color: #64748b !important;
+}
+.dark .text-slate-350 {
+	color: #94a3b8 !important;
+}
+
+/* Border overrides */
+.dark .border-slate-100 {
+	border-color: #334155 !important;
+}
+.dark .border-slate-200 {
+	border-color: #334155 !important;
+}
+.dark .border-slate-300 {
+	border-color: #475569 !important;
+}
+.dark .border-slate-200\/70 {
+	border-color: rgba(51, 65, 85, 0.7) !important;
+}
+.dark .border-slate-200\/60 {
+	border-color: rgba(51, 65, 85, 0.6) !important;
+}
+.dark .border-slate-100\/60 {
+	border-color: rgba(51, 65, 85, 0.6) !important;
+}
+.dark .border-slate-200\/40 {
+	border-color: rgba(51, 65, 85, 0.4) !important;
+}
+
+/* Form elements & inputs */
+.dark input,
+.dark select,
+.dark textarea {
+	background-color: #0f172a !important;
+	color: #f8fafc !important;
+	border-color: #334155 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+	color: #64748b !important;
+}
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+	border-color: #3b82f6 !important;
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Buttons */
+.dark button.bg-slate-900 {
+	background-color: #3b82f6 !important;
+	color: #ffffff !important;
+}
+.dark button.bg-slate-900:hover {
+	background-color: #2563eb !important;
+}
+.dark .hover\:bg-slate-50:hover {
+	background-color: #334155 !important;
+}
+.dark .hover\:bg-slate-100:hover {
+	background-color: #1e293b !important;
+}
+.dark .hover\:bg-slate-50\/60:hover {
+	background-color: rgba(51, 65, 85, 0.6) !important;
+}
+.dark .hover\:bg-slate-100\/50:hover {
+	background-color: rgba(30, 41, 59, 0.5) !important;
+}
+.dark .hover\:text-slate-700:hover {
+	color: #f8fafc !important;
+}
+.dark .hover\:text-slate-600:hover {
+	color: #cbd5e1 !important;
+}
+
+/* Scrollbars */
+.dark ::-webkit-scrollbar-thumb {
+	background: #475569 !important;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: #64748b !important;
+}
+.dark ::-webkit-scrollbar-track {
+	background: #0f172a !important;
+}
+
+/* Frappe UI Component Overrides */
+.dark .fui-dialog,
+.dark .fui-card,
+.dark [role="dialog"],
+.dark .bg-surface-modal {
+	background-color: #1e293b !important;
+	color: #f8fafc !important;
+	border-color: #334155 !important;
+}
+.dark .fui-dialog-header,
+.dark .fui-dialog-title {
+	color: #f8fafc !important;
+}
+.dark .fui-dialog-body {
+	color: #e2e8f0 !important;
+}
+.dark .fui-dialog-footer {
+	background-color: #0f172a !important;
+}
+.dark .fui-sidebar,
+.dark aside,
+.dark .h-screen.flex.bg-slate-50.border-r.border-slate-200 {
+	background-color: #1e293b !important;
+	border-right-color: #334155 !important;
+}
+.dark .h-screen.flex.bg-slate-50.border-r.border-slate-200 aside,
+.dark .h-screen.flex.bg-slate-50.border-r.border-slate-200 nav,
+.dark .h-screen.flex.bg-slate-50.border-r.border-slate-200 > div {
+	background-color: #1e293b !important;
+}
+
+/* Sidebar nav items */
+.dark :deep(nav button),
+.dark nav button {
+	color: #cbd5e1 !important;
+}
+.dark :deep(nav button:hover),
+.dark nav button:hover {
+	background-color: #334155 !important;
+	color: #f8fafc !important;
+}
+.dark :deep(nav button.bg-surface-selected),
+.dark nav button.bg-surface-selected,
+.dark :deep(nav button.\!bg-surface-selected) {
+	background-color: #3b82f6 !important;
+	color: #ffffff !important;
+}
+.dark :deep(nav button.bg-surface-selected span),
+.dark nav button.bg-surface-selected span {
+	color: #ffffff !important;
+}
+.dark :deep(nav button.bg-surface-selected svg),
+.dark nav button.bg-surface-selected svg {
+	color: #ffffff !important;
+}
+
+/* Header */
+.dark header.h-14 {
+	background-color: #1e293b !important;
+	border-bottom-color: #334155 !important;
+}
+
+/* Mobile responsive menu button */
+.dark .mobile-menu-toggle {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+.dark .mobile-menu-toggle:active {
+	background-color: #334155 !important;
+}
+.dark .mobile-page-title {
+	color: #f8fafc !important;
+}

@@ -454,43 +454,6 @@
 		width: 100% !important;
 	}
 
-	.fixed.inset-0.flex.justify-end.z-50 .relative.w-full.md\:w-\[70\%\] {
-		width: 100% !important;
-		flex-direction: column !important;
-		display: flex !important;
-		height: 100vh !important;
-		overflow-y: auto !important;
-	}
-
-	.fixed.inset-0.flex.justify-end.z-50 .flex-1.md\:w-\[60\%\] {
-		width: 100% !important;
-		max-height: none !important;
-		flex: none !important;
-		min-height: 0 !important;
-	}
-
-	.fixed.inset-0.flex.justify-end.z-50
-		.flex-1.md\:w-\[60\%\]
-		.flex-1.overflow-y-auto {
-		max-height: 300px !important;
-		overflow-y: auto !important;
-	}
-
-	.fixed.inset-0.flex.justify-end.z-50 .h-1\/2.md\:h-full.md\:w-\[40\%\] {
-		width: 100% !important;
-		height: auto !important;
-		max-height: none !important;
-		border-top: 1px solid #e2e8f0;
-		flex: none !important;
-		min-height: 0 !important;
-	}
-
-	.fixed.inset-0.flex.justify-end.z-50
-		.h-1\/2.md\:h-full.md\:w-\[40\%\]
-		.flex-1.overflow-y-auto {
-		max-height: none !important;
-		overflow-y: visible !important;
-	}
 
 	.fixed.inset-0.flex.justify-end.z-50 header.p-2.md\:p-4 {
 		padding: 8px !important;
@@ -687,6 +650,10 @@
 	.bg-white.rounded-xl.border.border-slate-800.shadow-sm.flex-1.flex.flex-col.overflow-hidden,
 	.bg-white.rounded-xl.border.border-slate-100.overflow-hidden,
 	.bg-white.rounded-xl.border.border-slate-100.flex-1.flex.flex-col.overflow-hidden.min-h-0,
+	.bg-white.rounded-xl.border.border-slate-200.shadow-sm.flex-1.flex.flex-col.overflow-hidden.min-h-0,
+	.bg-white.rounded-xl.border.border-slate-200.shadow-sm.flex-1.flex.flex-col.overflow-hidden,
+	.bg-white.rounded-xl.border.border-slate-200.overflow-hidden,
+	.bg-white.rounded-xl.border.border-slate-200.flex-1.flex.flex-col.overflow-hidden.min-h-0,
 	div[class*="rounded-xl"][class*="border"].flex-1.flex.flex-col.overflow-hidden {
 		height: auto !important;
 		min-height: 420px !important;

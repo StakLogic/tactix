@@ -30,6 +30,8 @@ function toggleTheme() {
 	const currentTheme = document.documentElement.getAttribute("data-theme")
 	const newTheme = currentTheme === "dark" ? "light" : "dark"
 	document.documentElement.setAttribute("data-theme", newTheme)
+	document.documentElement.classList.toggle("dark", newTheme === "dark")
+	localStorage.setItem("theme", newTheme)
 }
 
 const navigateTo = (path: string) => {

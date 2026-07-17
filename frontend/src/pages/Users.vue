@@ -1,7 +1,7 @@
 <template>
-  <div class="h-full overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50">
+  <div class="flex flex-col h-full overflow-hidden min-h-0 bg-slate-50/50">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 px-4 pt-4 flex-shrink-0">
       <div>
         <h1 class="text-xl font-black text-slate-900 leading-tight">User & Team Management</h1>
         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Administer user accounts, security roles, permissions, and team departments</p>
@@ -17,13 +17,13 @@
     </div>
 
     <!-- Controls & Search -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm mx-4 my-2 flex-shrink-0">
       <div class="relative w-full sm:max-w-xs">
         <input 
           type="text" 
           v-model="searchQuery"
           placeholder="Search users by name or email..."
-          class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
+          class="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
         />
         <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
       </div>
@@ -38,22 +38,23 @@
     </div>
 
     <!-- Users Table -->
-    <Card class="!shadow-sm bg-white border border-slate-200/60 overflow-hidden">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
+      <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
       <div v-if="loading" class="flex justify-center py-12">
         <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
       </div>
       <div v-else-if="filteredUsers.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
         No users found.
       </div>
-      <div v-else class="overflow-x-auto">
+      <div v-else class="flex-1 overflow-y-auto custom-scrollbar overflow-x-auto min-h-0">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
-            <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-              <th class="p-4">User</th>
-              <th class="p-4">Status</th>
-              <th class="p-4">Team / Department</th>
-              <th class="p-4">Assigned Roles</th>
-              <th class="p-4 text-right">Actions</th>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-semibold text-slate-500 uppercase tracking-wider sticky top-0 bg-slate-50 z-10">
+              <th class="px-4 py-3">User</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Team / Department</th>
+              <th class="px-4 py-3">Assigned Roles</th>
+              <th class="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -62,14 +63,14 @@
               :key="user.email" 
               class="hover:bg-slate-50/40 transition-colors"
             >
-              <td class="p-4 flex items-center gap-3">
+              <td class="px-4 py-3 flex items-center gap-3">
                 <Avatar :image="user.user_image" :label="user.first_name || user.email" size="md" class="shadow-sm border border-slate-100" />
                 <div class="flex flex-col">
                   <span class="font-semibold text-slate-800">{{ user.first_name }} {{ user.last_name || '' }}</span>
                   <span class="text-[10px] text-slate-400 font-medium">{{ user.email }}</span>
                 </div>
               </td>
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <Badge 
                   :theme="user.enabled ? 'green' : 'gray'" 
                   variant="subtle" 
@@ -78,13 +79,13 @@
                   {{ user.enabled ? 'Active' : 'Disabled' }}
                 </Badge>
               </td>
-              <td class="p-4 font-medium text-slate-600">
+              <td class="px-4 py-3 font-medium text-slate-600">
                 {{ user.department || 'Unassigned' }}
               </td>
-              <td class="p-4">
+              <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1 max-w-sm">
                   <Badge 
-                    v-for="role in user.roles.slice(0, 3)" 
+                    v-for="role in mapDbToUiRoles(user.roles || []).slice(0, 3)" 
                     :key="role"
                     theme="blue" 
                     variant="subtle" 
@@ -92,12 +93,12 @@
                   >
                     {{ role }}
                   </Badge>
-                  <span v-if="user.roles.length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
-                    +{{ user.roles.length - 3 }} more
+                  <span v-if="mapDbToUiRoles(user.roles || []).length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
+                    +{{ mapDbToUiRoles(user.roles || []).length - 3 }} more
                   </span>
                 </div>
               </td>
-              <td class="p-4 text-right space-x-1.5">
+              <td class="px-4 py-3 text-right space-x-1.5">
                 <Button 
                   variant="ghost" 
                   class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
@@ -117,10 +118,11 @@
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
+  </div>
 
     <!-- Create/Edit User Modal Dialog -->
-    <Dialog v-model="modal.show" :options="dialogOptions">
+    <Dialog v-model="modal.show" :disable-outside-click-to-close="true" :options="dialogOptions">
       <template #body-content>
         <div class="space-y-4 py-1.5 text-left">
           <!-- General User Info -->
@@ -137,6 +139,27 @@
           <!-- Team / Department Selection -->
           <FormControl type="select" label="Team / Department" v-model="modal.form.department" :options="departmentOptions" />
 
+          <!-- Employee Details (Hidden if Ticket Raiser) -->
+          <div v-if="!modal.form.roles.includes('Ticker Raiser')" class="space-y-4 pt-2 border-t border-slate-100 text-left">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormControl 
+                type="select" 
+                label="Gender *" 
+                v-model="modal.form.gender" 
+                :options="[
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' },
+                  { label: 'Other', value: 'Other' }
+                ]" 
+              />
+              <FormControl type="text" label="GitHub Username" v-model="modal.form.github_username" placeholder="GitHub username" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormControl type="date" label="Date of Birth *" v-model="modal.form.date_of_birth" />
+              <FormControl type="date" label="Date of Joining *" v-model="modal.form.date_of_joining" />
+            </div>
+          </div>
+
           <!-- Enabled switch -->
           <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
             <div>
@@ -151,22 +174,34 @@
           </div>
 
           <!-- Roles Selection Checklist -->
-          <div class="space-y-2">
+          <div class="space-y-2 text-left">
             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Security Roles & Permissions</label>
-            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50 max-h-[160px] overflow-y-auto space-y-2 custom-scrollbar">
-              <label 
-                v-for="role in roles" 
-                :key="role" 
-                class="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-800 cursor-pointer"
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="role in displayRoles"
+                :key="role"
+                type="button"
+                @click="toggleRole(role)"
+                :class="[
+                  'flex items-center justify-between p-3 rounded-xl border text-xs font-semibold transition-all duration-200 text-left',
+                  modal.form.roles.includes(role)
+                    ? 'border-blue-500 bg-blue-50/50 text-blue-700 shadow-sm'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+                ]"
               >
-                <input 
-                  type="checkbox" 
-                  v-model="modal.form.roles" 
-                  :value="role"
-                  class="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span class="font-medium">{{ role }}</span>
-              </label>
+                <span>{{ role }}</span>
+                <span 
+                  v-if="modal.form.roles.includes(role)" 
+                  class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px]"
+                >
+                  ✓
+                </span>
+                <span 
+                  v-else 
+                  class="w-4 h-4 border border-slate-300 rounded-full flex items-center justify-center text-[10px]"
+                >
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -200,6 +235,45 @@ const loading = ref(false)
 const users = ref([])
 const roles = ref([])
 const departments = ref([])
+
+const displayRoles = [
+	"Employee (Developer)",
+	"System Manager",
+	"Code Reviewer",
+	"Support Team",
+	"Ticker Raiser"
+]
+
+function mapDbToUiRoles(dbRoles) {
+	const mapped = []
+	if (!dbRoles) return mapped
+	if (dbRoles.includes("Employee")) mapped.push("Employee (Developer)")
+	if (dbRoles.includes("System Manager")) mapped.push("System Manager")
+	if (dbRoles.includes("Code Reviewer")) mapped.push("Code Reviewer")
+	if (dbRoles.includes("Support Team")) mapped.push("Support Team")
+	if (dbRoles.includes("Tactix Ticket Raiser")) mapped.push("Ticker Raiser")
+	return mapped
+}
+
+function mapUiToDbRoles(uiRoles) {
+	const mapped = []
+	if (!uiRoles) return mapped
+	if (uiRoles.includes("Employee (Developer)")) mapped.push("Employee")
+	if (uiRoles.includes("System Manager")) mapped.push("System Manager")
+	if (uiRoles.includes("Code Reviewer")) mapped.push("Code Reviewer")
+	if (uiRoles.includes("Support Team")) mapped.push("Support Team")
+	if (uiRoles.includes("Ticker Raiser")) mapped.push("Tactix Ticket Raiser")
+	return mapped
+}
+
+function toggleRole(role) {
+	const idx = modal.form.roles.indexOf(role)
+	if (idx > -1) {
+		modal.form.roles.splice(idx, 1)
+	} else {
+		modal.form.roles.push(role)
+	}
+}
 
 const departmentOptions = computed(() => [
 	{ label: "No Department (Unassigned)", value: "" },
@@ -268,6 +342,10 @@ const modal = reactive({
 		department: "",
 		enabled: 1,
 		roles: [],
+		gender: "",
+		date_of_birth: "",
+		date_of_joining: "",
+		github_username: "",
 	},
 })
 
@@ -281,7 +359,11 @@ function openCreateModal() {
 		password: "",
 		department: "",
 		enabled: 1,
-		roles: ["Employee"], // Default role setup
+		roles: ["Employee (Developer)"], // Default role setup
+		gender: "",
+		date_of_birth: "",
+		date_of_joining: "",
+		github_username: "",
 	}
 }
 
@@ -295,7 +377,11 @@ function openEditModal(user) {
 		password: "",
 		department: user.department || "",
 		enabled: user.enabled === 1 || user.enabled === true ? 1 : 0,
-		roles: [...(user.roles || [])],
+		roles: mapDbToUiRoles(user.roles || []),
+		gender: user.gender || "",
+		date_of_birth: user.date_of_birth || "",
+		date_of_joining: user.date_of_joining || "",
+		github_username: user.github_username || "",
 	}
 }
 
@@ -309,6 +395,19 @@ async function saveUserRecord() {
 		return
 	}
 
+	const isTicketRaiser = modal.form.roles.includes("Ticker Raiser")
+	if (!isTicketRaiser) {
+		if (!modal.form.gender || !modal.form.date_of_birth || !modal.form.date_of_joining) {
+			alert("Gender, Date of Birth, and Date of Joining are mandatory fields.")
+			return
+		}
+	}
+
+	const payload = {
+		...modal.form,
+		roles: mapUiToDbRoles(modal.form.roles || []),
+	}
+
 	modal.saving = true
 	try {
 		const res = await fetch("/api/method/tactix.api.users.save_user", {
@@ -316,7 +415,7 @@ async function saveUserRecord() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				email: modal.isEdit ? modal.form.email : null,
-				doc_data: JSON.stringify(modal.form),
+				doc_data: JSON.stringify(payload),
 			}),
 		})
 		const data = await res.json()
