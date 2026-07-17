@@ -782,7 +782,7 @@ async function handleNotificationClick(notification) {
 	} else if (docName) {
 		if (docType === "Task") {
 			router.push({ path: `/tasks/${docName}` })
-		} else if (docType === "Ticket") {
+		} else if (docType === "Ticket" || docType === "Tactix Ticket") {
 			router.push({ path: `/tickets/${docName}` })
 		}
 	}

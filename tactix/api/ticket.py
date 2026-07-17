@@ -23,7 +23,7 @@ def get_tickets(filters=None, start=0, page_length=20):
 	user = frappe.session.user
 	roles = frappe.get_roles(user)
 	or_filters = None
-	if "System Manager" not in roles:
+	if "System Manager" not in roles and "Support Team" not in roles:
 		user_details = frappe.db.get_value("User", user, ["tactix_customer", "tactix_department"], as_dict=True) or {}
 		customer = user_details.get("tactix_customer")
 		department = user_details.get("tactix_department")
