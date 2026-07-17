@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4 p-1 flex flex-col h-full overflow-hidden min-h-0">
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 flex-shrink-0">
+	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 flex-shrink-0">
 	  <Card 
 		v-for="stat in kpiStats" 
 		:key="stat.label" 
@@ -86,7 +86,7 @@
 	  </div>
 
 	  <!-- Bottom Row: Filters -->
-	  <div class="filter-row flex flex-wrap items-center gap-2 w-full">
+	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
 		<div class="w-32 shrink-0">
 			<Autocomplete
 			  ref="projectAutocomplete"
@@ -142,7 +142,7 @@
 		<select 
 		  v-model="selectedFilters.status"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.status !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -155,7 +155,7 @@
 		<select 
 		  v-model="selectedFilters.priority"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.priority !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -220,7 +220,7 @@
 		<select 
 		  v-model="selectedFilters.deadline"
 		  :class="[
-			'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] transition-all duration-200',
+			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
 			selectedFilters.deadline !== ''
 			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
@@ -232,7 +232,7 @@
 		<Button 
 		  v-if="hasActiveFilters"
 		  variant="ghost" 
-		  class="!text-red-500 hover:!bg-red-50 !px-2 !h-8"
+		  class="!text-red-500 hover:!bg-red-50 !px-2.5 !h-9 shrink-0"
 		  @click="clearFilters"
 		>
 		  <template #prefix><IconX class="w-3.5 h-3.5" /></template>
@@ -245,8 +245,8 @@
 	  <LoadingIndicator />
 	</div>
 
-	<div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
-	  <div v-if="viewMode === 'list'" class="bg-white rounded-xl border border-slate-800 shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
+	<div v-else class="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0">
+	  <div v-if="viewMode === 'list'" class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
 		  <ListView
 			class="h-full flex flex-col min-h-0"
 			:columns="columns"
@@ -262,7 +262,7 @@
 				</template>
 			  </ListHeaderItem>
 			</ListHeader>
-			<div class="flex-1 overflow-y-auto custom-scrollbar relative min-h-0">
+			<div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
 			<ListRows>
 			  <ListRow v-for="row in (filteredTasksData || [])" :key="row.name" v-slot="{ column, item }" :row="row">
 				<ListRowItem :item="item">
@@ -700,7 +700,7 @@
 		class="fixed inset-0 flex justify-end bg-slate-900/40 backdrop-blur-sm transition-opacity z-50"
 		@click.self="showEditTask = false"
 	>
-		<div class="w-full max-w-7xl bg-white h-[calc(100vh-30px)] my-[15px] mr-[15px] ml-[15px] rounded-2xl shadow-2xl flex flex-col animate-slide-in overflow-hidden">
+		<div class="w-full max-w-7xl bg-white h-full md:h-[calc(100vh-30px)] my-0 mr-0 ml-0 md:my-[15px] md:mr-[15px] md:ml-[15px] rounded-none md:rounded-2xl shadow-2xl flex flex-col animate-slide-in overflow-y-auto md:overflow-hidden">
 			<div class="bg-white border-b px-2 py-2 flex items-center justify-between z-10">
 				<div class="flex items-center gap-3">
 					<Badge :theme="getPriorityTheme(newTask.priority)" variant="subtle" size="md">
@@ -727,12 +727,12 @@
 					</div>
 				</div>
 
-				<div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
-				<div class="flex-1 min-w-0 overflow-hidden flex flex-col md:flex-row">
+				<div v-else class="flex-1 flex flex-col md:overflow-hidden md:min-h-0">
+				<div class="flex-grow md:flex-1 min-w-0 flex flex-col md:flex-row md:overflow-hidden md:min-h-0">
 				
-				<div class="flex-1 min-w-0 flex flex-col min-h-0 bg-slate-50/20">
+				<div class="w-full flex flex-col md:flex-1 md:min-h-0 bg-slate-50/20">
 					<!-- Scrollable Content Area -->
-					<div class="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
+					<div class="p-6 space-y-6 w-full flex-grow md:flex-1 md:overflow-y-auto custom-scrollbar md:min-h-0">
 						<div class="space-y-6">
 							<input 
 								v-model="newTask.subject" 
@@ -923,7 +923,7 @@
 					</div>
 				</div>
 
-				<div class="w-full md:w-80 md:min-w-80 md:shrink-0 border-l bg-slate-50/50 p-3 pb-28 space-y-4 overflow-y-auto custom-scrollbar">
+				<div class="w-full md:w-80 md:min-w-80 md:shrink-0 border-t md:border-t-0 md:border-l bg-slate-50/50 p-3 pb-28 space-y-4 overflow-y-auto custom-scrollbar">
 					<div v-if="newTask.fullfilled_in_display_text" class="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/50 rounded-lg p-2 mb-2">
 						<span class="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Fulfilled In</span>
 						<Badge 

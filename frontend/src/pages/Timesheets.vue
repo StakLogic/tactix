@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
     <!-- Top Stats / KPIs Header -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 flex-shrink-0">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 flex-shrink-0">
       <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Hours logged</span>
@@ -65,10 +65,15 @@
 
     <!-- Actions & Filter Header -->
     <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-4 my-2 flex-shrink-0">
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
         <select 
           v-model="selectedStatus"
-          class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[130px]"
+          :class="[
+            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[130px] shrink-0 transition-all duration-200',
+            selectedStatus !== ''
+              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
+              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
+          ]"
         >
           <option value="">All Statuses</option>
           <option value="Draft">Draft</option>
@@ -77,7 +82,12 @@
 
         <select 
           v-model="selectedTimespan"
-          class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[130px]"
+          :class="[
+            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[130px] shrink-0 transition-all duration-200',
+            selectedTimespan !== ''
+              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
+              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
+          ]"
         >
           <option value="">All Time</option>
           <option value="today">Today</option>
@@ -91,7 +101,12 @@
         <select 
           v-if="employeeInfoResource.data?.is_system_manager"
           v-model="selectedEmployee"
-          class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[150px]"
+          :class="[
+            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[150px] shrink-0 transition-all duration-200',
+            selectedEmployee !== ''
+              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
+              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
+          ]"
         >
           <option value="">All Employees</option>
           <option v-for="emp in employeeOptionsResource.data" :key="emp.value" :value="emp.value">
@@ -120,8 +135,8 @@
     </div>
 
     <!-- Timesheets List Table -->
-    <div class="flex-1 overflow-hidden px-4 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
@@ -142,7 +157,7 @@
             </ListHeaderItem>
           </ListHeader>
 
-          <div class="flex-1 overflow-y-auto custom-scrollbar relative min-h-0">
+          <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
             <ListRows>
               <ListRow
                 v-slot="{ column, item }"
@@ -227,37 +242,31 @@
             <IconAlertCircle class="w-4 h-4 text-red-500 flex-shrink-0" /> {{ formError }}
           </p>
 
-          <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Date Picker -->
-            <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-wide block">Timesheet Date *</label>
-              <input 
-                type="date" 
-                v-model="timesheetForm.date" 
-                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs font-bold text-slate-800 transition-all" 
-              />
-            </div>
+            <FormControl 
+              type="date" 
+              label="Timesheet Date *" 
+              v-model="timesheetForm.date" 
+            />
             <!-- Employee Info -->
-            <div class="space-y-1.5">
-              <label class="text-xs font-bold text-slate-500 uppercase tracking-wide block">Employee *</label>
-              <template v-if="employeeInfoResource.data?.is_system_manager">
-                <select 
-                  v-model="timesheetForm.employee" 
-                  class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs font-bold text-slate-800 tracking-wide transition-all cursor-pointer h-[34px]"
-                >
-                  <option value="">Select Employee</option>
-                  <option v-for="emp in employeeOptionsResource.data" :key="emp.value" :value="emp.value">
-                    {{ emp.label }}
-                  </option>
-                </select>
-              </template>
-              <template v-else>
-                <div class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-bold flex items-center gap-2 h-[34px]">
-                  <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <template v-if="employeeInfoResource.data?.is_system_manager">
+              <FormControl 
+                type="select" 
+                label="Employee *" 
+                v-model="timesheetForm.employee" 
+                :options="[{label: 'Select Employee', value: ''}, ...employeeOptionsResource.data]" 
+              />
+            </template>
+            <template v-else>
+              <div class="space-y-1.5">
+                <label class="block text-xs text-slate-600 font-medium">Employee *</label>
+                <div class="px-3 h-[2.25rem] bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium flex items-center gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                   {{ employeeInfoResource.data?.employee_name || 'Loading profile...' }}
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
           </div>
 
           <!-- Dynamic Time Logs Table -->
@@ -269,16 +278,16 @@
               <Button
                 variant="outline"
                 size="sm"
-                class="!text-blue-600 hover:!bg-blue-50 !px-4 !py-1.5 font-bold border-blue-200 hover:border-blue-300 rounded-xl transition-all"
+                class="!text-blue-600 hover:!bg-blue-50 !px-4 !h-8 font-semibold border-blue-200 hover:border-blue-300 rounded-lg transition-all"
                 @click="addRow"
               >
                 <template #prefix><IconPlus class="w-3.5 h-3.5" /></template> Add Task Row
               </Button>
             </div>
 
-            <div class="border border-slate-100 rounded-2xl overflow-hidden shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
+            <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
               <table class="w-full text-left text-xs border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-bold sticky top-0 z-10">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold sticky top-0 z-10">
                   <tr>
                     <th class="px-4 py-3 w-1/3">Task</th>
                     <th class="px-4 py-3 w-1/4">Activity *</th>
@@ -292,7 +301,7 @@
                     <td class="px-2 py-2">
                       <select 
                         v-model="row.task" 
-                        class="w-full px-2 py-1.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-xl outline-none text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-medium text-slate-700 transition-all cursor-pointer"
                       >
                         <option value="">Select Task (Optional)</option>
                         <option v-for="t in taskOptionsResource.data" :key="t.value" :value="t.value">
@@ -303,7 +312,7 @@
                     <td class="px-2 py-2">
                       <select 
                         v-model="row.activity_type" 
-                        class="w-full px-2 py-1.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-xl outline-none text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-medium text-slate-700 transition-all cursor-pointer"
                       >
                         <option value="Execution">Execution</option>
                         <option value="Planning">Planning</option>
@@ -318,19 +327,19 @@
                         type="number" 
                         step="0.5" 
                         min="0.1" 
-                        class="w-full px-2 py-1.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-xl outline-none text-xs font-bold text-slate-800 text-right transition-all" 
+                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-semibold text-slate-800 text-right transition-all" 
                       />
                     </td>
                     <td class="px-2 py-2">
                       <input 
                         v-model="row.description" 
                         placeholder="Provide details..." 
-                        class="w-full px-3 py-1.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-xl outline-none text-xs text-slate-700 transition-all" 
+                        class="w-full h-9 px-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs text-slate-700 transition-all" 
                       />
                     </td>
                     <td class="px-2 py-2 text-right">
                       <button 
-                        class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         @click="removeRow(idx)"
                       >
                         <IconX class="w-3.5 h-3.5" />
@@ -346,9 +355,9 @@
               </table>
             </div>
 
-            <div class="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-2xl border border-blue-100/50 text-xs font-bold">
+            <div class="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/50 text-xs font-bold">
               <span class="text-blue-700 uppercase tracking-wider font-extrabold">Total Logged Hours</span>
-              <span class="text-sm font-black text-blue-800 bg-blue-100/50 px-3.5 py-1 rounded-xl">{{ computedTotalHours }} hrs</span>
+              <span class="text-sm font-black text-blue-800 bg-blue-100/50 px-3.5 py-1 rounded-lg">{{ computedTotalHours }} hrs</span>
             </div>
           </div>
         </div>
@@ -365,9 +374,9 @@
           <!-- Summary Cards Row -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <!-- Date Card -->
-            <div class="bg-blue-50/40 border border-blue-100 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-blue-50/40 border border-blue-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Date</span>
+                <span class="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Date</span>
                 <div class="p-1.5 rounded-lg bg-blue-100/50">
                   <IconCalendar class="w-3.5 h-3.5 text-blue-600" />
                 </div>
@@ -378,9 +387,9 @@
             </div>
 
             <!-- Employee Card -->
-            <div class="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Employee</span>
+                <span class="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider">Employee</span>
                 <div class="p-1.5 rounded-lg bg-indigo-100/50">
                   <IconUser class="w-3.5 h-3.5 text-indigo-600" />
                 </div>
@@ -391,9 +400,9 @@
             </div>
 
             <!-- Total Hours Card -->
-            <div class="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Total hours</span>
+                <span class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Total hours</span>
                 <div class="p-1.5 rounded-lg bg-emerald-100/50">
                   <IconClock class="w-3.5 h-3.5 text-emerald-600" />
                 </div>
@@ -405,9 +414,9 @@
           </div>
 
           <!-- Time Logs Details Table -->
-          <div class="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+          <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
             <table class="w-full text-left text-xs border-collapse">
-              <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-bold">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
                 <tr>
                   <th class="px-4 py-3.5">Task</th>
                   <th class="px-4 py-3.5">Activity</th>

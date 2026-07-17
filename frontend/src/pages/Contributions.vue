@@ -158,7 +158,7 @@
     </div>
 
     <!-- Main List Container (Pull Request ListView) -->
-    <div v-if="activeTab === 'list'" class="flex-1 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 shadow-sm">
+    <div v-if="activeTab === 'list'" class="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 shadow-sm min-h-[420px] md:min-h-0">
       <div v-if="loading && filteredPRs.length === 0" class="flex justify-center p-12 flex-1 items-center">
         <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
       </div>
@@ -191,7 +191,7 @@
           </ListHeaderItem>
         </ListHeader>
         
-        <div class="flex-1 overflow-y-auto custom-scrollbar relative min-h-0 divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+        <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
           <ListRows>
             <ListRow v-for="row in filteredPRs" :key="row.id" v-slot="{ column, item }" :row="row" class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50" @click="openOnGitHub(row.html_url)">
               <ListRowItem :item="item">
