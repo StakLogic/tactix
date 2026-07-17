@@ -20,13 +20,14 @@ def get_users_data():
 		roles_by_user.setdefault(ur.parent, []).append(ur.role)
 		
 	# 3. Fetch employee mappings (departments)
-	employees = frappe.get_all("Employee", fields=["user_id", "department", "name"])
+	employees = frappe.get_all("Employee", fields=["user_id", "department", "name", "gender", "date_of_birth", "date_of_joining", "github_username"])
 	emp_by_user = {e.user_id: e for e in employees if e.user_id}
 	
 	# Assemble user list
 	user_list = []
 	for u in users:
 		uid = u.name
+		emp_info = emp_by_user.get(uid, {})
 		user_list.append({
 			"email": u.email,
 			"first_name": u.first_name,
@@ -34,8 +35,12 @@ def get_users_data():
 			"enabled": u.enabled,
 			"user_image": u.user_image,
 			"roles": roles_by_user.get(uid, []),
-			"department": emp_by_user.get(uid, {}).get("department") or "",
-			"employee_id": emp_by_user.get(uid, {}).get("name") or ""
+			"department": emp_info.get("department") or "",
+			"employee_id": emp_info.get("name") or "",
+			"gender": emp_info.get("gender") or "",
+			"date_of_birth": str(emp_info.get("date_of_birth")) if emp_info.get("date_of_birth") else "",
+			"date_of_joining": str(emp_info.get("date_of_joining")) if emp_info.get("date_of_joining") else "",
+			"github_username": emp_info.get("github_username") or ""
 		})
 		
 	# 4. Fetch all active roles
@@ -66,6 +71,13 @@ def save_user(email, doc_data):
 	department = data.get("department")
 	password = data.get("password")
 	
+	gender = data.get("gender")
+	date_of_birth = data.get("date_of_birth")
+	date_of_joining = data.get("date_of_joining")
+	github_username = data.get("github_username")
+	
+	is_ticket_raiser = "Tactix Ticket Raiser" in roles_list
+	
 	if is_new:
 		target_email = data.get("email")
 		if not target_email:
@@ -79,30 +91,32 @@ def save_user(email, doc_data):
 			"first_name": first_name,
 			"last_name": last_name,
 			"enabled": enabled,
-			"send_welcome_email": 0
+			"send_welcome_email": 0,
+			"roles": [{"role": r} for r in roles_list]
 		})
 		if password:
 			user_doc.new_password = password
 		user_doc.insert()
 		
-		# Create corresponding Employee
-		emp_doc = frappe.get_doc({
-			"doctype": "Employee",
-			"user_id": target_email,
-			"first_name": first_name,
-			"last_name": last_name,
-			"employee_name": f"{first_name} {last_name}".strip(),
-			"company": "SUPER AI",
-			"department": department,
-			"status": "Active"
-		})
-		emp_doc.insert()
-		
-		# Set Roles
-		user_doc.set("roles", [])
-		for r in roles_list:
-			user_doc.append("roles", {"role": r})
-		user_doc.save()
+		# Create corresponding Employee only if not a Ticket Raiser
+		if not is_ticket_raiser:
+			if not gender or not date_of_birth or not date_of_joining:
+				frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
+			emp_doc = frappe.get_doc({
+				"doctype": "Employee",
+				"user_id": target_email,
+				"first_name": first_name,
+				"last_name": last_name,
+				"employee_name": f"{first_name} {last_name}".strip(),
+				"company": "SUPER AI",
+				"department": department,
+				"status": "Active",
+				"gender": gender,
+				"date_of_birth": date_of_birth,
+				"date_of_joining": date_of_joining,
+				"github_username": github_username
+			})
+			emp_doc.insert()
 		
 	else:
 		target_email = email
@@ -121,25 +135,40 @@ def save_user(email, doc_data):
 		
 		# Update corresponding Employee
 		emp_names = frappe.db.get_all("Employee", filters={"user_id": target_email}, pluck="name")
-		if emp_names:
-			emp_doc = frappe.get_doc("Employee", emp_names[0])
-			emp_doc.first_name = first_name
-			emp_doc.last_name = last_name
-			emp_doc.employee_name = f"{first_name} {last_name}".strip()
-			emp_doc.department = department
-			emp_doc.save()
+		if not is_ticket_raiser:
+			if not gender or not date_of_birth or not date_of_joining:
+				frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
+			if emp_names:
+				emp_doc = frappe.get_doc("Employee", emp_names[0])
+				emp_doc.first_name = first_name
+				emp_doc.last_name = last_name
+				emp_doc.employee_name = f"{first_name} {last_name}".strip()
+				emp_doc.department = department
+				emp_doc.gender = gender
+				emp_doc.date_of_birth = date_of_birth
+				emp_doc.date_of_joining = date_of_joining
+				emp_doc.github_username = github_username
+				emp_doc.save()
+			else:
+				emp_doc = frappe.get_doc({
+					"doctype": "Employee",
+					"user_id": target_email,
+					"first_name": first_name,
+					"last_name": last_name,
+					"employee_name": f"{first_name} {last_name}".strip(),
+					"company": "SUPER AI",
+					"department": department,
+					"status": "Active",
+					"gender": gender,
+					"date_of_birth": date_of_birth,
+					"date_of_joining": date_of_joining,
+					"github_username": github_username
+				})
+				emp_doc.insert()
 		else:
-			emp_doc = frappe.get_doc({
-				"doctype": "Employee",
-				"user_id": target_email,
-				"first_name": first_name,
-				"last_name": last_name,
-				"employee_name": f"{first_name} {last_name}".strip(),
-				"company": "SUPER AI",
-				"department": department,
-				"status": "Active"
-			})
-			emp_doc.insert()
+			# If the user has a Ticket Raiser role, delete their Employee document if it exists
+			for emp in emp_names:
+				frappe.delete_doc("Employee", emp)
 			
 	frappe.db.commit()
 	return {"status": "success", "email": target_email}

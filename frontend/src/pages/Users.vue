@@ -85,7 +85,7 @@
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1 max-w-sm">
                   <Badge 
-                    v-for="role in user.roles.slice(0, 3)" 
+                    v-for="role in mapDbToUiRoles(user.roles || []).slice(0, 3)" 
                     :key="role"
                     theme="blue" 
                     variant="subtle" 
@@ -93,8 +93,8 @@
                   >
                     {{ role }}
                   </Badge>
-                  <span v-if="user.roles.length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
-                    +{{ user.roles.length - 3 }} more
+                  <span v-if="mapDbToUiRoles(user.roles || []).length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
+                    +{{ mapDbToUiRoles(user.roles || []).length - 3 }} more
                   </span>
                 </div>
               </td>
@@ -139,6 +139,27 @@
           <!-- Team / Department Selection -->
           <FormControl type="select" label="Team / Department" v-model="modal.form.department" :options="departmentOptions" />
 
+          <!-- Employee Details (Hidden if Ticket Raiser) -->
+          <div v-if="!modal.form.roles.includes('Ticker Raiser')" class="space-y-4 pt-2 border-t border-slate-100 text-left">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormControl 
+                type="select" 
+                label="Gender *" 
+                v-model="modal.form.gender" 
+                :options="[
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' },
+                  { label: 'Other', value: 'Other' }
+                ]" 
+              />
+              <FormControl type="text" label="GitHub Username" v-model="modal.form.github_username" placeholder="GitHub username" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormControl type="date" label="Date of Birth *" v-model="modal.form.date_of_birth" />
+              <FormControl type="date" label="Date of Joining *" v-model="modal.form.date_of_joining" />
+            </div>
+          </div>
+
           <!-- Enabled switch -->
           <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
             <div>
@@ -153,22 +174,34 @@
           </div>
 
           <!-- Roles Selection Checklist -->
-          <div class="space-y-2">
+          <div class="space-y-2 text-left">
             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Security Roles & Permissions</label>
-            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50 max-h-[160px] overflow-y-auto space-y-2 custom-scrollbar">
-              <label 
-                v-for="role in roles" 
-                :key="role" 
-                class="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-800 cursor-pointer"
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="role in displayRoles"
+                :key="role"
+                type="button"
+                @click="toggleRole(role)"
+                :class="[
+                  'flex items-center justify-between p-3 rounded-xl border text-xs font-semibold transition-all duration-200 text-left',
+                  modal.form.roles.includes(role)
+                    ? 'border-blue-500 bg-blue-50/50 text-blue-700 shadow-sm'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+                ]"
               >
-                <input 
-                  type="checkbox" 
-                  v-model="modal.form.roles" 
-                  :value="role"
-                  class="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span class="font-medium">{{ role }}</span>
-              </label>
+                <span>{{ role }}</span>
+                <span 
+                  v-if="modal.form.roles.includes(role)" 
+                  class="w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px]"
+                >
+                  ✓
+                </span>
+                <span 
+                  v-else 
+                  class="w-4 h-4 border border-slate-300 rounded-full flex items-center justify-center text-[10px]"
+                >
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -202,6 +235,45 @@ const loading = ref(false)
 const users = ref([])
 const roles = ref([])
 const departments = ref([])
+
+const displayRoles = [
+	"Employee (Developer)",
+	"System Manager",
+	"Code Reviewer",
+	"Support Team",
+	"Ticker Raiser"
+]
+
+function mapDbToUiRoles(dbRoles) {
+	const mapped = []
+	if (!dbRoles) return mapped
+	if (dbRoles.includes("Employee")) mapped.push("Employee (Developer)")
+	if (dbRoles.includes("System Manager")) mapped.push("System Manager")
+	if (dbRoles.includes("Code Reviewer")) mapped.push("Code Reviewer")
+	if (dbRoles.includes("Support Team")) mapped.push("Support Team")
+	if (dbRoles.includes("Tactix Ticket Raiser")) mapped.push("Ticker Raiser")
+	return mapped
+}
+
+function mapUiToDbRoles(uiRoles) {
+	const mapped = []
+	if (!uiRoles) return mapped
+	if (uiRoles.includes("Employee (Developer)")) mapped.push("Employee")
+	if (uiRoles.includes("System Manager")) mapped.push("System Manager")
+	if (uiRoles.includes("Code Reviewer")) mapped.push("Code Reviewer")
+	if (uiRoles.includes("Support Team")) mapped.push("Support Team")
+	if (uiRoles.includes("Ticker Raiser")) mapped.push("Tactix Ticket Raiser")
+	return mapped
+}
+
+function toggleRole(role) {
+	const idx = modal.form.roles.indexOf(role)
+	if (idx > -1) {
+		modal.form.roles.splice(idx, 1)
+	} else {
+		modal.form.roles.push(role)
+	}
+}
 
 const departmentOptions = computed(() => [
 	{ label: "No Department (Unassigned)", value: "" },
@@ -270,6 +342,10 @@ const modal = reactive({
 		department: "",
 		enabled: 1,
 		roles: [],
+		gender: "",
+		date_of_birth: "",
+		date_of_joining: "",
+		github_username: "",
 	},
 })
 
@@ -283,7 +359,11 @@ function openCreateModal() {
 		password: "",
 		department: "",
 		enabled: 1,
-		roles: ["Employee"], // Default role setup
+		roles: ["Employee (Developer)"], // Default role setup
+		gender: "",
+		date_of_birth: "",
+		date_of_joining: "",
+		github_username: "",
 	}
 }
 
@@ -297,7 +377,11 @@ function openEditModal(user) {
 		password: "",
 		department: user.department || "",
 		enabled: user.enabled === 1 || user.enabled === true ? 1 : 0,
-		roles: [...(user.roles || [])],
+		roles: mapDbToUiRoles(user.roles || []),
+		gender: user.gender || "",
+		date_of_birth: user.date_of_birth || "",
+		date_of_joining: user.date_of_joining || "",
+		github_username: user.github_username || "",
 	}
 }
 
@@ -311,6 +395,19 @@ async function saveUserRecord() {
 		return
 	}
 
+	const isTicketRaiser = modal.form.roles.includes("Ticker Raiser")
+	if (!isTicketRaiser) {
+		if (!modal.form.gender || !modal.form.date_of_birth || !modal.form.date_of_joining) {
+			alert("Gender, Date of Birth, and Date of Joining are mandatory fields.")
+			return
+		}
+	}
+
+	const payload = {
+		...modal.form,
+		roles: mapUiToDbRoles(modal.form.roles || []),
+	}
+
 	modal.saving = true
 	try {
 		const res = await fetch("/api/method/tactix.api.users.save_user", {
@@ -318,7 +415,7 @@ async function saveUserRecord() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				email: modal.isEdit ? modal.form.email : null,
-				doc_data: JSON.stringify(modal.form),
+				doc_data: JSON.stringify(payload),
 			}),
 		})
 		const data = await res.json()
