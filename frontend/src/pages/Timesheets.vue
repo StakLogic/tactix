@@ -136,7 +136,7 @@
 
     <!-- Timesheets List Table -->
     <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
+      <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
@@ -235,7 +235,7 @@
     </div>
 
     <!-- Create Timesheet Dialog -->
-    <Dialog v-model="showCreateDialog" :options="dialogOptions">
+    <Dialog v-model="showCreateDialog" :disable-outside-click-to-close="true" :options="dialogOptions">
       <template #body-content>
         <div class="space-y-6 py-2">
           <p v-if="formError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 shadow-sm font-semibold flex items-center gap-2">
@@ -365,7 +365,7 @@
     </Dialog>
 
     <!-- View Timesheet Details Dialog -->
-    <Dialog v-model="showViewDialog" :options="viewDialogOptions">
+    <Dialog v-model="showViewDialog" :disable-outside-click-to-close="true" :options="viewDialogOptions">
       <template #body-content>
         <div class="space-y-6 py-2" v-if="selectedTimesheet">
           <p v-if="viewError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 shadow-sm font-semibold flex items-center gap-2">

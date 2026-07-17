@@ -488,6 +488,7 @@
 	</div>
 
 	<Dialog v-model="showBulkDeleteDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Delete Selected Tasks', 
 		size: 'sm',
@@ -504,6 +505,7 @@
 	</Dialog>
 
 	<Dialog v-model="showErrorDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: errorDialogTitle, 
 		size: 'sm',
@@ -519,6 +521,7 @@
 	</Dialog>
 
 	<Dialog v-model="showCreateDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: isEditMode ? 'Edit Task' : 'Create Task', 
 		size: '4xl',

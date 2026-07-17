@@ -362,6 +362,7 @@
 	</div>
 
 	<Dialog v-model="showBulkDeleteDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Delete Selected Tickets', 
 		size: 'sm',
@@ -378,6 +379,7 @@
 	</Dialog>
 
 	<Dialog v-model="showErrorDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Cannot Delete', 
 		size: 'sm',
@@ -392,7 +394,7 @@
 	  </template>
 	</Dialog>
 
-	<Dialog v-model="showCreateDialog" :options="dialogOptions">
+	<Dialog v-model="showCreateDialog" :disable-outside-click-to-close="true" :options="dialogOptions">
 	  <template #body-content>
 		<div class="space-y-6 py-2">
 		  <p v-if="ticketFormError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -664,6 +666,7 @@
 	</Transition>
 
 	<Dialog v-model="showCreateTaskDialog" 
+		:disable-outside-click-to-close="true"
 		:options="{ 
 		title: 'Create Task', 
 		size: '4xl',
