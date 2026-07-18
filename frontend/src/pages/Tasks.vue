@@ -1542,6 +1542,15 @@ const isEditMode = ref(false)
 const showEditTask = ref(false)
 const editPanelReady = ref(false)
 const searchQuery = ref("")
+const debouncedSearchQuery = ref("")
+
+let searchTimeout = null
+watch(searchQuery, (val) => {
+	clearTimeout(searchTimeout)
+	searchTimeout = setTimeout(() => {
+		debouncedSearchQuery.value = val
+	}, 350)
+})
 const saving = ref(false)
 const commentText = ref("")
 const editingCommentName = ref(null)
@@ -1771,7 +1780,7 @@ const departmentResource = createListResource({
 const taskFilters = computed(() => {
 	const f = {}
 
-	if (searchQuery.value) f.subject = ["like", `%${searchQuery.value}%`]
+	if (debouncedSearchQuery.value) f.subject = ["like", `%${debouncedSearchQuery.value}%`]
 	if (selectedFilters.project) f.project = selectedFilters.project
 	if (selectedFilters.status) f.status = selectedFilters.status
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
@@ -1885,12 +1894,13 @@ const taskFilters = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-	if (searchQuery.value) return true
+	if (debouncedSearchQuery.value) return true
 	return Object.values(selectedFilters).some((value) => value !== "")
 })
 
 function clearFilters() {
 	searchQuery.value = ""
+	debouncedSearchQuery.value = ""
 	selectedFilters.project = ""
 	selectedFilters.department = ""
 	selectedFilters.status = ""

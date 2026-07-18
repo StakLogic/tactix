@@ -867,6 +867,15 @@ const showEditTicket = ref(false)
 const isEditMode = ref(false)
 const editPanelReady = ref(false)
 const searchQuery = ref("")
+const debouncedSearchQuery = ref("")
+
+let searchTimeout = null
+watch(searchQuery, (val) => {
+	clearTimeout(searchTimeout)
+	searchTimeout = setTimeout(() => {
+		debouncedSearchQuery.value = val
+	}, 350)
+})
 const saving = ref(false)
 const taskSaving = ref(false)
 const activeSidebarTab = ref(0)
@@ -1000,7 +1009,7 @@ const selectedFilters = reactive({
 /* RESOURCES */
 const ticketFilters = computed(() => {
 	const f = {}
-	if (searchQuery.value) f.subject = ["like", `%${searchQuery.value}%`]
+	if (debouncedSearchQuery.value) f.subject = ["like", `%${debouncedSearchQuery.value}%`]
 	if (selectedFilters.status) f.status = selectedFilters.status
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
 	if (selectedFilters.customer) f.customer = selectedFilters.customer
@@ -1580,12 +1589,13 @@ const columns = [
 ]
 
 const hasActiveFilters = computed(() => {
-	if (searchQuery.value) return true
+	if (debouncedSearchQuery.value) return true
 	return Object.values(selectedFilters).some((value) => value !== "")
 })
 
 const resetFilters = () => {
 	searchQuery.value = ""
+	debouncedSearchQuery.value = ""
 	selectedFilters.status = ""
 	selectedFilters.priority = ""
 	selectedFilters.raised_by = ""
