@@ -84,7 +84,8 @@
    "in_global_search": 1,
    "in_standard_filter": 1,
    "label": "Subject",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "bold": 1,
@@ -114,7 +115,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Priority",
-   "options": "Low\nMedium\nHigh\nUrgent"
+   "options": "Low\nMedium\nHigh\nUrgent",
+   "search_index": 1
   },
   {
    "fieldname": "cb00",
@@ -358,7 +360,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Customer",
-   "options": "Tactix Customer"
+   "options": "Tactix Customer",
+   "search_index": 1
   },
   {
    "fieldname": "email_account",
@@ -453,13 +456,15 @@
    "fieldname": "department",
    "fieldtype": "Link",
    "label": "Department",
-   "options": "Tactix Department"
+   "options": "Tactix Department",
+   "search_index": 1
   },
   {
    "fieldname": "raised_by_user",
    "fieldtype": "Link",
    "label": "Raised by User",
-   "options": "User"
+   "options": "User",
+   "search_index": 1
   },
   {
    "fieldname": "attachments_section",

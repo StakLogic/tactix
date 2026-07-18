@@ -109,6 +109,10 @@
 		z-index: 10;
 		background: white !important;
 	}
+	.dark [role="dialog"] header,
+	.dark [role="dialog"] [class*="dialog-header"] {
+		background: #1e293b !important;
+	}
 
 	[role="dialog"] footer,
 	[role="dialog"] [class*="dialog-footer"],
@@ -119,6 +123,12 @@
 		background: white !important;
 		padding: 8px !important;
 		border-top: 1px solid #e2e8f0;
+	}
+	.dark [role="dialog"] footer,
+	.dark [role="dialog"] [class*="dialog-footer"],
+	.dark [role="dialog"] [class*="actions"] {
+		background: #1e293b !important;
+		border-top: 1px solid #334155 !important;
 	}
 }
 

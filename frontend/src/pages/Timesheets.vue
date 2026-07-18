@@ -126,7 +126,7 @@
 
         <Button
           variant="solid"
-          class="!text-xs !px-5 !h-9 !shadow-md transition-all bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          class="!text-xs !px-5 !h-9 !shadow-md transition-all !bg-blue-600 hover:!bg-blue-700 !text-white font-bold"
           @click="openCreateDialog"
         >
           <template #prefix><IconPlus class="w-4 h-4" /></template> New Timesheet

@@ -21,6 +21,29 @@ def _normalize_task_filters(filters):
 		filters["name"] = ["in", assigned_tasks]
 		filters.pop("assigned_to")
 
+	if filters.get("subject") and isinstance(filters["subject"], list) and len(filters["subject"]) == 2 and filters["subject"][0] == "like":
+		query = filters["subject"][1]
+		# Find tasks matching subject OR description using get_all (ignoring permissions here since main get_list applies permissions)
+		matching_tasks = frappe.get_all("Task",
+			filters=[],
+			or_filters=[
+				["subject", "like", query],
+				["description", "like", query]
+			],
+			pluck="name"
+		) or [""]
+
+		if "name" in filters:
+			existing_names = filters["name"][1]
+			if not isinstance(existing_names, list):
+				existing_names = [existing_names]
+			intersected_names = list(set(existing_names) & set(matching_tasks)) or [""]
+			filters["name"] = ["in", intersected_names]
+		else:
+			filters["name"] = ["in", matching_tasks]
+
+		filters.pop("subject")
+
 	if filters.get("status") and filters.get("status") == "Overdue":
 		filters["is_overdue"] = True
 		filters.pop("status")
