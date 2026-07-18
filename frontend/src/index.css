@@ -39,6 +39,15 @@
 	--primary-color-shadow-light: rgba(59, 130, 246, 0.2);
 	background-color: #0f172a !important;
 	color: #f8fafc !important;
+
+	/* Frappe UI custom variables overrides for Dark Mode */
+	--surface-white: #1e293b;
+	--ink-gray-8: #f8fafc;
+	--outline-gray-2: #334155;
+	--surface-gray-2: #334155;
+	--surface-gray-3: #475569;
+	--surface-gray-4: #475569;
+	--outline-gray-3: #475569;
 }
 
 /* General Layout backgrounds */
@@ -168,11 +177,17 @@
 }
 
 /* Buttons */
-.dark button.bg-slate-900 {
+.dark button.bg-slate-900,
+.dark button.\!bg-slate-900,
+.dark button.bg-slate-800,
+.dark button.\!bg-slate-800 {
 	background-color: #3b82f6 !important;
 	color: #ffffff !important;
 }
-.dark button.bg-slate-900:hover {
+.dark button.bg-slate-900:hover,
+.dark button.\!bg-slate-900:hover,
+.dark button.bg-slate-800:hover,
+.dark button.\!bg-slate-800:hover {
 	background-color: #2563eb !important;
 }
 .dark .hover\:bg-slate-50:hover {

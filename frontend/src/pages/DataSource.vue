@@ -81,7 +81,7 @@
               <div class="flex flex-wrap items-center gap-2 pt-2">
                 <Button 
                   variant="solid" 
-                  class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center"
+                  class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
                   :loading="saving"
                   @click="saveGithubConfig"
                 >
@@ -139,7 +139,7 @@
           <Button 
             v-if="isAdmin"
             variant="solid" 
-            class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center"
+            class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
             @click="openCreateModal"
           >
             <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>

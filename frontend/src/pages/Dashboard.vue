@@ -10,7 +10,7 @@
 					<template #prefix><IconRefresh class="w-4 h-4" /></template>
 					Refresh
 				</Button>
-				<Button variant="solid" @click="$router.push('/tasks')">Manage Tasks</Button>
+				<Button variant="solid" class="!bg-slate-800 hover:!bg-slate-900 !text-white transition-all" @click="$router.push('/tasks')">Manage Tasks</Button>
 			</div>
 		</div>
 

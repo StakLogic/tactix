@@ -1,0 +1,2 @@
+import{m as c,o as l,c as r,a as o}from"./index-DVmgRmeJ.js";const t={class:"lucide lucide-clock",xmlns:"http://www.w3.org/2000/svg",width:"24",height:"24",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.5","stroke-linecap":"round","stroke-linejoin":"round"};function n(s,e){return l(),r("svg",t,[...e[0]||(e[0]=[o("path",{d:"M12 6v6l4 2"},null,-1),o("circle",{cx:"12",cy:"12",r:"10"},null,-1)])])}const a=c({name:"lucide-clock",render:n});export{a as I};
+//# sourceMappingURL=clock-CQ_8v_vH.js.map

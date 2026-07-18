@@ -462,6 +462,9 @@
 		z-index: 10;
 		background: white !important;
 	}
+	.dark .fixed.inset-0.flex.justify-end.z-50 header.p-2.md\:p-4 {
+		background: #1e293b !important;
+	}
 
 	.fixed.inset-0.flex.justify-end.z-50 header .flex.gap-2.shrink-0 {
 		flex-wrap: wrap !important;

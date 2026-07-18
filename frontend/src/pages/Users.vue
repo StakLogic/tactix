@@ -29,7 +29,7 @@
       </div>
       <Button 
         variant="solid" 
-        class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1"
+        class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
         @click="openCreateModal"
       >
         <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
