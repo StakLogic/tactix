@@ -76,6 +76,12 @@ const routes = [
 				name: "Drive",
 				component: () => import("@/pages/Drive.vue"),
 			},
+
+			{
+				path: "settings",
+				name: "Settings",
+				component: () => import("@/pages/Settings.vue"),
+			},
 		],
 	},
 ]

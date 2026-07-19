@@ -136,7 +136,7 @@
 
     <!-- Timesheets List Table -->
     <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
+      <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
@@ -167,7 +167,7 @@
               >
                 <ListRowItem :item="item">
                   <template v-if="column.key === 'name'">
-                    <span class="font-bold text-blue-600">#{{ row.name }}</span>
+                    <span class="font-bold text-blue-600 font-medium">#{{ row.name }}</span>
                   </template>
 
                   <template v-if="column.key === 'start_date'">

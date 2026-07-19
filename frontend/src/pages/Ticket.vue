@@ -47,7 +47,8 @@
 
 		  <!-- Actions Dropdown / New Ticket Button -->
 		  <Dropdown
-			v-if="selectedTickets.size > 0"
+			v-slot="{ open }"
+			v-if="isAdmin && selectedTickets.size > 0"
 			:options="actionsOptions"
 		  >
 			<Button
@@ -157,13 +158,13 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-2 flex flex-col min-h-0">
-	  <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
+	  <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
 		  <ListView
 		  class="h-full flex flex-col min-h-0"
 		  :columns="columns"
 		  :rows="tickets.data?.tickets || []" 
 		  :options="{ 
-			  selectable: true, 
+			  selectable: isAdmin, 
 			  showTooltip: true, 
 			  resizeColumn: true, 
 			  onRowClick: (row) => openEditDialog(row) 
@@ -448,7 +449,7 @@
 		<div v-if="showEditTicket" class="fixed inset-0 flex justify-end z-50">
 			<div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="showEditTicket=false"></div>
 			
-			<div class="relative w-full md:max-w-4xl lg:max-w-5xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
+			<div class="relative w-full md:max-w-8xl lg:max-w-8xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
 				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30 min-h-0">
 					<div class="flex items-center gap-3 text-slate-500">
 						<div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -569,7 +570,7 @@
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
-									<FormControl label="Status" type="select" :options="['Open','Replied','Resolved','Closed']" v-model="ticketForm.status" class="!mb-0 shadow-sm" />
+									<FormControl label="Status" type="select" :options="ticketStatusOptions" v-model="ticketForm.status" class="!mb-0 shadow-sm" />
 									<FormControl label="Priority" type="select" :options="['Low','Medium','High','Urgent']" v-model="ticketForm.priority" class="!mb-0 shadow-sm" />
 								</div>
 
@@ -965,6 +966,14 @@ const isCreator = computed(() => {
 
 const isFieldDisabled = computed(() => {
 	return isEmployeeOnly.value && !isCreator.value
+})
+
+const ticketStatusOptions = computed(() => {
+	const base = ['Open', 'Replied', 'Resolved', 'Closed']
+	if (session.isTicketRaiser && localStorage.getItem("tactix_allow_ticket_raiser_to_close_tickets") === "0") {
+		return ['Open', 'Replied', 'Resolved']
+	}
+	return base
 })
 
 const isTaskCreatorOrOwner = computed(() => {
@@ -1403,7 +1412,7 @@ const emptyTicket = () => ({
 	raised_by: session.user,
 	raised_by_user: "",
 	status: "Open",
-	priority: "Medium",
+	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 	ticket_type: "Support",
 	department: isTicketRaiser && tactixDepartment ? tactixDepartment : "",
 	agent_group: "",
@@ -1424,7 +1433,7 @@ const initialForm = {
 	name: "",
 	subject: "",
 	project: "",
-	priority: "Medium",
+	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 	status: "Open",
 	ticket: "",
 	exp_end_date: "",

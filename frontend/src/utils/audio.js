@@ -2,6 +2,12 @@ let lastPlayTime = 0
 const COOLDOWN_MS = 1000
 
 export function playNotificationSound() {
+	if (localStorage.getItem("tactix_personal_enable_sound") === "false") {
+		return
+	}
+	if (localStorage.getItem("tactix_global_enable_sound") === "false") {
+		return
+	}
 	const nowTime = Date.now()
 	if (nowTime - lastPlayTime < COOLDOWN_MS) {
 		return // Suppress double-chime triggers in rapid succession
@@ -60,6 +66,12 @@ export function playNotificationSound() {
 }
 
 export function playPRNotificationSound() {
+	if (localStorage.getItem("tactix_personal_enable_sound") === "false") {
+		return
+	}
+	if (localStorage.getItem("tactix_global_enable_sound") === "false") {
+		return
+	}
 	const nowTime = Date.now()
 	if (nowTime - lastPlayTime < COOLDOWN_MS) {
 		return // Suppress double-chime triggers in rapid succession
@@ -130,6 +142,12 @@ export function playPRNotificationSound() {
 }
 
 export function playSynthesizerArpeggio() {
+	if (localStorage.getItem("tactix_personal_enable_sound") === "false") {
+		return
+	}
+	if (localStorage.getItem("tactix_global_enable_sound") === "false") {
+		return
+	}
 	const nowTime = Date.now()
 	if (nowTime - lastPlayTime < COOLDOWN_MS) {
 		return
