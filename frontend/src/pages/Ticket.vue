@@ -449,7 +449,7 @@
 		<div v-if="showEditTicket" class="fixed inset-0 flex justify-end z-50">
 			<div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="showEditTicket=false"></div>
 			
-			<div class="relative w-full md:max-w-4xl lg:max-w-5xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
+			<div class="relative w-full md:max-w-8xl lg:max-w-8xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
 				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30 min-h-0">
 					<div class="flex items-center gap-3 text-slate-500">
 						<div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
