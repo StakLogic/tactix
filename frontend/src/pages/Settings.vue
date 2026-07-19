@@ -49,18 +49,28 @@
             <div class="border-t border-slate-100 pt-6 space-y-4">
               <!-- Sound Toggle -->
               <div class="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                <div class="space-y-1">
+                <div class="space-y-1 pr-4">
                   <label class="text-xs font-bold text-slate-700 block">Real-Time Sound Alerts</label>
                   <span class="text-[10px] text-slate-400 font-semibold block leading-normal max-w-md">
                     Play a notification chime when new tickets are raised or tasks are assigned to you.
                   </span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  v-model="personalSettings.enableSound"
-                  @change="savePersonalSettings"
-                  class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
+                <!-- Custom Toggle Switch -->
+                <button
+                  type="button"
+                  :class="[
+                    personalSettings.enableSound ? 'bg-blue-600' : 'bg-slate-200',
+                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none'
+                  ]"
+                  @click="personalSettings.enableSound = !personalSettings.enableSound; savePersonalSettings()"
+                >
+                  <span
+                    :class="[
+                      personalSettings.enableSound ? 'translate-x-4' : 'translate-x-0',
+                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                    ]"
+                  />
+                </button>
               </div>
 
               <!-- Test Sound Button -->
@@ -112,54 +122,86 @@
 
             <div class="border-t border-slate-100 pt-6 space-y-5">
               <!-- Workspace branding -->
-              <FormControl 
-                label="Workspace/Company Name" 
-                type="text" 
-                v-model="systemSettings.company_name" 
-                :disabled="!isAdmin"
-                class="shadow-sm" 
-              />
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Workspace/Company Name</label>
+                <input 
+                  type="text" 
+                  v-model="systemSettings.company_name" 
+                  :disabled="!isAdmin"
+                  placeholder="e.g. Tactix"
+                  class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                />
+              </div>
 
               <!-- Default priority -->
-              <FormControl 
-                label="Default Ticket Priority" 
-                type="select" 
-                :options="['Low','Medium','High','Urgent']" 
-                v-model="systemSettings.default_ticket_priority" 
-                :disabled="!isAdmin"
-                class="shadow-sm" 
-              />
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Default Ticket Priority</label>
+                <select 
+                  v-model="systemSettings.default_ticket_priority" 
+                  :disabled="!isAdmin"
+                  class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
 
               <!-- Global notification sound switch -->
               <div class="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                <div class="space-y-1">
+                <div class="space-y-1 pr-4">
                   <label class="text-xs font-bold text-slate-700 block">System-Wide Notification Chimes</label>
                   <span class="text-[10px] text-slate-400 font-semibold block leading-normal max-w-md">
                     Allow audio alerts for all system events. Disabling this turns off chimes system-wide.
                   </span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  v-model="systemSettings.enable_real_time_notification_sound"
+                <!-- Custom Toggle Switch -->
+                <button
+                  type="button"
                   :disabled="!isAdmin"
-                  class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
+                  :class="[
+                    systemSettings.enable_real_time_notification_sound ? 'bg-blue-600' : 'bg-slate-200',
+                    !isAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none'
+                  ]"
+                  @click="isAdmin && (systemSettings.enable_real_time_notification_sound = !systemSettings.enable_real_time_notification_sound)"
+                >
+                  <span
+                    :class="[
+                      systemSettings.enable_real_time_notification_sound ? 'translate-x-4' : 'translate-x-0',
+                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                    ]"
+                  />
+                </button>
               </div>
 
               <!-- Ticket closure permission -->
               <div class="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                <div class="space-y-1">
+                <div class="space-y-1 pr-4">
                   <label class="text-xs font-bold text-slate-700 block">Allow Ticket Raisers to Close Tickets</label>
                   <span class="text-[10px] text-slate-400 font-semibold block leading-normal max-w-md">
                     Allow customers/raisers to mark their tickets as closed directly. If disabled, only support employees and managers can close tickets.
                   </span>
                 </div>
-                <input 
-                  type="checkbox" 
-                  v-model="systemSettings.allow_ticket_raiser_to_close_tickets"
+                <!-- Custom Toggle Switch -->
+                <button
+                  type="button"
                   :disabled="!isAdmin"
-                  class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
+                  :class="[
+                    systemSettings.allow_ticket_raiser_to_close_tickets ? 'bg-blue-600' : 'bg-slate-200',
+                    !isAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none'
+                  ]"
+                  @click="isAdmin && (systemSettings.allow_ticket_raiser_to_close_tickets = !systemSettings.allow_ticket_raiser_to_close_tickets)"
+                >
+                  <span
+                    :class="[
+                      systemSettings.allow_ticket_raiser_to_close_tickets ? 'translate-x-4' : 'translate-x-0',
+                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                    ]"
+                  />
+                </button>
               </div>
             </div>
           </div>
@@ -178,7 +220,7 @@
 
             <Button 
               variant="solid" 
-              class="w-full sm:w-auto !text-xs font-bold uppercase tracking-wider" 
+              class="w-full sm:w-auto !h-8 !px-3 font-semibold text-xs justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all" 
               :loading="saving"
               @click="saveSystemSettings"
             >
@@ -196,7 +238,6 @@
 import {
   Button,
   Card,
-  FormControl,
   createResource,
 } from "frappe-ui"
 import { computed, reactive, ref, onMounted } from "vue"
