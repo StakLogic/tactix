@@ -58,7 +58,8 @@
 
 		  <!-- Actions Dropdown / New Task Button -->
 		  <Dropdown
-			v-if="selectedTasks.size > 0"
+			v-slot="{ open }"
+			v-if="isAdmin && selectedTasks.size > 0"
 			:options="actionsOptions"
 		  >
 			<Button
@@ -251,7 +252,7 @@
 			class="h-full flex flex-col min-h-0"
 			:columns="columns"
 			:rows="filteredTasksData || []" 
-			:options="{ selectable: true, showTooltip: true, resizeColumn: true, onRowClick: (row) => openEditDialog(row), }"
+			:options="{ selectable: isAdmin, showTooltip: true, resizeColumn: true, onRowClick: (row) => openEditDialog(row), }"
 			row-key="name"
 			v-model:selections="selectedTasks"
 		  >
@@ -1616,6 +1617,8 @@ const isEmployeeOnly = computed(() => {
 	const userRoles = session.roles || []
 	return userRoles.includes("Employee") && !session.isAdmin
 })
+
+const isAdmin = computed(() => session.isAdmin)
 
 const isCreator = computed(() => {
 	if (!isEditMode.value) return true

@@ -167,7 +167,7 @@
               >
                 <ListRowItem :item="item">
                   <template v-if="column.key === 'name'">
-                    <span class="font-bold text-blue-600">#{{ row.name }}</span>
+                    <span class="font-bold text-blue-600 font-medium">#{{ row.name }}</span>
                   </template>
 
                   <template v-if="column.key === 'start_date'">

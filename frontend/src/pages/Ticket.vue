@@ -47,7 +47,8 @@
 
 		  <!-- Actions Dropdown / New Ticket Button -->
 		  <Dropdown
-			v-if="selectedTickets.size > 0"
+			v-slot="{ open }"
+			v-if="isAdmin && selectedTickets.size > 0"
 			:options="actionsOptions"
 		  >
 			<Button
@@ -163,7 +164,7 @@
 		  :columns="columns"
 		  :rows="tickets.data?.tickets || []" 
 		  :options="{ 
-			  selectable: true, 
+			  selectable: isAdmin, 
 			  showTooltip: true, 
 			  resizeColumn: true, 
 			  onRowClick: (row) => openEditDialog(row) 
