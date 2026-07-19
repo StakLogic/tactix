@@ -5,6 +5,7 @@ def after_migrate():
 	create_tactix_roles()
 	create_custom_fields(get_custom_fields(), ignore_validate=True)
 	setup_role_permissions()
+	create_default_tactix_settings()
 
 
 def setup_role_permissions():
@@ -12,7 +13,7 @@ def setup_role_permissions():
 	for doctype in [
 		"Task", "Project", "Tactix Ticket", "Tactix Customer", "Tactix Department",
 		"Task Assigned To", "Tactix Ticket Attachment", "Github Settings",
-		"Tactix Pull Request"
+		"Tactix Pull Request", "Tactix Settings"
 	]:
 		grant_custom_permission(doctype, "System Manager", {
 			"read": 1, "write": 1, "create": 1, "delete": 1,
@@ -51,6 +52,11 @@ def setup_role_permissions():
 		"report": 1, "if_owner": 0
 	})
 
+	grant_custom_permission("Tactix Settings", "Employee", {
+		"read": 1, "write": 0, "create": 0, "delete": 0,
+		"share": 1, "export": 0, "print": 1, "email": 1,
+		"report": 1, "if_owner": 0
+	})
 
 	# Ticket User
 	grant_custom_permission("Tactix Ticket", "Tactix Ticket Raiser", {
@@ -63,6 +69,10 @@ def setup_role_permissions():
 
 	grant_custom_permission("Tactix Department", "Tactix Ticket Raiser", {
 		"read": 1, "write": 1, "create": 1,
+	})
+
+	grant_custom_permission("Tactix Settings", "Tactix Ticket Raiser", {
+		"read": 1, "write": 0, "create": 0, "delete": 0,
 	})
 
 
@@ -196,3 +206,20 @@ def get_custom_fields():
 			}
 		]
 	}
+
+
+def create_default_tactix_settings():
+	if not frappe.db.exists("DocType", "Tactix Settings"):
+		return
+	if not frappe.db.exists("Tactix Settings", "Tactix Settings"):
+		try:
+			doc = frappe.get_doc({
+				"doctype": "Tactix Settings",
+				"enable_real_time_notification_sound": 1,
+				"allow_ticket_raiser_to_close_tickets": 1,
+				"default_ticket_priority": "Medium",
+				"company_name": "Tactix"
+			})
+			doc.insert(ignore_permissions=True)
+		except Exception:
+			pass

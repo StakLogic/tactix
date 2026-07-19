@@ -653,6 +653,20 @@ const notificationLogResource = createResource({
 	},
 })
 
+const tactixSettingsResource = createResource({
+	url: "tactix.api.generic.get_tactix_settings",
+	auto: true,
+	onSuccess(data) {
+		if (data) {
+			localStorage.setItem("tactix_global_enable_sound", data.enable_real_time_notification_sound ? "true" : "false")
+			localStorage.setItem("tactix_allow_ticket_raiser_to_close_tickets", data.allow_ticket_raiser_to_close_tickets ? "1" : "0")
+			localStorage.setItem("tactix_default_ticket_priority", data.default_ticket_priority || "Medium")
+			localStorage.setItem("tactix_company_name", data.company_name || "Tactix")
+			document.title = data.company_name || "Tactix"
+		}
+	}
+})
+
 const markAsReadResource = createResource({
 	url: "frappe.desk.doctype.notification_log.notification_log.mark_as_read",
 	auto: false,

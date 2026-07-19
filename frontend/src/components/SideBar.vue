@@ -81,6 +81,13 @@ const crmSidebar = computed(() => {
 				onClick: () => navigateTo("/tickets"),
 				isActive: route.path === "/tickets",
 			},
+			{
+				label: "Settings",
+				icon: Settings,
+				to: "/settings",
+				onClick: () => navigateTo("/settings"),
+				isActive: route.path === "/settings",
+			},
 		]
 	} else if (isEmployee || isAdmin) {
 		// TIER 2: Standard Employee / Admin items

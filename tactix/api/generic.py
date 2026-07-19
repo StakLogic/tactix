@@ -111,3 +111,43 @@ def create_notification_log(for_user, subject, document_type, document_name, fro
 	
 	# Trigger standard socket notification for real-time sound/alert reload
 	frappe.publish_realtime("notification", user=for_user)
+
+
+@frappe.whitelist()
+def get_tactix_settings():
+	# If settings doctype doesn't exist yet, return defaults
+	if not frappe.db.exists("DocType", "Tactix Settings"):
+		return {
+			"enable_real_time_notification_sound": 1,
+			"allow_ticket_raiser_to_close_tickets": 1,
+			"default_ticket_priority": "Medium",
+			"company_name": "Tactix"
+		}
+	doc = frappe.get_doc("Tactix Settings")
+	return {
+		"enable_real_time_notification_sound": doc.enable_real_time_notification_sound,
+		"allow_ticket_raiser_to_close_tickets": doc.allow_ticket_raiser_to_close_tickets,
+		"default_ticket_priority": doc.default_ticket_priority or "Medium",
+		"company_name": doc.company_name or "Tactix"
+	}
+
+
+@frappe.whitelist()
+def save_tactix_settings(enable_real_time_notification_sound=None, allow_ticket_raiser_to_close_tickets=None, default_ticket_priority=None, company_name=None):
+	roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in roles:
+		frappe.throw("Not authorized to configure Tactix settings.")
+	
+	doc = frappe.get_doc("Tactix Settings")
+	if enable_real_time_notification_sound is not None:
+		doc.enable_real_time_notification_sound = int(enable_real_time_notification_sound)
+	if allow_ticket_raiser_to_close_tickets is not None:
+		doc.allow_ticket_raiser_to_close_tickets = int(allow_ticket_raiser_to_close_tickets)
+	if default_ticket_priority is not None:
+		doc.default_ticket_priority = default_ticket_priority
+	if company_name is not None:
+		doc.company_name = company_name
+	
+	doc.save()
+	frappe.db.commit()
+	return {"status": "success"}

@@ -569,7 +569,7 @@
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
-									<FormControl label="Status" type="select" :options="['Open','Replied','Resolved','Closed']" v-model="ticketForm.status" class="!mb-0 shadow-sm" />
+									<FormControl label="Status" type="select" :options="ticketStatusOptions" v-model="ticketForm.status" class="!mb-0 shadow-sm" />
 									<FormControl label="Priority" type="select" :options="['Low','Medium','High','Urgent']" v-model="ticketForm.priority" class="!mb-0 shadow-sm" />
 								</div>
 
@@ -965,6 +965,14 @@ const isCreator = computed(() => {
 
 const isFieldDisabled = computed(() => {
 	return isEmployeeOnly.value && !isCreator.value
+})
+
+const ticketStatusOptions = computed(() => {
+	const base = ['Open', 'Replied', 'Resolved', 'Closed']
+	if (session.isTicketRaiser && localStorage.getItem("tactix_allow_ticket_raiser_to_close_tickets") === "0") {
+		return ['Open', 'Replied', 'Resolved']
+	}
+	return base
 })
 
 const isTaskCreatorOrOwner = computed(() => {
@@ -1403,7 +1411,7 @@ const emptyTicket = () => ({
 	raised_by: session.user,
 	raised_by_user: "",
 	status: "Open",
-	priority: "Medium",
+	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 	ticket_type: "Support",
 	department: isTicketRaiser && tactixDepartment ? tactixDepartment : "",
 	agent_group: "",
@@ -1424,7 +1432,7 @@ const initialForm = {
 	name: "",
 	subject: "",
 	project: "",
-	priority: "Medium",
+	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 	status: "Open",
 	ticket: "",
 	exp_end_date: "",
