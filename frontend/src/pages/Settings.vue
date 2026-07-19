@@ -122,7 +122,7 @@
 
             <div class="border-t border-slate-100 pt-6 space-y-5">
               <!-- Workspace branding -->
-              <div class="space-y-1">
+              <!-- <div class="space-y-1">
                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Workspace/Company Name</label>
                 <input 
                   type="text" 
@@ -131,7 +131,7 @@
                   placeholder="e.g. Tactix"
                   class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 />
-              </div>
+              </div> -->
 
               <!-- Default priority -->
               <div class="space-y-1">
