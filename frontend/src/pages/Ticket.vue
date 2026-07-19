@@ -158,7 +158,7 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-2 flex flex-col min-h-0">
-	  <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
+	  <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
 		  <ListView
 		  class="h-full flex flex-col min-h-0"
 		  :columns="columns"

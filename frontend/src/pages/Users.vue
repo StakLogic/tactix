@@ -39,7 +39,7 @@
 
     <!-- Users Table -->
     <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-800 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
+      <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
       <div v-if="loading" class="flex justify-center py-12">
         <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
       </div>
@@ -166,11 +166,21 @@
               <span class="text-xs font-bold text-slate-700 block">User Account Enabled</span>
               <span class="text-[10px] text-slate-400 font-medium">Toggle login permissions for this user</span>
             </div>
-            <input 
-              type="checkbox" 
-              v-model="modal.form.enabled"
-              class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-            />
+            <button
+              type="button"
+              :class="[
+                modal.form.enabled ? 'bg-blue-600' : 'bg-slate-200',
+                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none'
+              ]"
+              @click="modal.form.enabled = !modal.form.enabled"
+            >
+              <span
+                :class="[
+                  modal.form.enabled ? 'translate-x-4' : 'translate-x-0',
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                ]"
+              />
+            </button>
           </div>
 
           <!-- Roles Selection Checklist -->
