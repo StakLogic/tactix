@@ -1,54 +1,128 @@
 <template>
-  <div class="h-full flex overflow-hidden bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
+  <div class="space-y-4 p-1 flex flex-col h-full overflow-hidden min-h-0">
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden p-6">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-      <!-- Top Title Bar -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
-        <div class="flex items-center gap-3.5">
-          <div class="p-3 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-500/20 shrink-0">
-            <IconFolderOpen class="w-6 h-6" />
+      <!-- Top Bar: Filters & Actions Card (matching Tasks.vue & Ticket.vue) -->
+      <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-3 flex-shrink-0">
+        <!-- Top Row: Search & Action Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pb-2 border-b border-slate-100 dark:border-slate-800">
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-80">
+            <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search file name..."
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white"
+            />
           </div>
-          <div>
-            <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Documents & Drive
-            </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Organization shared documents, departmental workspaces, and client archives
-            </p>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-2 ml-auto sm:ml-0">
+            <!-- View Mode Toggle -->
+            <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200/50 dark:border-slate-700">
+              <button
+                @click="viewMode = 'grid'"
+                class="p-1.5 rounded-md transition-colors"
+                :class="viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-blue-600 font-bold shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+                title="Grid View"
+              >
+                <IconLayoutGrid class="w-4 h-4" />
+              </button>
+              <button
+                @click="viewMode = 'list'"
+                class="p-1.5 rounded-md transition-colors"
+                :class="viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-blue-600 font-bold shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+                title="List View"
+              >
+                <IconList class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- Refresh Button -->
+            <Button
+              variant="outline"
+              class="!text-slate-600 dark:!text-slate-300 !px-3 !h-9 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+              @click="refresh"
+            >
+              <template #prefix><IconRefreshCcw class="w-4 h-4 text-slate-500" :class="{ 'animate-spin': loading }" /></template>
+            </Button>
+
+            <!-- Back Button -->
+            <Button
+              v-if="currentPath !== '/'"
+              variant="outline"
+              class="!text-slate-600 dark:!text-slate-300 !px-3 !h-9 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+              @click="navigateUp"
+            >
+              <template #prefix><IconArrowLeft class="w-4 h-4 text-slate-500" /></template>
+              Back
+            </Button>
+
+            <!-- New Folder Button -->
+            <Button
+              v-if="uploadAllowed"
+              variant="solid"
+              class="!text-xs !px-5 !h-9 !shadow-md transition-all"
+              style="background-color: var(--primary-color); box-shadow: 0 4px 6px -1px var(--primary-color-shadow);"
+              @click="showNewFolderModal = true"
+            >
+              <template #prefix><IconFolderPlus class="w-4 h-4" /></template>
+              New Folder
+            </Button>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <Button
-            v-if="uploadAllowed"
-            variant="solid"
-            class="!bg-indigo-600 hover:!bg-indigo-700 !shadow-sm"
-            @click="showNewFolderModal = true"
+
+        <!-- Bottom Row: Filters (File Type, Source, Access, Clear) -->
+        <div class="flex flex-wrap items-center gap-2">
+          <select
+            v-model="fileTypeFilter"
+            class="h-9 px-3 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-100"
           >
-            <template #prefix><IconFolderPlus class="w-3.5 h-3.5" /></template>
-            New Folder
-          </Button>
-          <Button variant="outline" class="!text-slate-600 !border-slate-200 hover:!bg-slate-50 dark:!text-slate-350 dark:!border-slate-700 dark:hover:!bg-slate-800" @click="refresh">
-            <template #prefix><IconRefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" /></template>
-            Refresh
-          </Button>
-          <Button
-            v-if="currentPath !== '/'"
-            variant="outline"
-            class="!text-slate-600 !border-slate-200 hover:!bg-slate-50 dark:!text-slate-350 dark:!border-slate-700 dark:hover:!bg-slate-800"
-            @click="navigateUp"
+            <option value="All">All Types</option>
+            <option value="Documents">Documents</option>
+            <option value="Images">Images</option>
+            <option value="Audio/Video">Audio & Video</option>
+            <option value="Others">Others</option>
+          </select>
+
+          <select
+            v-model="sourceFilter"
+            class="h-9 px-3 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-100"
           >
-            <template #prefix><IconArrowLeft class="w-3.5 h-3.5" /></template>
-            Back
+            <option value="All">All Sources</option>
+            <option value="Direct">Direct Upload</option>
+            <option value="Ticket">Ticket Attachment</option>
+            <option value="Task">Task Attachment</option>
+          </select>
+
+          <select
+            v-model="accessFilter"
+            class="h-9 px-3 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-100"
+          >
+            <option value="All">All Accessible</option>
+            <option value="My">My Files</option>
+            <option value="Shared">Shared With Me</option>
+          </select>
+
+          <Button
+            v-if="searchQuery || fileTypeFilter !== 'All' || sourceFilter !== 'All' || accessFilter !== 'All'"
+            variant="ghost"
+            class="!text-red-500 hover:!bg-red-50 !px-2.5 !h-9 shrink-0"
+            @click="resetFilters"
+          >
+            <template #prefix><IconX class="w-3.5 h-3.5" /></template>
+            Clear
           </Button>
         </div>
       </div>
 
-      <!-- Breadcrumbs + Quick Stats Bar -->
-      <div class="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex-shrink-0 shadow-sm transition-colors duration-300">
+      <!-- Breadcrumb & Stats Bar -->
+      <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 flex-shrink-0 shadow-sm">
         <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-semibold overflow-x-auto whitespace-nowrap">
           <button
-            class="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-bold uppercase tracking-wider text-[10px] px-1.5 py-1 rounded-lg hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40"
+            class="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 font-bold uppercase tracking-wider text-[10px] px-1.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40"
             @click="fetchPath('/')"
           >
             <IconHome class="w-3.5 h-3.5" />
@@ -58,8 +132,8 @@
           <template v-for="(part, idx) in rawPathParts" :key="idx">
             <IconChevronRight class="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
             <button
-              class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-semibold px-1.5 py-1 rounded-lg hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40"
-              :class="{ 'text-slate-800 dark:text-slate-100 font-bold': idx === rawPathParts.length - 1 }"
+              class="hover:text-blue-600 dark:hover:text-blue-400 font-semibold px-1.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs"
+              :class="{ 'text-slate-900 dark:text-white font-bold': idx === rawPathParts.length - 1 }"
               @click="navigateToBreadcrumb(idx)"
             >
               {{ getCleanName(part) }}
@@ -69,68 +143,56 @@
 
         <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide shrink-0">
           <span v-if="!loading" class="flex items-center gap-1.5">
-            <IconFolder class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+            <IconFolder class="w-3.5 h-3.5 text-slate-400" />
             {{ folders.length }} {{ folders.length === 1 ? 'Folder' : 'Folders' }}
           </span>
           <span v-if="!loading" class="text-slate-200 dark:text-slate-700">•</span>
           <span v-if="!loading" class="flex items-center gap-1.5">
-            <IconFile class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+            <IconFile class="w-3.5 h-3.5 text-slate-400" />
             {{ filteredFiles.length }} {{ filteredFiles.length === 1 ? 'File' : 'Files' }}
           </span>
         </div>
       </div>
 
-      <!-- Error Toast Notification -->
-      <transition name="slide-up">
-        <div v-if="toast.show"
-          class="fixed bottom-6 right-6 z-[60] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-all"
-          :class="toast.type === 'error' ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-emerald-500 text-white shadow-emerald-200'"
-        >
-          <component :is="toast.type === 'error' ? IconAlertCircle : IconCheck" class="w-4 h-4 text-white shrink-0" />
-          <span class="text-xs font-semibold">{{ toast.message }}</span>
-          <button @click="toast.show = false" class="text-white hover:opacity-85 ml-2 border-none bg-transparent cursor-pointer">
-            <IconX class="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </transition>
-
       <!-- Main Scrollable Directory Workspace -->
-      <div class="flex-1 overflow-y-auto space-y-6 min-h-0 pr-1 mt-5 custom-scrollbar">
+      <div class="flex-1 overflow-y-auto space-y-4 min-h-0 pr-1 mt-3 custom-scrollbar">
 
         <!-- Loading State -->
         <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-4">
-          <LoadingIndicator class="w-8 h-8 text-indigo-600" />
+          <LoadingIndicator class="w-8 h-8 text-blue-600" />
           <span class="text-xs font-semibold text-slate-400">Retrieving items…</span>
         </div>
 
-        <template v-else>
+        <div v-else class="space-y-4">
           <!-- Virtual Folders Grid -->
-          <div v-if="folders.length > 0" class="space-y-3.5">
-            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">Folders</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div v-if="folders.length > 0" class="space-y-2">
+            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+              Folders ({{ folders.length }})
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               <div
                 v-for="folder in folders"
                 :key="folder.path"
-                class="group relative flex flex-col p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-950 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.3)] transition-all duration-300 cursor-pointer select-none"
-                :class="{ 'ring-2 ring-indigo-500 border-transparent': selectedItem?.path === folder.path }"
+                class="group relative flex flex-col p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer select-none"
+                :class="{ 'ring-2 ring-blue-500 border-transparent': selectedItem?.path === folder.path }"
                 @click="selectItem(folder)"
                 @dblclick="fetchPath(folder.path)"
               >
                 <div class="flex items-start justify-between">
-                  <div class="p-3 rounded-xl transition-all duration-300 shrink-0 shadow-sm" :class="getFolderIconGradientClass(folder.path)">
-                    <IconFolder class="w-5 h-5 stroke-[1.8] group-hover:scale-110 transition-transform" />
+                  <div class="p-2.5 rounded-lg transition-all shrink-0 shadow-sm" :class="getFolderIconGradientClass(folder.path)">
+                    <IconFolder class="w-5 h-5 group-hover:scale-105 transition-transform" />
                   </div>
 
-                  <span class="text-[9px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-slate-150 dark:border-slate-700" :class="getFolderTagClass(folder.path)">
+                  <span class="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700" :class="getFolderTagClass(folder.path)">
                     {{ getFolderTypeLabel(folder.path) }}
                   </span>
                 </div>
 
-                <div class="mt-4">
-                  <div class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate" :title="folder.name">
+                <div class="mt-3">
+                  <div class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate" :title="folder.name">
                     {{ folder.name }}
                   </div>
-                  <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1 flex items-center gap-1 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
+                  <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1 flex items-center gap-1 group-hover:text-blue-500 transition-colors">
                     <span>Open folder</span>
                     <IconArrowLeft class="w-3 h-3 rotate-180 group-hover:translate-x-0.5 transition-transform" />
                   </div>
@@ -140,67 +202,30 @@
           </div>
 
           <!-- Files List Container -->
-          <div class="space-y-3.5">
-
-            <!-- Controls & Filters -->
-            <div v-if="currentPath !== '/' && currentPath !== '/Clients' && currentPath !== '/Departments'" class="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-800 p-3.5 rounded-2xl flex-shrink-0">
-              <!-- Search Bar -->
-              <div class="relative w-full xl:w-72 group">
-                <IconSearch class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-600 transition-colors" />
-                <input
-                  type="text"
-                  v-model="searchQuery"
-                  placeholder="Search file name…"
-                  class="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50/70 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 transition-all font-sans text-slate-800 dark:text-slate-100"
-                />
-              </div>
-
-              <!-- Filter Pills -->
-              <div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-start xl:justify-end">
-                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl overflow-x-auto">
-                  <button
-                    v-for="type in ['All', 'Documents', 'Images', 'Audio/Video', 'Others']"
-                    :key="type"
-                    class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wide transition-all border border-transparent bg-transparent cursor-pointer whitespace-nowrap"
-                    :class="fileTypeFilter === type ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm font-black' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-                    @click="fileTypeFilter = type"
-                  >
-                    {{ type }}
-                  </button>
+          <div class="space-y-3">
+            <transition name="slide-up">
+              <div v-if="selectedItems && selectedItems.length > 0" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 p-3.5 rounded-2xl shadow-sm mb-4">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></div>
+                  <span class="text-xs font-bold text-indigo-950 dark:text-indigo-100">
+                    {{ selectedItems ? selectedItems.length : 0 }} {{ selectedItems?.length === 1 ? 'file' : 'files' }} selected
+                  </span>
                 </div>
-
-                <!-- Source Filters -->
-                <select
-                  v-model="sourceFilter"
-                  class="text-[10px] uppercase tracking-wider border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 px-3 py-2.5 outline-none text-slate-500 dark:text-slate-400 font-bold focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800 font-sans"
-                >
-                  <option value="All">All Sources</option>
-                  <option value="Direct">Direct Upload</option>
-                  <option value="Ticket">Ticket Attachment</option>
-                  <option value="Task">Task Attachment</option>
-                </select>
-
-                <!-- Grid/List View Toggle -->
-                <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/60 shrink-0">
-                  <button
-                    class="p-1.5 rounded-lg border-none bg-transparent cursor-pointer text-slate-400 dark:text-slate-550 hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center justify-center"
-                    :class="{ 'bg-white dark:bg-slate-800 !text-indigo-600 dark:!text-indigo-400 shadow-sm': viewMode === 'grid' }"
-                    @click="viewMode = 'grid'"
-                    title="Grid View"
-                  >
-                    <IconLayoutGrid class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    class="p-1.5 rounded-lg border-none bg-transparent cursor-pointer text-slate-400 dark:text-slate-550 hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center justify-center"
-                    :class="{ 'bg-white dark:bg-slate-800 !text-indigo-600 dark:!text-indigo-400 shadow-sm': viewMode === 'list' }"
-                    @click="viewMode = 'list'"
-                    title="List View"
-                  >
-                    <IconList class="w-3.5 h-3.5" />
-                  </button>
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button variant="solid" class="!bg-indigo-600 hover:!bg-indigo-700 !shadow-sm" size="sm" @click="openBulkShareModal">
+                    <template #prefix><IconShare2 class="w-3.5 h-3.5" /></template>
+                    Share Selected
+                  </Button>
+                  <Button variant="outline" class="!text-rose-600 !border-rose-200 hover:!bg-rose-50 dark:!border-rose-900/50" size="sm" @click="promptBulkDelete">
+                    <template #prefix><IconTrash2 class="w-3.5 h-3.5" /></template>
+                    Delete Selected
+                  </Button>
+                  <Button variant="ghost" size="sm" @click="clearSelection" class="!text-slate-500">
+                    Clear
+                  </Button>
                 </div>
               </div>
-            </div>
+            </transition>
 
             <!-- Header Title -->
             <div class="flex items-center justify-between px-1">
@@ -228,9 +253,19 @@
                   v-for="file in filteredFiles"
                   :key="file.name"
                   class="flex flex-col items-center p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-950 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)] dark:hover:shadow-[0_14px_28px_rgba(0,0,0,0.25)] transition-all duration-300 cursor-pointer group text-center select-none relative"
-                  :class="{ 'ring-2 ring-indigo-500 border-transparent': selectedItem?.name === file.name }"
+                  :class="{ 'ring-2 ring-indigo-500 border-transparent': selectedItem?.name === file.name || isSelected(file.name) }"
                   @click="selectItem(file)"
                 >
+                  <!-- Checkbox selector -->
+                  <div class="absolute top-3 left-3 z-10" @click.stop>
+                    <input
+                      type="checkbox"
+                      :checked="isSelected(file.name)"
+                      @change="toggleSelect(file.name)"
+                      class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                    />
+                  </div>
+
                   <!-- Thumbnail with color-matched theme -->
                   <div class="p-5 rounded-2xl transition-all duration-300 mb-3 shrink-0 flex items-center justify-center aspect-square w-14" :class="getFileIconBg(file.file_name)">
                     <component
@@ -246,7 +281,7 @@
                   </div>
 
                   <!-- File Size & Source badge -->
-                  <div class="flex items-center gap-1.5 mt-2 justify-center">
+                  <div class="flex items-center gap-1.5 mt-2 justify-center flex-wrap">
                     <span class="text-[9px] font-mono font-semibold text-slate-400 dark:text-slate-500">
                       {{ formatBytes(file.file_size) }}
                     </span>
@@ -256,10 +291,22 @@
                     >
                       {{ file.source }}
                     </span>
+                    <span v-if="file.is_shared" class="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 flex items-center gap-1 shrink-0" title="Shared with team members">
+                      <IconShare2 class="w-2.5 h-2.5" />
+                      {{ file.shares_count }}
+                    </span>
                   </div>
 
                   <!-- Hover Action Buttons -->
                   <div class="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" @click.stop>
+                    <button
+                      v-if="file.can_share"
+                      class="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border-none shadow-sm"
+                      title="Share File Access"
+                      @click="openShareModal(file)"
+                    >
+                      <IconShare2 class="w-3.5 h-3.5" />
+                    </button>
                     <a
                       :href="file.file_url"
                       target="_blank"
@@ -286,7 +333,15 @@
                 <table class="w-full text-left border-collapse table-fixed">
                   <thead>
                     <tr class="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-850 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      <th class="w-1/2 py-3.5 px-6">Name</th>
+                      <th class="w-10 py-3.5 pl-5 pr-1 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isAllSelected"
+                          @change="toggleSelectAll"
+                          class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                        />
+                      </th>
+                      <th class="w-1/2 py-3.5 px-4">Name</th>
                       <th class="w-1/6 py-3.5 px-4">Size</th>
                       <th class="w-1/6 py-3.5 px-4">Date</th>
                       <th class="w-1/6 py-3.5 px-4 text-right pr-6">Actions</th>
@@ -297,10 +352,18 @@
                       v-for="file in filteredFiles"
                       :key="file.name"
                       class="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer group"
-                      :class="{ 'bg-indigo-50/30 hover:bg-indigo-50/40 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/30': selectedItem?.name === file.name }"
+                      :class="{ 'bg-indigo-50/30 hover:bg-indigo-50/40 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/30': selectedItem?.name === file.name || isSelected(file.name) }"
                       @click="selectItem(file)"
                     >
-                      <td class="py-3.5 px-6 flex items-center gap-3 min-w-0">
+                      <td class="py-3.5 pl-5 pr-1 text-center" @click.stop>
+                        <input
+                          type="checkbox"
+                          :checked="isSelected(file.name)"
+                          @change="toggleSelect(file.name)"
+                          class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                        />
+                      </td>
+                      <td class="py-3.5 px-4 flex items-center gap-3 min-w-0">
                         <div class="p-2 rounded-lg shrink-0" :class="getFileIconBg(file.file_name)">
                           <component
                             :is="getFileIcon(file.file_name)"
@@ -319,10 +382,14 @@
                             >
                               {{ file.source }}
                             </span>
+                            <span v-if="file.is_shared" class="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 flex items-center gap-1 shrink-0">
+                              <IconShare2 class="w-2.5 h-2.5" />
+                              Shared ({{ file.shares_count }})
+                            </span>
                             <span v-if="file.source === 'Task' && file.task_subject" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
                               {{ file.task_subject }}
                             </span>
-                            <span v-else class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+                            <span v-else-if="file.source_name" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
                               {{ file.source_name }}
                             </span>
                           </div>
@@ -339,6 +406,14 @@
 
                       <td class="py-3.5 px-4 text-right pr-6 select-none" @click.stop>
                         <div class="flex items-center justify-end gap-1">
+                          <button
+                            v-if="file.can_share"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shrink-0 cursor-pointer border-none bg-transparent"
+                            title="Share File Access"
+                            @click="openShareModal(file)"
+                          >
+                            <IconShare2 class="w-4 h-4" />
+                          </button>
                           <a
                             :href="file.file_url"
                             target="_blank"
@@ -427,7 +502,7 @@
               </div>
             </div>
           </div>
-        </template>
+        </div>
       </div>
     </div>
 
@@ -495,8 +570,8 @@
               </div>
             </div>
 
-            <!-- Download button -->
-            <div class="pt-1">
+            <!-- Action buttons -->
+            <div class="pt-1 space-y-2">
               <a
                 :href="selectedItem.file_url"
                 target="_blank"
@@ -506,6 +581,14 @@
                 <IconDownload class="w-3.5 h-3.5" />
                 Download File
               </a>
+              <button
+                v-if="selectedItem.can_share"
+                @click="openShareModal(selectedItem)"
+                class="flex items-center justify-center gap-2 w-full rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 transition-colors border-none cursor-pointer shadow-sm"
+              >
+                <IconShare2 class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                Share Access ({{ selectedItem.shares_count || 0 }})
+              </button>
             </div>
 
             <!-- Linked Context Redirect -->
@@ -555,93 +638,213 @@
         </p>
       </div>
     </div>
+  </div>
 
-    <!-- Confirm File Deletion Dialog Modal -->
-    <div v-if="deleteConfirm.show" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
-      <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-slate-850 shadow-2xl animate-fade-in border border-slate-100 dark:border-slate-800">
-        <div class="flex items-center gap-3.5 border-b border-slate-100 dark:border-slate-800 px-6 py-5">
-          <div class="p-2 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl">
-            <IconAlertCircle class="w-5 h-5" />
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Delete permanently?</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">This action cannot be undone</p>
-          </div>
-        </div>
+    <!-- Confirm File / Bulk Deletion Dialog (matching Tasks & Tickets) -->
+    <Dialog
+      v-model="deleteConfirm.show"
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? 'Delete Selected Files' : 'Delete File Permanently?',
+        size: 'sm',
+        actions: [
+          {
+            label: deleteConfirm.isBulk ? 'Delete Files' : 'Delete File',
+            variant: 'solid',
+            theme: 'red',
+            onClick: deleteConfirm.isBulk ? confirmBulkDelete : confirmDelete
+          },
+          {
+            label: 'Cancel',
+            variant: 'ghost',
+            onClick: () => (deleteConfirm.show = false)
+          }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            Are you sure you want to permanently delete <span class="font-bold text-slate-900 dark:text-white">{{ deleteConfirm.count }}</span> selected file(s)? This action cannot be undone.
+          </span>
+          <span v-else>
+            Are you sure you want to permanently delete <b class="text-slate-900 dark:text-white break-all">"{{ deleteConfirm.file?.file_name }}"</b>? It will be removed from all attached workspaces and records.
+          </span>
+        </p>
+      </template>
+    </Dialog>
 
-        <div class="px-6 py-6 text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">
-          Are you sure you want to permanently delete <b class="text-slate-800 dark:text-slate-250 break-all">"{{ deleteConfirm.file?.file_name }}"</b>? It will be removed from all attached workspaces and records.
-        </div>
-
-        <div class="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-6 py-4">
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
-            @click="deleteConfirm.show = false"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="rounded-xl bg-rose-600 px-4.5 py-2 text-xs font-bold text-white shadow-md shadow-rose-200 hover:bg-rose-700 border-none transition-colors"
-            @click="confirmDelete"
-          >
-            Delete File
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- New Folder Modal -->
-    <div v-if="showNewFolderModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
-      <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-slate-850 shadow-2xl animate-fade-in border border-slate-100 dark:border-slate-800">
-        <div class="flex items-center gap-3.5 border-b border-slate-100 dark:border-slate-800 px-6 py-5">
-          <div class="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
-            <IconFolderPlus class="w-5 h-5" />
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Create new folder</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Organize your files and workspaces</p>
-          </div>
-        </div>
-
-        <div class="px-6 py-5 space-y-2">
-          <label class="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest">Folder Name</label>
-          <input
+    <!-- New Folder Dialog (matching Tasks & Tickets) -->
+    <Dialog
+      v-model="showNewFolderModal"
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: 'Create New Folder',
+        size: 'sm',
+        actions: [
+          {
+            label: 'Create Folder',
+            variant: 'solid',
+            loading: creatingFolder,
+            disabled: !newFolderName.trim(),
+            onClick: createFolder
+          },
+          {
+            label: 'Cancel',
+            variant: 'ghost',
+            onClick: () => { showNewFolderModal = false; newFolderName = ''; }
+          }
+        ]
+      }"
+    >
+      <template #body-content>
+        <div class="space-y-4 py-2">
+          <FormControl
             type="text"
+            label="Folder Name *"
             v-model="newFolderName"
             placeholder="Enter folder name…"
-            class="w-full px-4 py-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 transition-all font-sans text-slate-800 dark:text-slate-100"
             @keyup.enter="createFolder"
           />
         </div>
+      </template>
+    </Dialog>
 
-        <div class="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-6 py-4">
-          <button
-            type="button"
-            class="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
-            @click="showNewFolderModal = false; newFolderName = ''"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="rounded-xl bg-indigo-600 px-4.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 border-none transition-colors disabled:opacity-50 cursor-pointer"
-            :disabled="creatingFolder || !newFolderName.trim()"
-            @click="createFolder"
-          >
-            {{ creatingFolder ? 'Creating…' : 'Create Folder' }}
-          </button>
+    <!-- Share File Dialog (matching Tasks & Tickets) -->
+    <Dialog
+      v-model="shareModal.show"
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: shareModal.isBulk ? `Share ${shareModal.selectedCount} Selected Files` : 'Share File Access',
+        size: 'lg',
+        actions: [
+          {
+            label: 'Share Access',
+            variant: 'solid',
+            loading: shareModal.submitting,
+            disabled: !shareModal.targetUser,
+            onClick: () => (shareModal.isBulk ? executeBulkShare() : executeShare())
+          },
+          {
+            label: 'Cancel',
+            variant: 'ghost',
+            onClick: () => (shareModal.show = false)
+          }
+        ]
+      }"
+    >
+      <template #body-content>
+        <div class="space-y-6 py-2">
+          <!-- File Subtitle / Bulk summary -->
+          <div v-if="!shareModal.isBulk && shareModal.file" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center gap-2">
+            <IconFile class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" :title="shareModal.file.file_name">
+              {{ shareModal.file.file_name }}
+            </span>
+          </div>
+
+          <div v-else-if="shareModal.isBulk" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Sharing {{ selectedItems ? selectedItems.length : 0 }} selected file(s) with team member
+            </span>
+          </div>
+
+          <!-- Add Access Form using FormControl -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div class="md:col-span-2">
+              <FormControl
+                type="select"
+                label="Team Member *"
+                v-model="shareModal.targetUser"
+                :options="availableShareUserOptions"
+                placeholder="Select team member..."
+              />
+            </div>
+            <div>
+              <FormControl
+                type="select"
+                label="Access Level *"
+                v-model="shareModal.permission"
+                :options="permissionOptions"
+              />
+            </div>
+          </div>
+
+          <!-- Active Access List (Only for Single File Share) -->
+          <div v-if="!shareModal.isBulk" class="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">People with Access</label>
+              <span class="text-xs text-slate-400 font-medium">{{ (shareModal.shares?.length || 0) + (shareModal.owner ? 1 : 0) }} members</span>
+            </div>
+
+            <!-- Loading state -->
+            <div v-if="shareModal.loading" class="py-4 flex justify-center">
+              <div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+
+            <div v-else class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+              <!-- File Owner Record -->
+              <div v-if="shareModal.owner" class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div class="flex items-center gap-3">
+                  <Avatar :image="shareModal.owner.user_image" :label="shareModal.owner.full_name" size="sm" />
+                  <div>
+                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      {{ shareModal.owner.full_name }}
+                      <Badge theme="gray" variant="subtle" label="Owner" />
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ shareModal.owner.email }}</div>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Full Owner</span>
+              </div>
+
+              <!-- Shared Users List -->
+              <div
+                v-for="share in shareModal.shares"
+                :key="share.share_id"
+                class="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
+              >
+                <div class="flex items-center gap-3">
+                  <Avatar :image="share.user_image" :label="share.full_name" size="sm" />
+                  <div>
+                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      {{ share.full_name }}
+                      <Badge theme="blue" variant="subtle" :label="share.primary_role" />
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ share.email }}</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize">
+                    {{ share.permission === 'write' ? 'Can Edit' : 'Can View' }}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="!text-red-500 hover:!bg-red-50 !p-1.5"
+                    @click="executeUnshare(share.user)"
+                    title="Revoke access"
+                  >
+                    <template #prefix><IconTrash2 class="w-3.5 h-3.5" /></template>
+                  </Button>
+                </div>
+              </div>
+
+              <div v-if="(!shareModal.shares || shareModal.shares.length === 0) && !shareModal.loading" class="text-center py-4 text-xs text-slate-400 italic font-medium">
+                No additional team members currently have access.
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </template>
+    </Dialog>
 </template>
 
 <script setup>
 import dayjs from "dayjs"
-import { Avatar, Button, LoadingIndicator, createResource } from "frappe-ui"
-import { computed, ref, watch } from "vue"
+import { Avatar, Badge, Button, Dialog, FormControl, LoadingIndicator, createResource } from "frappe-ui"
+import { computed, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { session } from "../data/session"
 
@@ -668,6 +871,7 @@ import IconLayoutGrid from "~icons/lucide/layout-grid"
 import IconList from "~icons/lucide/list"
 import IconRefreshCcw from "~icons/lucide/refresh-ccw"
 import IconSearch from "~icons/lucide/search"
+import IconShare2 from "~icons/lucide/share-2"
 import IconTicket from "~icons/lucide/ticket"
 import IconTrash2 from "~icons/lucide/trash-2"
 import IconUploadCloud from "~icons/lucide/upload-cloud"
@@ -680,12 +884,26 @@ const route = useRoute()
 const currentPath = ref("/")
 const folders = ref([])
 const files = ref([])
+const selectedItems = ref([])
 const loading = ref(false)
 
 const searchQuery = ref("")
 const fileTypeFilter = ref("All")
 const sourceFilter = ref("All")
+const accessFilter = ref("All")
 const viewMode = ref("grid")
+
+const shareableUsers = ref([])
+const shareModal = reactive({
+	show: false,
+	file: null,
+	loading: false,
+	submitting: false,
+	targetUser: "",
+	permission: "read",
+	owner: null,
+	shares: []
+})
 
 const selectedItem = ref(null)
 
@@ -753,6 +971,192 @@ const createFolderResource = createResource({
 	url: "tactix.api.drive.create_explorer_folder",
 })
 
+const getShareableUsersResource = createResource({
+	url: "tactix.api.drive.get_shareable_users",
+	onSuccess(data) {
+		shareableUsers.value = data || []
+	},
+})
+
+const getFileSharesResource = createResource({
+	url: "tactix.api.drive.get_file_shares",
+})
+
+const shareFileResource = createResource({
+	url: "tactix.api.drive.share_file",
+})
+
+const unshareFileResource = createResource({
+	url: "tactix.api.drive.unshare_file",
+})
+
+const availableShareUsers = computed(() => {
+	if (!shareModal.owner) return shareableUsers.value
+	const existingUsers = new Set([
+		shareModal.owner.user,
+		...shareModal.shares.map((s) => s.user),
+	])
+	return shareableUsers.value.filter((u) => !existingUsers.has(u.name))
+})
+
+const availableShareUserOptions = computed(() => {
+	return availableShareUsers.value.map((u) => ({
+		label: `${u.full_name} (${u.primary_role})`,
+		value: u.name,
+	}))
+})
+
+const permissionOptions = [
+	{ label: "Can View", value: "read" },
+	{ label: "Can Edit", value: "write" },
+]
+
+function isSelected(name) {
+	return selectedItems.value.includes(name)
+}
+
+function toggleSelect(name) {
+	if (isSelected(name)) {
+		selectedItems.value = selectedItems.value.filter((id) => id !== name)
+	} else {
+		selectedItems.value.push(name)
+	}
+}
+
+const isAllSelected = computed(() => {
+	if (filteredFiles.value.length === 0) return false
+	return filteredFiles.value.every((f) => selectedItems.value.includes(f.name))
+})
+
+function toggleSelectAll() {
+	if (isAllSelected.value) {
+		selectedItems.value = []
+	} else {
+		selectedItems.value = filteredFiles.value.map((f) => f.name)
+	}
+}
+
+function clearSelection() {
+	selectedItems.value = []
+}
+
+const shareMultipleFilesResource = createResource({
+	url: "tactix.api.drive.share_multiple_files",
+})
+
+const deleteMultipleFilesResource = createResource({
+	url: "tactix.api.drive.delete_multiple_files",
+})
+
+async function openBulkShareModal() {
+	if (selectedItems.value.length === 0) return
+	shareModal.isBulk = true
+	shareModal.selectedCount = selectedItems.value.length
+	shareModal.file = null
+	shareModal.show = true
+	shareModal.loading = false
+	shareModal.targetUser = ""
+	shareModal.permission = "read"
+	shareModal.shares = []
+	shareModal.owner = null
+
+	if (shareableUsers.value.length === 0) {
+		getShareableUsersResource.fetch()
+	}
+}
+
+async function executeBulkShare() {
+	if (selectedItems.value.length === 0 || !shareModal.targetUser) return
+	shareModal.submitting = true
+	try {
+		await shareMultipleFilesResource.submit({
+			file_names: JSON.stringify(selectedItems.value),
+			target_user: shareModal.targetUser,
+			permission: shareModal.permission,
+		})
+		showToast(`Shared ${selectedItems.value.length} files successfully`, "success")
+		shareModal.show = false
+		clearSelection()
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		showToast(err.message || "Failed to share files", "error")
+	} finally {
+		shareModal.submitting = false
+	}
+}
+
+async function promptBulkDelete() {
+	if (selectedItems.value.length === 0) return
+	deleteConfirm.value = {
+		show: true,
+		isBulk: true,
+		count: selectedItems.value.length,
+	}
+}
+
+async function openShareModal(file) {
+	shareModal.isBulk = false
+	shareModal.selectedCount = 1
+	shareModal.file = file
+	shareModal.show = true
+	shareModal.loading = true
+	shareModal.targetUser = ""
+	shareModal.permission = "read"
+
+	if (shareableUsers.value.length === 0) {
+		getShareableUsersResource.fetch()
+	}
+
+	try {
+		const res = await getFileSharesResource.fetch({ file_name: file.name })
+		shareModal.owner = res.owner
+		shareModal.shares = res.shares || []
+	} catch (err) {
+		showToast(err.message || "Failed to load file access permissions", "error")
+	} finally {
+		shareModal.loading = false
+	}
+}
+
+async function executeShare() {
+	if (!shareModal.file || !shareModal.targetUser) return
+	shareModal.submitting = true
+	try {
+		await shareFileResource.submit({
+			file_name: shareModal.file.name,
+			target_user: shareModal.targetUser,
+			permission: shareModal.permission,
+		})
+		showToast("File shared successfully", "success")
+		shareModal.targetUser = ""
+		const res = await getFileSharesResource.fetch({ file_name: shareModal.file.name })
+		shareModal.owner = res.owner
+		shareModal.shares = res.shares || []
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		showToast(err.message || "Failed to share file", "error")
+	} finally {
+		shareModal.submitting = false
+	}
+}
+
+async function executeUnshare(targetUser) {
+	if (!shareModal.file || !targetUser) return
+	try {
+		await unshareFileResource.submit({
+			file_name: shareModal.file.name,
+			target_user: targetUser,
+		})
+		showToast("Revoked access successfully", "success")
+		const res = await getFileSharesResource.fetch({ file_name: shareModal.file.name })
+		shareModal.owner = res.owner
+		shareModal.shares = res.shares || []
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		showToast(err.message || "Failed to revoke access", "error")
+	}
+}
+
 async function createFolder() {
 	if (!newFolderName.value || !newFolderName.value.trim()) return
 	creatingFolder.value = true
@@ -776,6 +1180,7 @@ async function createFolder() {
 function loadPathContents(path) {
 	loading.value = true
 	selectedItem.value = null // reset details selection
+	selectedItems.value = [] // reset selection list
 	folderContentsResource
 		.fetch({ path })
 		.then(() => {
@@ -996,6 +1401,24 @@ async function confirmDelete() {
 	}
 }
 
+async function confirmBulkDelete() {
+	if (selectedItems.value.length === 0) return
+	deleteConfirm.value.show = false
+	loading.value = true
+
+	try {
+		await deleteMultipleFilesResource.submit({
+			file_names: JSON.stringify(selectedItems.value),
+		})
+		showToast(`Deleted ${selectedItems.value.length} files successfully`, "success")
+		clearSelection()
+		loadPathContents(currentPath.value)
+	} catch (err) {
+		loading.value = false
+		showToast(err.message || "Failed to delete selected files", "error")
+	}
+}
+
 // Redirect client to ticket or task view page
 function redirectOrigin(file) {
 	if (file.source === "Ticket") {
@@ -1134,6 +1557,12 @@ const filteredFiles = computed(() => {
 
 	if (sourceFilter.value !== "All") {
 		list = list.filter((f) => f.source === sourceFilter.value)
+	}
+
+	if (accessFilter.value === "My") {
+		list = list.filter((f) => f.is_owner)
+	} else if (accessFilter.value === "Shared") {
+		list = list.filter((f) => f.shared_with_me || f.is_shared)
 	}
 
 	return list
