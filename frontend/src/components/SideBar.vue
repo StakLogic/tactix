@@ -21,10 +21,10 @@ import { session } from "../data/session"
 const route = useRoute()
 const router = useRouter()
 
-// Correct Role Logic
-const isAdmin = session.isAdmin
-const isTicketRaiser = session.isTicketRaiser
-const isEmployee = session.isEmployee
+// Correct Role Logic (Reactive computed properties)
+const isAdmin = computed(() => session.isAdmin)
+const isTicketRaiser = computed(() => session.isTicketRaiser)
+const isEmployee = computed(() => session.isEmployee)
 
 function toggleTheme() {
 	const currentTheme = document.documentElement.getAttribute("data-theme")
@@ -52,7 +52,7 @@ const crmSidebar = computed(() => {
 		},
 	]
 
-	if (isAdmin) {
+	if (isAdmin.value) {
 		menuItems.push({
 			label: "Switch to Desk",
 			icon: Database,
@@ -71,7 +71,7 @@ const crmSidebar = computed(() => {
 	// 2. Build Sidebar Navigation Sections
 	let sidebarItems: any[] = []
 
-	if (isTicketRaiser && !isAdmin) {
+	if (isTicketRaiser.value && !isAdmin.value) {
 		// TIER 1: Ticket Raiser only sees Tickets
 		sidebarItems = [
 			{
@@ -89,7 +89,7 @@ const crmSidebar = computed(() => {
 				isActive: route.path === "/settings",
 			},
 		]
-	} else if (isEmployee || isAdmin) {
+	} else if (isEmployee.value || isAdmin.value) {
 		// TIER 2: Standard Employee / Admin items
 		sidebarItems = [
 			{
@@ -144,7 +144,7 @@ const crmSidebar = computed(() => {
 		]
 
 		// TIER 3: Admin additional items
-		if (isAdmin) {
+		if (isAdmin.value) {
 			sidebarItems.push(
 				{
 					label: "Data Sources",

@@ -461,7 +461,7 @@ import {
 	ListView,
 	createResource,
 } from "frappe-ui"
-import { computed, reactive, ref, watch } from "vue"
+import { computed, onMounted, reactive, ref, watch } from "vue"
 
 import IconAlertCircle from "~icons/lucide/alert-circle"
 import IconCalendar from "~icons/lucide/calendar"
@@ -623,8 +623,9 @@ function reloadTimesheets() {
 }
 
 // Initial fetch
-fetchTimesheets()
-fetchSummary()
+onMounted(() => {
+	reloadTimesheets()
+})
 
 // Watch filters
 watch(

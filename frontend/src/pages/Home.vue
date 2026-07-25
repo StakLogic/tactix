@@ -1,17 +1,28 @@
 <template>
-	<div class="flex h-screen overflow-hidden bg-white font-sans text-slate-900 antialiased">
+	<div class="flex h-screen overflow-hidden bg-white dark:bg-slate-900 font-sans text-slate-900 dark:text-white antialiased">
 		
 		<!-- Sidebar -->
 		<SideBar />
 
-		<main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC]">
+		<main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC] dark:bg-slate-950">
 			
-			<!-- Header -->
-			<header class="h-14 border-b border-slate-200 bg-[#F8F8F8] flex items-center justify-between px-6 flex-shrink-0 z-40 shadow-sm shadow-slate-500/5">
+			<!-- Header Navbar -->
+			<header class="h-14 border-b border-slate-200 dark:border-slate-800 bg-[#F8F8F8] dark:bg-slate-900 flex items-center justify-between px-6 flex-shrink-0 z-40 shadow-xs">
 				
-				<!-- Search -->
-				<div class="relative w-72 group">
-					
+				<!-- Page Name Indicator -->
+				<div class="flex items-center gap-3">
+					<div class="p-2 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700/80 shadow-2xs transition-all" :class="pageMeta.bg">
+						<component :is="pageMeta.icon" class="w-4 h-4" :class="pageMeta.color" />
+					</div>
+					<div class="flex items-center gap-2">
+						<h1 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+							{{ pageMeta.title }}
+						</h1>
+						<span class="hidden sm:inline-block text-[10px] font-semibold text-slate-400 dark:text-slate-500">•</span>
+						<span class="hidden sm:inline-block text-xs font-medium text-slate-500 dark:text-slate-400 leading-none">
+							{{ pageMeta.subtitle }}
+						</span>
+					</div>
 				</div>
 				
 				<!-- Right Section -->
@@ -223,9 +234,7 @@
 			<!-- Routed Pages -->
 			<div class="flex-1 overflow-hidden p-0 lg:p-2 flex flex-col min-h-0">
 				<router-view v-slot="{ Component }">
-					<transition name="fade" mode="out-in">
-						<component :is="Component" />
-					</transition>
+					<component :is="Component" :key="route.fullPath" />
 				</router-view>
 			</div>
 
@@ -272,7 +281,7 @@
 <script setup>
 import { createResource } from "frappe-ui"
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
@@ -296,8 +305,125 @@ import IconSearch from "~icons/lucide/search"
 import IconTrash2 from "~icons/lucide/trash-2"
 import IconUpload from "~icons/lucide/upload"
 
+import IconCheckSquare from "~icons/lucide/check-square"
+import IconClock from "~icons/lucide/clock"
+import IconDatabase from "~icons/lucide/database"
+import IconFolder from "~icons/lucide/folder"
+import IconGitPullRequest from "~icons/lucide/git-pull-request"
+import IconLayoutDashboard from "~icons/lucide/layout-dashboard"
+import IconSettings from "~icons/lucide/settings"
+import IconTicket from "~icons/lucide/ticket"
+import IconTrendingUp from "~icons/lucide/trending-up"
+import IconUsers from "~icons/lucide/users"
+
 const socket = useSocket()
 const router = useRouter()
+const route = useRoute()
+
+const pageMeta = computed(() => {
+	const name = route.name || ""
+	const path = route.path || ""
+
+	if (name === "Dashboard" || path.includes("/dashboard")) {
+		return {
+			title: "Dashboard",
+			subtitle: "Overview & Analytics",
+			icon: IconLayoutDashboard,
+			color: "text-blue-600 dark:text-blue-400",
+			bg: "bg-blue-50 dark:bg-blue-950",
+		}
+	}
+	if (name === "Tickets" || path.includes("/tickets")) {
+		return {
+			title: "Tickets",
+			subtitle: "Support & Helpdesk",
+			icon: IconTicket,
+			color: "text-indigo-600 dark:text-indigo-400",
+			bg: "bg-indigo-50 dark:bg-indigo-950",
+		}
+	}
+	if (name === "Tasks" || path.includes("/tasks")) {
+		return {
+			title: "Tasks",
+			subtitle: "Task Management",
+			icon: IconCheckSquare,
+			color: "text-emerald-600 dark:text-emerald-400",
+			bg: "bg-emerald-50 dark:bg-emerald-950",
+		}
+	}
+	if (name === "Timesheets" || path.includes("/timesheets")) {
+		return {
+			title: "Timesheets",
+			subtitle: "Time Tracking & Logs",
+			icon: IconClock,
+			color: "text-amber-600 dark:text-amber-400",
+			bg: "bg-amber-50 dark:bg-amber-950",
+		}
+	}
+	if (name === "Performance" || path.includes("/performance")) {
+		return {
+			title: "Performance",
+			subtitle: "Metrics & Output",
+			icon: IconTrendingUp,
+			color: "text-purple-600 dark:text-purple-400",
+			bg: "bg-purple-50 dark:bg-purple-950",
+		}
+	}
+	if (name === "DataSources" || path.includes("/data-sources")) {
+		return {
+			title: "Data Sources",
+			subtitle: "Integrations & Sync",
+			icon: IconDatabase,
+			color: "text-sky-600 dark:text-sky-400",
+			bg: "bg-sky-50 dark:bg-sky-950",
+		}
+	}
+	if (name === "Users" || path.includes("/users")) {
+		return {
+			title: "Team Directory",
+			subtitle: "User Management",
+			icon: IconUsers,
+			color: "text-teal-600 dark:text-teal-400",
+			bg: "bg-teal-50 dark:bg-teal-950",
+		}
+	}
+	if (name === "Contributions" || path.includes("/contributions")) {
+		return {
+			title: "Contributions",
+			subtitle: "Code & Pull Requests",
+			icon: IconGitPullRequest,
+			color: "text-violet-600 dark:text-violet-400",
+			bg: "bg-violet-50 dark:bg-violet-950",
+		}
+	}
+	if (name === "Drive" || path.includes("/drive")) {
+		return {
+			title: "Document Drive",
+			subtitle: "File Storage & Sharing",
+			icon: IconFolder,
+			color: "text-blue-600 dark:text-blue-400",
+			bg: "bg-blue-50 dark:bg-blue-950",
+		}
+	}
+	if (name === "Settings" || path.includes("/settings")) {
+		return {
+			title: "Settings",
+			subtitle: "Workspace Configuration",
+			icon: IconSettings,
+			color: "text-slate-600 dark:text-slate-400",
+			bg: "bg-slate-100 dark:bg-slate-800",
+		}
+	}
+
+	return {
+		title: "Tactix",
+		subtitle: "Workspace",
+		icon: IconLayoutDashboard,
+		color: "text-blue-600 dark:text-blue-400",
+		bg: "bg-blue-50 dark:bg-blue-950",
+	}
+})
+
 const showNotifications = ref(false)
 const showProfileMenu = ref(false)
 const showCropModal = ref(false)
