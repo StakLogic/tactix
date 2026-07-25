@@ -72,8 +72,9 @@
 		</div>
 	  </div>
 
-	  <!-- Bottom Row: Filters -->
+	  <!-- Bottom Row: Filters (Same layout & Autocomplete dropdowns as Tasks.vue) -->
 	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
+		<!-- Status Filter -->
 		<select 
 		  v-model="selectedFilters.status"
 		  :class="[
@@ -83,39 +84,68 @@
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
 		  ]"
 		>
-		  <option value="">Select Status</option>
-		  <option value="Open">Open</option>
-		  <option value="Replied">Replied</option>
-		  <option value="Resolved">Resolved</option>
-		  <option value="Closed">Closed</option>
+		  <option value="" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Status</option>
+		  <option value="Open" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Open</option>
+		  <option value="Replied" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Replied</option>
+		  <option value="Resolved" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Resolved</option>
+		  <option value="Closed" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Closed</option>
 		</select>
 
-		<select 
-		  v-model="selectedFilters.customer"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.customer !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="">Client</option>
-		  <option v-for="opt in customerFilterSelectOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
+		<!-- Client Autocomplete Filter -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="customerAutocomplete"
+			  :options="customerFilterSelectOptions"
+			  :modelValue="selectedFilters.customer"
+			  @update:modelValue="val => selectedFilters.customer = val?.value || val || ''"
+			  :max-options="100"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => customerAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					selectedFilters.customer !== ''
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
+					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+				  ]"
+				>
+				  <span class="truncate">{{ getClientLabel(selectedFilters.customer) }}</span>
+				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
+		</div>
 
-		<select 
-		  v-model="selectedFilters.department"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.department !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="">Department</option>
-		  <option v-for="opt in departmentFilterSelectOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
+		<!-- Department Autocomplete Filter -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="departmentAutocomplete"
+			  :options="departmentFilterSelectOptions"
+			  :modelValue="selectedFilters.department"
+			  @update:modelValue="val => selectedFilters.department = val?.value || val || ''"
+			  :max-options="100"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => departmentAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					selectedFilters.department !== ''
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
+					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+				  ]"
+				>
+				  <span class="truncate">{{ getDepartmentLabel(selectedFilters.department) }}</span>
+				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
+		</div>
 
+		<!-- Priority Filter -->
 		<select 
 		  v-model="selectedFilters.priority"
 		  :class="[
@@ -125,25 +155,39 @@
 			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
 		  ]"
 		>
-		  <option value="">Priority</option>
-		  <option value="Low">Low</option>
-		  <option value="Medium">Medium</option>
-		  <option value="High">High</option>
-		  <option value="Urgent">Urgent</option>
+		  <option value="" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Priority</option>
+		  <option value="Low" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Low</option>
+		  <option value="Medium" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Medium</option>
+		  <option value="High" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">High</option>
+		  <option value="Urgent" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Urgent</option>
 		</select>
 
-		<select 
-		  v-model="selectedFilters.raised_by"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.raised_by !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="">Raised By</option>
-		  <option v-for="opt in raisedByFilterSelectOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
+		<!-- Raised By Autocomplete Filter -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="raisedByAutocomplete"
+			  :options="raisedByFilterSelectOptions"
+			  :modelValue="selectedFilters.raised_by"
+			  @update:modelValue="val => selectedFilters.raised_by = val?.value || val || ''"
+			  :max-options="100"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => raisedByAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					selectedFilters.raised_by !== ''
+					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
+					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+				  ]"
+				>
+				  <span class="truncate">{{ getUserLabel(selectedFilters.raised_by, 'Raised By') }}</span>
+				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
+		</div>
 
 		<Button 
 		  v-if="hasActiveFilters"
@@ -816,6 +860,9 @@ import { session } from "../data/session"
 import { useSocket } from "../socket"
 
 // Popover refs for Autocomplete programmatic toggling
+const customerAutocomplete = ref(null)
+const departmentAutocomplete = ref(null)
+const raisedByAutocomplete = ref(null)
 
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {
