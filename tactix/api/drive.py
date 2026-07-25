@@ -90,10 +90,7 @@ def get_folder_contents(path="/"):
 	user_customer = user_details.get("tactix_customer")
 
 	if is_ticket_raiser:
-		if not user_customer:
-			return {"folders": [], "files": [], "current_path": "/"}
-		if path == "/" or not path.startswith(f"/Clients/{user_customer}"):
-			path = f"/Clients/{user_customer}"
+		frappe.throw("Access Restricted: Drive is exclusively for internal organization staff.", frappe.PermissionError)
 
 	if not path or path == "":
 		path = "/"
@@ -106,11 +103,8 @@ def get_folder_contents(path="/"):
 
 	if path == "/":
 		folders.append({"name": "Shared", "is_folder": True, "path": "/Shared"})
-		if not is_ticket_raiser:
-			folders.append({"name": "Clients", "is_folder": True, "path": "/Clients"})
-			folders.append({"name": "Departments", "is_folder": True, "path": "/Departments"})
-		else:
-			folders.append({"name": user_customer, "is_folder": True, "path": f"/Clients/{user_customer}"})
+		folders.append({"name": "Departments", "is_folder": True, "path": "/Departments"})
+		folders.append({"name": "Clients", "is_folder": True, "path": "/Clients"})
 
 	elif path == "/Clients":
 		if is_ticket_raiser:

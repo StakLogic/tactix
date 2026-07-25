@@ -223,9 +223,7 @@
 			<!-- Routed Pages -->
 			<div class="flex-1 overflow-hidden p-0 lg:p-2 flex flex-col min-h-0">
 				<router-view v-slot="{ Component }">
-					<transition name="fade" mode="out-in">
-						<component :is="Component" />
-					</transition>
+					<component :is="Component" :key="route.fullPath" />
 				</router-view>
 			</div>
 
@@ -272,7 +270,7 @@
 <script setup>
 import { createResource } from "frappe-ui"
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
@@ -298,6 +296,7 @@ import IconUpload from "~icons/lucide/upload"
 
 const socket = useSocket()
 const router = useRouter()
+const route = useRoute()
 const showNotifications = ref(false)
 const showProfileMenu = ref(false)
 const showCropModal = ref(false)

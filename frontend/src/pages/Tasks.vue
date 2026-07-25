@@ -2490,6 +2490,12 @@ watch(showCreateDialog, (val) => {
 	}
 })
 
+onMounted(() => {
+	fetchTasks()
+	fetchTaskSummary()
+	if (viewMode.value === "board") fetchAllColumns()
+})
+
 onUnmounted(() => {
 	window.removeEventListener("keydown", handleGlobalKeydown)
 	stopVoice()

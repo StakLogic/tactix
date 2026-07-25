@@ -1080,6 +1080,11 @@ function fetchTicketSummary() {
 fetchTickets()
 fetchTicketSummary()
 
+onMounted(() => {
+	fetchTickets()
+	fetchTicketSummary()
+})
+
 // Watch filters and reset current page to 1
 watch(
 	ticketFilters,

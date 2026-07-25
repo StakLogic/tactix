@@ -148,7 +148,7 @@ import {
 	createListResource,
 	createResource,
 } from "frappe-ui"
-import { computed, reactive, watch } from "vue"
+import { computed, onMounted, reactive, watch } from "vue"
 
 dayjs.extend(relativeTime)
 
@@ -224,6 +224,13 @@ const userResource = createListResource({
 			image: user.user_image || "",
 		})),
 	pageLength: 10000,
+})
+
+onMounted(() => {
+	tasks.reload()
+	taskSummary.reload()
+	timesheetsSummary.reload()
+	performanceResource.reload()
 })
 
 function getUserAvatarImage(userName) {

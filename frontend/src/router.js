@@ -99,7 +99,7 @@ router.beforeEach(async (to, from, next) => {
 			await userResource.promise
 
 			// Only fetch user info if not already loaded to prevent redundant network requests on every navigation
-			if (!session.userInfo.fetched) {
+			if (!session.userInfo.loading && !session.userInfo.data?.roles?.length) {
 				await session.userInfo.fetch()
 			}
 		} catch (error) {
@@ -122,11 +122,11 @@ router.beforeEach(async (to, from, next) => {
 	}
 
 	// Roles based Access Control
-	const isSystemManager = session.isAdmin
-	const isEmployee = session.isEmployee
-	const isTicketRaiser = session.isTicketRaiser
+	const isSystemManager = Boolean(session.isAdmin)
+	const isEmployee = Boolean(session.isEmployee)
+	const isTicketRaiser = Boolean(session.isTicketRaiser)
 
-	const pathParts = to.path.split("/").filter(Boolean)
+	const pathParts = to.path.split("/").filter((p) => p && p !== "tactix")
 	const resource = pathParts[0] || "" // e.g. "dashboard", "tasks", "tickets", etc.
 
 	if (isSystemManager) {
