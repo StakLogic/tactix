@@ -1,10 +1,10 @@
 <template>
-	<div class="flex h-screen overflow-hidden bg-white font-sans text-slate-900 antialiased">
+	<div class="flex h-screen overflow-hidden bg-white dark:bg-slate-900 font-sans text-slate-900 dark:text-white antialiased">
 		
 		<!-- Sidebar -->
 		<SideBar />
 
-		<main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC]">
+		<main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8FAFC] dark:bg-slate-950">
 			
 			<!-- Header Navbar -->
 			<header class="h-14 border-b border-slate-200 dark:border-slate-800 bg-[#F8F8F8] dark:bg-slate-900 flex items-center justify-between px-6 flex-shrink-0 z-40 shadow-xs">
