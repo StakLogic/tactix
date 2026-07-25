@@ -147,19 +147,19 @@
           v-model="sourceFilter"
           class="h-8 px-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors"
         >
-          <option value="All">All Sources</option>
-          <option value="Direct">Direct Upload</option>
-          <option value="Ticket">Ticket Attachment</option>
-          <option value="Task">Task Attachment</option>
+          <option value="All" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">All Sources</option>
+          <option value="Direct" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Direct Upload</option>
+          <option value="Ticket" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Ticket Attachment</option>
+          <option value="Task" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Task Attachment</option>
         </select>
 
         <select
           v-model="accessFilter"
           class="h-8 px-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors"
         >
-          <option value="All">All Accessible</option>
-          <option value="My">My Files</option>
-          <option value="Shared">Shared With Me</option>
+          <option value="All" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">All Accessible</option>
+          <option value="My" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">My Files</option>
+          <option value="Shared" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Shared With Me</option>
         </select>
 
         <button
@@ -260,7 +260,7 @@
                   </div>
                 </div>
 
-                <div class="p-1 rounded-lg text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors">
+                <div class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 transition-colors">
                   <IconArrowLeft class="w-3.5 h-3.5 rotate-180" />
                 </div>
               </div>
@@ -301,7 +301,7 @@
             </div>
 
             <!-- Empty File Explorer Card -->
-            <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-800/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl text-center">
+            <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl text-center">
               <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl mb-3">
                 <IconFile class="w-10 h-10 text-slate-300 dark:text-slate-600" />
               </div>
@@ -322,8 +322,8 @@
                 <div
                   v-for="file in filteredFiles"
                   :key="file.name"
-                  class="group relative flex flex-col bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70 rounded-2xl overflow-hidden hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 cursor-pointer select-none"
-                  :class="{ 'ring-2 ring-blue-500 border-transparent bg-blue-50/20 dark:bg-blue-950/30': selectedItem?.name === file.name || isSelected(file.name) }"
+                  class="group relative flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 cursor-pointer select-none"
+                  :class="{ 'ring-2 ring-blue-500 border-transparent bg-blue-50 dark:bg-blue-950': selectedItem?.name === file.name || isSelected(file.name) }"
                   @click="selectItem(file)"
                   @dblclick="openPreview(file)"
                 >
@@ -343,7 +343,7 @@
                   </div>
 
                   <!-- Google Drive Card Top Thumbnail Region -->
-                  <div class="h-32 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-700/50 relative flex items-center justify-center overflow-hidden group-hover:bg-slate-100/80 dark:group-hover:bg-slate-900 transition-colors">
+                  <div class="h-32 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 relative flex items-center justify-center overflow-hidden group-hover:bg-slate-100 dark:group-hover:bg-slate-900 transition-colors">
 
                     <!-- Image File Thumbnail Preview -->
                     <template v-if="isImage(file.file_name)">
@@ -370,14 +370,14 @@
                       </div>
                     </template>
 
-                    <!-- Hover Quick Action Bar (Hidden when modals are open) -->
+                    <!-- Hover Quick Action Bar (Solid Theme Backgrounds) -->
                     <div
                       v-if="!previewModal.show && !shareModal.show && !deleteConfirm.show && !showNewFolderModal"
                       class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
                       @click.stop
                     >
                       <button
-                        class="p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-white transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md"
                         title="Preview File"
                         @click="openPreview(file)"
                       >
@@ -385,7 +385,7 @@
                       </button>
                       <button
                         v-if="file.can_share"
-                        class="p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-white transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md"
                         title="Share File"
                         @click="openShareModal(file)"
                       >
@@ -395,14 +395,14 @@
                         :href="file.file_url"
                         target="_blank"
                         download
-                        class="p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-white transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md flex items-center justify-center"
                         title="Download File"
                       >
                         <IconDownload class="w-3.5 h-3.5" />
                       </a>
                       <button
                         v-if="isDeletable(file)"
-                        class="p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-white transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 dark:hover:text-rose-400 transition-colors cursor-pointer shadow-md"
                         title="Delete File"
                         @click="promptDelete(file)"
                       >
@@ -739,21 +739,21 @@
           <button
             v-if="filteredFiles.length > 1"
             @click="prevPreview"
-            class="absolute left-5 top-1/2 -translate-y-1/2 z-20 p-3 bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-700 shadow-xl transition-all cursor-pointer hover:scale-105"
+            class="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-white text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 shadow-2xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
             title="Previous file (Left arrow)"
           >
             <IconChevronLeft class="w-6 h-6" />
           </button>
 
           <!-- Center Stage Container (Spacious light/dark background) -->
-          <div class="flex-1 flex items-center justify-center p-6 overflow-auto min-h-0 bg-slate-100/70 dark:bg-slate-950/90 relative custom-scrollbar">
+          <div class="flex-1 flex items-center justify-center p-6 overflow-auto min-h-0 bg-slate-100 dark:bg-slate-950 relative custom-scrollbar">
             <!-- Image Viewer with Large Height & Width Constraints -->
             <template v-if="isImage(previewModal.file.file_name)">
               <div class="flex items-center justify-center min-h-full min-w-full">
                 <img
                   :src="previewModal.file.file_url"
                   :alt="previewModal.file.file_name"
-                  class="max-h-[76vh] max-w-full object-contain rounded-2xl shadow-xl transition-transform duration-200 ease-out border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  class="max-h-[76vh] max-w-full object-contain rounded-2xl shadow-xl transition-transform duration-200 ease-out border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                   :style="{ transform: `scale(${imageZoom}) rotate(${imageRotation}deg)` }"
                   @load="onImageLoad"
                 />
@@ -779,7 +779,7 @@
                   <LoadingIndicator class="w-6 h-6 text-blue-500 animate-spin mr-2" />
                   <span>Loading text preview…</span>
                 </div>
-                <pre v-else class="flex-1 overflow-auto p-4 bg-slate-950/90 rounded-xl text-slate-200 custom-scrollbar leading-relaxed whitespace-pre-wrap break-all mt-3">{{ textPreviewContent }}</pre>
+                <pre v-else class="flex-1 overflow-auto p-4 bg-slate-950 rounded-xl text-slate-200 custom-scrollbar leading-relaxed whitespace-pre-wrap break-all mt-3">{{ textPreviewContent }}</pre>
               </div>
             </template>
 
@@ -838,7 +838,7 @@
           <button
             v-if="filteredFiles.length > 1"
             @click="nextPreview"
-            class="absolute right-5 top-1/2 -translate-y-1/2 z-20 p-3 bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-700 shadow-xl transition-all cursor-pointer hover:scale-105"
+            class="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-white text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 shadow-2xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
             title="Next file (Right arrow)"
           >
             <IconChevronRight class="w-6 h-6" />
