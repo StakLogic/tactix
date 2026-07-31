@@ -11,9 +11,9 @@
 				
 				<!-- Page Name Indicator -->
 				<div class="flex items-center gap-3">
-					<div class="p-2 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700/80 shadow-2xs transition-all" :class="pageMeta.bg">
+					<!-- <div class="p-2 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700/80 shadow-2xs transition-all" :class="pageMeta.bg">
 						<component :is="pageMeta.icon" class="w-4 h-4" :class="pageMeta.color" />
-					</div>
+					</div> -->
 					<div class="flex items-center gap-2">
 						<h1 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-none">
 							{{ pageMeta.title }}
