@@ -174,10 +174,10 @@ def get_custom_fields():
 				"insert_after":"color",
 			},
 			{
-				"fieldname": "security_impact",
-				"label": "Security Impact",
-				"fieldtype": "Select",
-				"options": "\nYes\nNo\nNot Applicable",
+				"fieldname": "tactix_team",
+				"label": "Team",
+				"fieldtype": "Link",
+				"options": "Tactix Team",
 				"insert_after": "tactix_ticket",
 			}
 		],

@@ -165,6 +165,8 @@
                   <th class="p-4" v-if="activeTab === 'department'">Department Name</th>
                   <th class="p-4" v-if="activeTab === 'tactix_dept'">Department Name</th>
                   <th class="p-4" v-if="activeTab === 'tactix_dept'">Head of Dept</th>
+                  <th class="p-4" v-if="activeTab === 'tactix_team'">Team Name</th>
+                  <th class="p-4" v-if="activeTab === 'tactix_team'">Team Lead</th>
                   <th class="p-4 text-right" v-if="isAdmin">Actions</th>
                 </tr>
               </thead>
@@ -180,6 +182,8 @@
                   <td class="p-4 text-slate-600" v-if="activeTab === 'department'">{{ row.department_name }}</td>
                   <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_name }}</td>
                   <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_head || 'None' }}</td>
+                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_name }}</td>
+                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_lead || 'None' }}</td>
                   <td class="p-4 text-right space-x-1.5" v-if="isAdmin">
                     <Button 
                       variant="ghost" 
@@ -231,6 +235,12 @@
           <template v-if="activeTab === 'tactix_cust'">
             <FormControl type="text" label="Customer Name / ID *" v-model="modal.form.name" :disabled="modal.isEdit" placeholder="Enter customer name" />
           </template>
+
+          <!-- Fields for Tactix Team -->
+          <template v-if="activeTab === 'tactix_team'">
+            <FormControl type="text" label="Team Name *" v-model="modal.form.team_name" placeholder="Enter team name" />
+            <FormControl type="select" label="Team Lead" v-model="modal.form.team_lead" :options="userOptions" />
+          </template>
         </div>
       </template>
     </Dialog>
@@ -265,6 +275,7 @@ const tabs = [
 	{ id: "department", label: "Departments" },
 	{ id: "tactix_dept", label: "Tactix Departments" },
 	{ id: "tactix_cust", label: "Tactix Customers" },
+	{ id: "tactix_team", label: "Tactix Teams" },
 ]
 
 const activeTab = ref("github")
@@ -282,6 +293,8 @@ const currentTabLabelSingular = computed(() => {
 			return "Tactix Department"
 		case "tactix_cust":
 			return "Tactix Customer"
+		case "tactix_team":
+			return "Tactix Team"
 		default:
 			return ""
 	}
@@ -297,6 +310,8 @@ const currentTabDoctype = computed(() => {
 			return "Tactix Department"
 		case "tactix_cust":
 			return "Tactix Customer"
+		case "tactix_team":
+			return "Tactix Team"
 		default:
 			return ""
 	}
@@ -512,6 +527,8 @@ function openCreateModal() {
 		company: linkOptions.companies[0] || "",
 		department_name: "",
 		department_head: "",
+		team_name: "",
+		team_lead: "",
 		name: "",
 	}
 }

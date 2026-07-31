@@ -542,7 +542,7 @@
 			</div>
 			<div class="space-y-4">
 			  <FormControl type="select" label="Priority" v-model="newTask.priority" :options="priorityOptions" />
-			  <FormControl type="select" label="Security Impact" v-model="newTask.security_impact" :options="securityImpactOptions" />
+			  <FormControl type="select" label="Team" v-model="newTask.tactix_team" :options="tactixTeamResource.data" />
 			  <FormControl type="date" label="Start Date" v-model="newTask.assigned_date" />
 			  <FormControl type="date" label="Deadline" v-model="newTask.exp_end_date" />
 			</div>
@@ -699,366 +699,364 @@
 	  </template>
 	</Dialog>
 
-	<div 
-		v-if="showEditTask" 
-		class="fixed inset-0 flex justify-end bg-slate-900/40 backdrop-blur-sm transition-opacity z-50"
-		@click.self="showEditTask = false"
-	>
-		<div class="w-full max-w-7xl bg-white h-full md:h-[calc(100vh-30px)] my-0 mr-0 ml-0 md:my-[15px] md:mr-[15px] md:ml-[15px] rounded-none md:rounded-2xl shadow-2xl flex flex-col animate-slide-in overflow-y-auto md:overflow-hidden">
-			<div class="bg-white border-b px-2 py-2 flex items-center justify-between z-10">
-				<div class="flex items-center gap-3">
-					<Badge :theme="getPriorityTheme(newTask.priority)" variant="subtle" size="md">
-					{{ newTask.priority }}
-					</Badge>
-					<h2 class="text-lg font-bold text-slate-900 truncate">
-					{{ isEditMode ? 'Task Details' : 'New Task' }}
-					</h2>
-				</div>
-				<div class="flex items-center gap-2">
-					<Button variant="solid" :loading="saving" @click="handleSaveTask" class="!bg-blue-600">
-					{{ isEditMode ? 'Save Changes' : 'Create Task' }}
-					</Button>
-					<Button variant="ghost" class="!px-2" @click="showEditTask = false">
-						<IconX class="w-5 h-5" />
-					</Button>
-				</div>
-				</div>
-
-				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30">
+	<Transition name="slide">
+		<div v-if="showEditTask" class="fixed inset-0 flex justify-end z-50">
+			<div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="showEditTask = false"></div>
+			
+			<div class="relative w-full md:max-w-7xl lg:max-w-7xl h-full bg-white flex flex-col shadow-2xl border-l overflow-y-auto md:overflow-hidden">
+				<!-- Spinner Loading State -->
+				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30 min-h-0">
 					<div class="flex items-center gap-3 text-slate-500">
 						<div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
 						<span class="text-sm font-medium">Loading task details...</span>
 					</div>
 				</div>
 
-				<div v-else class="flex-1 flex flex-col md:overflow-hidden md:min-h-0">
-				<div class="flex-grow md:flex-1 min-w-0 flex flex-col md:flex-row md:overflow-hidden md:min-h-0">
-				
-				<div class="w-full flex flex-col md:flex-1 md:min-h-0 bg-slate-50/20">
-					<!-- Scrollable Content Area -->
-					<div class="p-6 space-y-6 w-full flex-grow md:flex-1 md:overflow-y-auto custom-scrollbar md:min-h-0">
-						<div class="space-y-6">
-							<input 
-								v-model="newTask.subject" 
-								:disabled="isFieldDisabled"
-								class="text-3xl font-black text-slate-900 w-full border-none focus:ring-0 p-0 placeholder-slate-300 mb-2 bg-transparent disabled:opacity-75 disabled:cursor-not-allowed" 
-								placeholder="Task Subject..."
-							/>
-							
-							<!-- ── Edit Panel: Task Description with Voice Input ── -->
-							<div class="space-y-2">
-								<div class="flex items-center justify-between">
-									<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Description</label>
-									<!-- Voice Controls -->
-									<div class="flex items-center gap-2">
-										<!-- Speech-to-text Info -->
-										<span v-if="activeEditorKey === 'panel' && interimText" class="text-xs text-slate-400 italic truncate max-w-[180px]">"{{ interimText }}..."</span>
-										<span v-if="activeEditorKey === 'panel' && voiceError" class="text-xs text-red-500">{{ voiceError }}</span>
-										<span v-if="activeEditorKey === 'panel' && justInserted" class="text-xs text-green-600 font-semibold">✓ Inserted</span>
+				<template v-else>
+					<!-- Top Header Bar (Sticky & Constrained Side Drawer Header) -->
+					<header class="p-3 sm:p-4 border-b flex justify-between items-center bg-white shrink-0 shadow-sm z-20">
+						<div class="min-w-0 flex-1 mr-2">
+							<div class="flex flex-wrap items-center gap-1.5">
+								<span v-if="newTask.name" class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-0.5 uppercase tracking-wider">{{ newTask.name }}</span>
+								<Badge :theme="getPriorityTheme(newTask.priority)" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]">
+									{{ newTask.priority }}
+								</Badge>
+								<Badge v-if="newTask.is_overdue" theme="red" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]">
+									Overdue
+								</Badge>
+								<Badge v-if="newTask.fullfilled_in_display_text" theme="green" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]">
+									{{ newTask.fullfilled_in_display_text }}
+								</Badge>
+							</div>
+							<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-1 text-xl truncate max-w-full" :title="newTask.subject">
+								{{ isEditMode ? (newTask.subject || 'Task Details') : 'New Task' }}
+							</h2>
+						</div>
+						<div class="flex items-center gap-1.5 shrink-0">
+							<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTask" class="shadow-sm !px-2 sm:!px-3 text-xs !bg-blue-600">
+								{{ isEditMode ? 'Save Changes' : 'Create Task' }}
+							</Button>
+							<Button variant="ghost" size="sm" @click="showEditTask = false" class="text-slate-400 hover:text-slate-600 !p-1">
+								<IconX class="w-4 h-4"/>
+							</Button>
+						</div>
+					</header>
 
-										<!-- Audio recording Info -->
-										<span v-if="activeAudioKey === 'panel' && uploadingAudio" class="text-xs text-blue-500 flex items-center gap-1">
-											<div class="w-3.5 h-3.5 border border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-											Uploading...
-										</span>
-										<span v-if="activeAudioKey === 'panel' && audioError" class="text-xs text-red-500">{{ audioError }}</span>
-										<span v-if="isRecordingAudio && activeAudioKey === 'panel'" class="text-xs text-red-500 font-medium flex items-center gap-1.5 animate-pulse">
-											<span class="w-2 h-2 rounded-full bg-red-500"></span>
-											{{ formatDuration(audioDuration) }}
-										</span>
+					<!-- Main Split Body Container -->
+					<div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden">
+						
+						<!-- Left Column (60% Width on Desktop): Subject, Description & Activity Timeline -->
+						<div class="w-full md:w-[60%] flex flex-col bg-white min-h-0 border-b md:border-b-0 md:border-r border-slate-100 shrink-0">
+							<!-- Scrollable Main Left Content Area -->
+							<div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar">
+								<!-- Task Subject Input -->
+								<!-- <div class="space-y-1">
+									<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Subject</label>
+									<input 
+										v-model="newTask.subject" 
+										:disabled="isFieldDisabled"
+										class="w-full text-xl sm:text-2xl font-extrabold text-slate-900 bg-transparent border-b border-slate-200 focus:border-blue-500 pb-2 outline-none transition-colors placeholder-slate-300 disabled:opacity-75 disabled:cursor-not-allowed" 
+										placeholder="Task Subject..."
+									/>
+								</div> -->
 
-										<!-- Dictate Button -->
-										<button
-										  v-if="!isRecordingAudio || activeAudioKey !== 'panel'"
-										  @click="toggleVoice('panel')"
-										  :disabled="isRecordingAudio || uploadingAudio"
-										  type="button"
-										  :title="isRecording && activeEditorKey === 'panel' ? 'Stop dictating' : 'Start dictating (Voice to Text)'"
-										  :class="[
-											'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed',
-											isRecording && activeEditorKey === 'panel'
-											  ? 'bg-red-500 text-white border-red-500 animate-pulse shadow'
-											  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
-										  ]"
-										>
-										  <!-- Mic icon -->
-										  <svg v-if="!(isRecording && activeEditorKey === 'panel')" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-											<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-											<path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-										  </svg>
-										  <!-- Stop icon -->
-										  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-											<rect x="6" y="6" width="12" height="12" rx="2"/>
-										  </svg>
-										  {{ isRecording && activeEditorKey === 'panel' ? 'Stop' : 'Dictate' }}
-										</button>
+								<!-- Task Description Section with Voice Dictation -->
+								<div class="space-y-2.5">
+									<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+										<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description</label>
+										
+										<!-- Voice Controls -->
+										<div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+											<span v-if="activeEditorKey === 'panel' && interimText" class="text-xs text-slate-400 italic truncate max-w-[140px] sm:max-w-[180px]">"{{ interimText }}..."</span>
+											<span v-if="activeEditorKey === 'panel' && voiceError" class="text-xs text-red-500">{{ voiceError }}</span>
+											<span v-if="activeEditorKey === 'panel' && justInserted" class="text-xs text-green-600 font-semibold">✓ Inserted</span>
 
-										<!-- Record Audio Button -->
-										<button
-										  v-if="!isRecording || activeEditorKey !== 'panel'"
-										  @click="toggleAudioRecording('panel')"
-										  :disabled="isRecording || uploadingAudio"
-										  type="button"
-										  :title="isRecordingAudio && activeAudioKey === 'panel' ? 'Stop recording' : 'Record audio file'"
-										  :class="[
-											'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed',
-											isRecordingAudio && activeAudioKey === 'panel'
-											  ? 'bg-red-600 text-white border-red-600 animate-pulse shadow'
-											  : 'bg-white text-slate-600 border-slate-200 hover:border-orange-400 hover:text-orange-600'
-										  ]"
-										>
-										  <svg v-if="!(isRecordingAudio && activeAudioKey === 'panel')" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-											<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-											<path d="M19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8"/>
-										  </svg>
-										  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-											<rect x="6" y="6" width="12" height="12" rx="2"/>
-										  </svg>
-										  {{ isRecordingAudio && activeAudioKey === 'panel' ? 'Stop' : 'Record Audio' }}
-										</button>
+											<span v-if="activeAudioKey === 'panel' && uploadingAudio" class="text-xs text-blue-500 flex items-center gap-1">
+												<div class="w-3.5 h-3.5 border border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+												Uploading...
+											</span>
+											<span v-if="activeAudioKey === 'panel' && audioError" class="text-xs text-red-500">{{ audioError }}</span>
+											<span v-if="isRecordingAudio && activeAudioKey === 'panel'" class="text-xs text-red-500 font-medium flex items-center gap-1.5 animate-pulse">
+												<span class="w-2 h-2 rounded-full bg-red-500"></span>
+												{{ formatDuration(audioDuration) }}
+											</span>
+
+											<button
+											  v-if="!isRecordingAudio || activeAudioKey !== 'panel'"
+											  @click="toggleVoice('panel')"
+											  :disabled="isRecordingAudio || uploadingAudio"
+											  type="button"
+											  :title="isRecording && activeEditorKey === 'panel' ? 'Stop dictating' : 'Start dictating (Voice to Text)'"
+											  :class="[
+												'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed',
+												isRecording && activeEditorKey === 'panel'
+												  ? 'bg-red-500 text-white border-red-500 animate-pulse shadow'
+												  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
+											  ]"
+											>
+											  <svg v-if="!(isRecording && activeEditorKey === 'panel')" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+												<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+												<path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+											  </svg>
+											  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+												<rect x="6" y="6" width="12" height="12" rx="2"/>
+											  </svg>
+											  {{ isRecording && activeEditorKey === 'panel' ? 'Stop' : 'Dictate' }}
+											</button>
+
+											<button
+											  v-if="!isRecording || activeEditorKey !== 'panel'"
+											  @click="toggleAudioRecording('panel')"
+											  :disabled="isRecording || uploadingAudio"
+											  type="button"
+											  :title="isRecordingAudio && activeAudioKey === 'panel' ? 'Stop recording' : 'Record audio file'"
+											  :class="[
+												'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed',
+												isRecordingAudio && activeAudioKey === 'panel'
+												  ? 'bg-red-600 text-white border-red-600 animate-pulse shadow'
+												  : 'bg-white text-slate-600 border-slate-200 hover:border-orange-400 hover:text-orange-600'
+											  ]"
+											>
+											  <svg v-if="!(isRecordingAudio && activeAudioKey === 'panel')" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+												<path d="M19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8"/>
+											  </svg>
+											  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+												<rect x="6" y="6" width="12" height="12" rx="2"/>
+											  </svg>
+											  {{ isRecordingAudio && activeAudioKey === 'panel' ? 'Stop' : 'Record Audio' }}
+											</button>
+										</div>
+									</div>
+									<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+										<TextEditor
+											ref="panelEditorRef"
+											editor-class="prose-sm max-w-none p-3.5 sm:p-4 min-h-[200px] outline-none bg-white"
+											:content="newTask.description"
+											@change="(val) => (newTask.description = val)"
+											:fixed-menu="true"
+											:extensions="[AudioExtension]"
+										/>
 									</div>
 								</div>
-								<div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
-									<TextEditor
-										ref="panelEditorRef"
-										editor-class="prose-sm max-w-none p-4 min-h-[220px] outline-none bg-white"
-										:content="newTask.description"
-										@change="(val) => (newTask.description = val)"
-										:fixed-menu="true"
-										:extensions="[AudioExtension]"
-									/>
-								</div>
-							</div>
-						</div>
 
-						<!-- Premium Discussion & Activity Timeline (Inline, no double-scrollbars!) -->
-						<div class="pt-8 border-t border-slate-200 mt-8 space-y-6">
-							<div class="flex items-center justify-between">
-								<div class="flex items-center gap-2">
-									<IconMessageSquare class="w-4 h-4 text-slate-500" />
-									<h3 class="text-sm font-bold text-slate-800">Discussion & Activity</h3>
-									<span class="text-xs bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full font-semibold">
-										{{ comments.data?.length || 0 }} updates
-									</span>
-								</div>
-							</div>
+								<!-- Discussion & Activity Timeline Section -->
+								<div class="pt-6 border-t border-slate-200/80 space-y-4">
+									<div class="flex items-center justify-between">
+										<div class="flex items-center gap-2">
+											<IconMessageSquare class="w-4 h-4 text-slate-500" />
+											<h3 class="text-xs sm:text-sm font-bold text-slate-800">Discussion & Activity</h3>
+											<span class="text-xs bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full font-semibold">
+												{{ comments.data?.length || 0 }} updates
+											</span>
+										</div>
+									</div>
 
-							<div class="relative min-h-[50px] pb-6">
-								<div v-if="comments.loading" class="flex justify-center py-8">
-									<div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-								</div>
-
-								<div v-else-if="comments.data && comments.data.length > 0" class="relative pl-6 border-l-2 border-slate-100 ml-4 space-y-6">
-									<div v-for="comment in comments.data" :key="comment.name" class="relative group">
-										<!-- Timeline Avatar absolute on rail -->
-										<div class="absolute -left-[37px] top-1 z-10">
-											<Avatar 
-												:image="getUserAvatarImage(comment.comment_by)"
-												:label="comment.comment_by || 'User'" 
-												size="sm" 
-												class="ring-4 ring-white shadow-sm" 
-											/>
+									<div class="relative min-h-[50px] pb-2">
+										<div v-if="comments.loading" class="flex justify-center py-8">
+											<div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
 										</div>
 
-										<!-- Modern Message Bubble Card -->
-										<div class="bg-white border border-slate-200/60 rounded-2xl rounded-tl-none p-4 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200">
-											<div class="flex items-center justify-between mb-2">
-												<div class="flex items-center gap-2">
-													<span class="text-xs font-bold text-slate-800">{{ comment.comment_by }}</span>
-													<span class="text-[10px] text-slate-400 font-medium">{{ formatTimeAgo(comment.creation) }}</span>
-												</div>
-
-												<!-- Comment Edit/Delete Actions -->
-												<div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" v-if="comment.comment_by === session.user">
-													<button 
-														@click="startEditing(comment)"
-														class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-blue-600 transition-colors"
-														title="Edit Comment"
-													>
-														<IconEdit3 class="w-3.5 h-3.5" />
-													</button>
-													<button 
-														@click="handleDeleteComment(comment.name)"
-														class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-colors"
-														title="Delete Comment"
-													>
-														<IconTrash2 class="w-3.5 h-3.5" />
-													</button>
-												</div>
-											</div>
-
-											<div class="text-sm text-slate-600 leading-relaxed">
-												<div v-if="editingCommentName === comment.name" class="space-y-3">
-													<FormControl 
-														type="textarea"
-														v-model="editContent" 
-														class="w-full rounded-xl border border-slate-200 p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+										<!-- Timeline Comments Feed -->
+										<div v-else-if="comments.data && comments.data.length > 0" class="space-y-4 relative pl-10 sm:pl-12 before:absolute before:inset-y-0 before:left-[18px] sm:before:left-[22px] before:w-0.5 before:bg-slate-200/50">
+											<div v-for="comment in comments.data" :key="comment.name" class="relative group">
+												<!-- Timeline Avatar -->
+												<div class="absolute -left-[40px] sm:-left-[48px] top-1 z-10">
+													<Avatar 
+														:image="getUserAvatarImage(comment.comment_by)"
+														:label="getUserLabel(comment.comment_by) || comment.comment_by || 'User'" 
+														size="md" 
+														class="ring-4 ring-white shadow-sm shrink-0" 
 													/>
-													<div class="flex justify-end gap-2">
-														<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-														<Button size="sm" variant="solid" @click="handleUpdateComment(comment.name)" class="!bg-blue-600">Save</Button>
+												</div>
+
+												<!-- Message Bubble Card -->
+												<div class="bg-white rounded-xl border border-slate-200/80 p-3.5 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200">
+													<div class="flex items-center justify-between mb-2">
+														<div class="flex items-center gap-1.5 text-xs">
+															<span class="font-bold text-slate-800 truncate max-w-[140px] sm:max-w-none">{{ getUserLabel(comment.comment_by) || comment.comment_by }}</span>
+															<span class="text-slate-300">·</span>
+															<span class="text-slate-400 font-medium shrink-0">{{ formatTimeAgo(comment.creation) }}</span>
+														</div>
+
+														<div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" v-if="comment.comment_by === session.user">
+															<button 
+																@click="startEditing(comment)"
+																class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-blue-600 transition-colors"
+																title="Edit Comment"
+															>
+																<IconEdit3 class="w-3.5 h-3.5" />
+															</button>
+															<button 
+																@click="handleDeleteComment(comment.name)"
+																class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-colors"
+																title="Delete Comment"
+															>
+																<IconTrash2 class="w-3.5 h-3.5" />
+															</button>
+														</div>
+													</div>
+
+													<div class="text-sm text-slate-600 leading-relaxed">
+														<div v-if="editingCommentName === comment.name" class="space-y-3">
+															<FormControl 
+																type="textarea"
+																v-model="editContent" 
+																class="w-full rounded-xl border border-slate-200 p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+															/>
+															<div class="flex justify-end gap-2">
+																<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
+																<Button size="sm" variant="solid" @click="handleUpdateComment(comment.name)" class="!bg-blue-600">Save</Button>
+															</div>
+														</div>
+														<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="comment.content"></div>
 													</div>
 												</div>
-												<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="comment.content"></div>
 											</div>
+										</div>
+
+										<!-- Empty State Placeholder -->
+										<div v-else class="flex flex-col items-center justify-center py-8 sm:py-10 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200 mx-1 my-1 shadow-sm">
+											<IconMessageSquare class="w-8 h-8 mb-2 opacity-25 text-slate-500" />
+											<p class="text-xs font-semibold italic text-slate-400 text-center">No updates or comments yet. Start the conversation!</p>
 										</div>
 									</div>
 								</div>
+							</div>
 
-								<div v-else class="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
-									<IconMessageSquare class="w-8 h-8 mb-2 opacity-25 text-slate-500" />
-									<p class="text-xs font-semibold italic">No updates or comments yet. Start the conversation!</p>
+							<!-- Docked Bottom Comment Box -->
+							<div class="p-3 sm:p-4 bg-white border-t shrink-0">
+								<CommentBox
+									v-model="commentText"
+									:avatar="getUserAvatarImage(session.user)"
+									:user="session.user"
+									:userName="session.userFullName"
+									placeholder="Type a message..."
+									:loading="comments.loading"
+									@submit="handlePostComment"
+								/>
+							</div>
+						</div>
+
+						<!-- Right Column (40% Width on Desktop): Metadata Cards & Attachments Sidebar -->
+						<div class="w-full md:w-[40%] md:shrink-0 flex flex-col bg-slate-50/30 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar min-h-0">
+							<!-- Section 1: General Information Card -->
+							<div class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-4 shadow-sm">
+								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">General Information</h4>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+									<FormControl label="Status" type="select" :options="statusOptions.map(s => s.value)" v-model="newTask.status" class="!mb-0 shadow-sm" />
+									<FormControl label="Priority" type="select" :options="priorityOptions" v-model="newTask.priority" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+								</div>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3 sm:pt-4">
+									<FormControl label="Project" type="select" :options="projectResource.data" v-model="newTask.project" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+									<FormControl label="Department" type="select" :options="departmentResource.data" v-model="newTask.department" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+								</div>
+							</div>
+
+							<!-- Section 2: Assignment & Schedule Card -->
+							<div class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-4 shadow-sm">
+								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Assignment & Schedule</h4>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+									<FormControl label="Assigned By" type="select" v-model="newTask.assigned_by" :options="userResource.data" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+									<FormControl label="Team" type="select" :options="tactixTeamResource.data" v-model="newTask.tactix_team" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+								</div>
+
+								<div class="space-y-1 border-t border-slate-200/60 pt-3">
+									<label class="text-xs font-medium text-slate-600 block">Assigned To</label>
+									<MultiSelect
+										:options="assignedToOptions"
+										v-model="newTask.assigned_to"
+										:disabled="isFieldDisabled"
+										class="shadow-sm"
+									>
+										<template #footer="{ clearAll, selectAll }">
+											<div class="flex justify-between my-2">
+												<Button theme="red" @click="clearAll">
+													<template #prefix>
+														<LucideTrash class="size-4" />
+													</template>
+												Clear All
+												</Button>
+
+												<Button @click="selectAll">
+													<template #prefix>
+														<LucideCheck class="size-4" />
+													</template>
+												Select All
+												</Button>
+											</div>
+										</template>
+									</MultiSelect>
+								</div>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3">
+									<FormControl label="Deadline" type="date" v-model="newTask.exp_end_date" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+									<FormControl label="Expected Time (Hrs)" type="number" v-model="newTask.expected_time" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+								</div>
+
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3">
+									<FormControl label="Assigned Datetime" type="datetime-local" :model-value="formatForInput(newTask.assigned_datetime)" class="!mb-0 shadow-sm" disabled="true" />
+									<FormControl v-if="newTask.completed_by" label="Completed By" type="select" v-model="newTask.completed_by" :options="userResource.data" class="!mb-0 shadow-sm" disabled="true" />
+								</div>
+							</div>
+
+							<!-- Section 3: Attachments Card -->
+							<div class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-4 shadow-sm">
+								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Attachments</h4>
+								
+								<FileUploader @success="handleFileUpload">
+									<template #default="{ openFileSelector }">
+										<button 
+											@click="openFileSelector" 
+											class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl p-3.5 sm:p-4 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all group"
+										>
+											<IconPaperclip class="w-4 h-4" />
+											<span class="text-xs font-semibold">Add Files</span>
+										</button>
+									</template>
+								</FileUploader>
+								
+								<div class="grid grid-cols-1 gap-2.5">
+									<div 
+										v-for="(file, idx) in newTask.attachments" 
+										:key="idx" 
+										class="group flex items-center justify-between bg-slate-50/60 border border-slate-200 rounded-xl shadow-sm hover:border-blue-300 hover:shadow transition-all overflow-hidden p-2"
+									>
+										<a 
+											:href="file.file_url" 
+											target="_blank" 
+											class="flex flex-1 items-center gap-2.5 truncate"
+										>
+											<div class="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+												<IconBriefcase class="w-4 h-4" /> 
+											</div>
+											<div class="truncate text-left">
+												<span class="block truncate font-semibold text-slate-700 text-xs group-hover:text-blue-600 transition-colors">
+													{{ file.file_name }}
+												</span>
+												<span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Attachment</span>
+											</div>
+										</a>
+
+										<button 
+											@click.stop="removeAttachment(idx)" 
+											class="p-2 ml-1 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+											title="Remove file"
+										>
+											<IconX class="w-4 h-4" />
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-
-					<!-- Stuck/Docked discussion composer at the bottom -->
-					<div class="p-4 bg-white border">
-						<CommentBox
-							v-model="commentText"
-							:avatar="getUserAvatarImage(session.user)"
-							:user="session.user"
-							:userName="session.userFullName"
-							placeholder="Type a message..."
-							:loading="comments.loading"
-							@submit="handlePostComment"
-						/>
-					</div>
-				</div>
-
-				<div class="w-full md:w-80 md:min-w-80 md:shrink-0 border-t md:border-t-0 md:border-l bg-slate-50/50 p-3 pb-28 space-y-4 overflow-y-auto custom-scrollbar">
-					<div v-if="newTask.fullfilled_in_display_text" class="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/50 rounded-lg p-2 mb-2">
-						<span class="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Fulfilled In</span>
-						<Badge 
-							theme="green" 
-							variant="subtle" 
-							:label="newTask.fullfilled_in_display_text"
-						>
-						</Badge>
-					</div>
-					<Badge theme="red" variant="subtle" v-if="newTask.is_overdue" label="Overdue">
-					</Badge>
-					<div class="space-y-2">
-						<DetailItem label="Status">
-							<FormControl type="select" :options="statusOptions.map(s => s.value)" v-model="newTask.status" class="!mb-0 shadow-sm"/>
-						</DetailItem>
-
-						<DetailItem label="Project">
-							<FormControl type="select" :options="projectResource.data" v-model="newTask.project" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
-						</DetailItem>
-
-						<DetailItem label="Department">
-							<FormControl type="select" :options="departmentResource.data" v-model="newTask.department" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
-						</DetailItem>
-
-						<DetailItem label="Priority">
-							<FormControl type="select" :options="priorityOptions" v-model="newTask.priority" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
-						</DetailItem>
-						
-						<DetailItem label="Security Impact">
-							<FormControl type="select" :options="securityImpactOptions" v-model="newTask.security_impact" class="!mb-0 shadow-sm" :disabled="isFieldDisabled"/>
-						</DetailItem>
-
-						<DetailItem label="Assigned By">
-							<FormControl type="select" v-model="newTask.assigned_by" :options="userResource.data" :disabled="isFieldDisabled"/>
-						</DetailItem>
-
-						<DetailItem label="Assigned To">
-							<MultiSelect
-								:options="assignedToOptions"
-								v-model="newTask.assigned_to"
-								:disabled="isFieldDisabled"
-							>
-								<template #footer="{ clearAll, selectAll }">
-									<div class="flex justify-between my-2">
-										<Button theme="red" @click="clearAll">
-											<template #prefix>
-												<LucideTrash class="size-4" />
-											</template>
-										Clear All
-										</Button>
-
-										<Button @click="selectAll">
-											<template #prefix>
-												<LucideCheck class="size-4" />
-											</template>
-										Select All
-										</Button>
-									</div>
-								</template>
-							</MultiSelect>
-						</DetailItem>
-
-						<DetailItem label="Assigned Datetime">
-							<FormControl type="datetime-local" :model-value="formatForInput(newTask.assigned_datetime)" class="shadow-sm" disabled="true"/>
-						</DetailItem>
-
-						<DetailItem label="Deadline">
-							<FormControl type="date" v-model="newTask.exp_end_date" class="shadow-sm" :disabled="isFieldDisabled" />
-						</DetailItem>
-
-						<DetailItem label="Completed By" v-if="newTask.completed_by">
-							<FormControl type="select" v-model="newTask.completed_by" :options="userResource.data" disabled="true" />
-						</DetailItem>
-
-						<DetailItem label="Expected Time (In Hrs)">
-							<FormControl type="number" v-model="newTask.expected_time" class="shadow-sm" :disabled="isFieldDisabled"/>
-						</DetailItem>
-
-						<div class="pt-4 border-t border-slate-200">
-						<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
-							Attachments
-						</label>
-						<div class="space-y-2">
-							<FileUploader @success="handleFileUpload">
-							<template #default="{ openFileSelector }">
-								<button 
-								@click="openFileSelector" 
-								class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-xl p-4 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all group"
-								>
-								<IconPaperclip class="w-4 h-4" />
-								<span class="text-xs font-semibold">Add Files</span>
-								</button>
-							</template>
-							</FileUploader>
-							
-							<div class="grid grid-cols-1 gap-2">
-							<div 
-								v-for="(file, idx) in newTask.attachments" 
-								:key="idx" 
-								class="group flex items-center justify-between bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-all overflow-hidden"
-							>
-								<a 
-								:href="file.file_url" 
-								target="_blank" 
-								class="flex flex-1 items-center gap-2 p-2 cursor-pointer hover:bg-blue-50/50 transition-colors truncate"
-								>
-								<IconBriefcase class="w-3.5 h-3.5 text-blue-500 shrink-0" /> 
-								<span class="truncate font-medium text-slate-700 text-[11px] group-hover:text-blue-600 transition-colors">
-									{{ file.file_name }}
-								</span>
-								<LucideExternalLink class="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-								</a>
-
-								<button 
-								@click.stop="removeAttachment(idx)" 
-								class="p-2 mr-1 hover:bg-red-50 rounded-md text-slate-400 hover:text-red-500 transition-colors"
-								title="Remove file"
-								>
-								<IconX class="w-3.5 h-3.5" />
-								</button>
-							</div>
-							</div>
-						</div>
-						
-						</div>
-					</div>
-				</div>
+				</template>
 			</div>
-				</div>
-	  	</div>
-	</div>
+		</div>
+	</Transition>
   </div>
 </template>
 
@@ -1709,11 +1707,14 @@ const deadlineOptions = [
 	{ label: "Last Year", value: "last_year" },
 ]
 
-const securityImpactOptions = [
-	{ label: "Yes", value: "Yes" },
-	{ label: "No", value: "No" },
-	{ label: "Not Applicable", value: "Not Applicable" },
-]
+const tactixTeamResource = createListResource({
+	doctype: "Tactix Team",
+	fields: ["team_name", "name"],
+	auto: true,
+	transform: (teams) =>
+		teams.map((t) => ({ label: t.team_name || t.name, value: t.name })),
+	pageLength: 10000,
+})
 
 const columns = [
 	{ label: "Task Name", key: "subject", icon: IconCheckCircle, width: "280px" },
@@ -2123,7 +2124,7 @@ const initialForm = {
 	completed_by: "",
 	expected_time: "",
 	department: "",
-	security_impact: "",
+	tactix_team: "",
 }
 
 const newTask = reactive({ ...initialForm })
@@ -2510,6 +2511,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.slide-enter-active, .slide-leave-active { transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1); }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
 }
