@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
     <!-- Top Stats / KPIs Header -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 flex-shrink-0">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-shrink-0">
       <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Hours logged</span>
@@ -242,7 +242,7 @@
             <IconAlertCircle class="w-4 h-4 text-red-500 flex-shrink-0" /> {{ formError }}
           </p>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <!-- Date Picker -->
             <FormControl 
               type="date" 
@@ -372,9 +372,9 @@
             <IconAlertCircle class="w-4 h-4 text-red-500 flex-shrink-0" /> {{ viewError }}
           </p>
           <!-- Summary Cards Row -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <!-- Date Card -->
-            <div class="bg-blue-50/40 border border-blue-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-blue-50/40 border border-blue-100 rounded-xl p-2 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Date</span>
                 <div class="p-1.5 rounded-lg bg-blue-100/50">
@@ -387,7 +387,7 @@
             </div>
 
             <!-- Employee Card -->
-            <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-2 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider">Employee</span>
                 <div class="p-1.5 rounded-lg bg-indigo-100/50">
@@ -400,7 +400,7 @@
             </div>
 
             <!-- Total Hours Card -->
-            <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4 flex flex-col justify-between shadow-sm">
+            <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-2 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Total hours</span>
                 <div class="p-1.5 rounded-lg bg-emerald-100/50">

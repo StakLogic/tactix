@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0 bg-slate-50/50">
     <!-- Top Filter Header -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-4 mt-4 flex-shrink-0">
+    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-4 mt-2 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div class="p-2.5 rounded-xl bg-blue-50 text-blue-600">
           <IconTrendingUp class="w-5 h-5" />
@@ -51,7 +51,7 @@
     </div>
 
     <!-- Main Dashboard Scrollable Area -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar min-h-0">
+    <div class="flex-1 overflow-y-auto p-2 space-y-6 custom-scrollbar min-h-0">
       <!-- Loading Spinner -->
       <div v-if="performanceResource.loading" class="flex flex-col items-center justify-center py-20 space-y-3">
         <div class="w-10 h-10 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -60,9 +60,9 @@
 
       <template v-else-if="performanceData">
         <!-- KPI Metrics Grid (5 Column Layout) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
           <!-- Task Completion Rate Card -->
-          <Card class="!shadow-sm bg-white border border-slate-100 p-4 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
+          <Card class="!shadow-sm bg-white border border-slate-100 p-2 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Task Completion</span>
@@ -88,7 +88,7 @@
           </Card>
 
           <!-- Ticket SLA Response Card -->
-          <Card class="!shadow-sm bg-white border border-slate-100 p-4 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
+          <Card class="!shadow-sm bg-white border border-slate-100 p-2 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg First Response</span>
@@ -115,7 +115,7 @@
           </Card>
 
           <!-- Total Logged Hours Card -->
-          <Card class="!shadow-sm bg-white border border-slate-100 p-4 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
+          <Card class="!shadow-sm bg-white border border-slate-100 p-2 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Logged Hours</span>
@@ -133,7 +133,7 @@
           </Card>
 
           <!-- Avg Daily Logged Hours Card -->
-          <Card class="!shadow-sm bg-white border border-slate-100 p-4 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
+          <Card class="!shadow-sm bg-white border border-slate-100 p-2 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Daily Hours</span>
@@ -159,7 +159,7 @@
           </Card>
 
           <!-- Pull Requests & Contributions Card (New!) -->
-          <Card class="!shadow-sm bg-white border border-slate-100 p-4 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
+          <Card class="!shadow-sm bg-white border border-slate-100 p-2 flex flex-col justify-between hover:shadow-md hover:scale-[1.01] transition-all duration-300">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PRs & Contributions</span>
@@ -189,7 +189,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Trends Area Chart Card -->
           <Card class="!shadow-sm bg-white border border-slate-100 p-6 lg:col-span-2 space-y-4 flex flex-col min-h-0 hover:shadow-md transition-all duration-300">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                   <IconActivity class="w-4 h-4 text-slate-400" /> Performance Activity Trends
@@ -316,7 +316,7 @@
             </div>
 
             <!-- Donut Container -->
-            <div class="flex items-center justify-between w-full gap-4 py-4">
+            <div class="flex items-center justify-between w-full gap-2 py-4">
               <!-- SVG Donut Chart -->
               <div class="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
                 <svg class="w-full h-full transform -rotate-90" viewBox="0 0 42 42">
