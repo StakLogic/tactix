@@ -234,7 +234,7 @@
 			<!-- Routed Pages -->
 			<div class="flex-1 overflow-hidden p-0 lg:p-2 flex flex-col min-h-0">
 				<router-view v-slot="{ Component }">
-					<component :is="Component" :key="route.fullPath" />
+					<component :is="Component" :key="route.name || route.path" />
 				</router-view>
 			</div>
 

@@ -1964,9 +1964,6 @@ function fetchTaskSummary() {
 	tasksSummaryResource.fetch({ filters: taskFilters.value })
 }
 
-fetchTasks()
-fetchTaskSummary()
-
 watch(
 	taskFilters,
 	() => {
@@ -2444,6 +2441,15 @@ const router = useRouter()
 async function openTaskByName(taskName) {
 	if (!taskName) return
 	if (showEditTask.value && newTask.name === taskName) return
+
+	if (tasksResource.data?.tasks) {
+		const found = tasksResource.data.tasks.find((t) => t.name === taskName)
+		if (found) {
+			openEditDialog(found)
+			return
+		}
+	}
+
 	try {
 		const res = await createResource({
 			url: "frappe.client.get",

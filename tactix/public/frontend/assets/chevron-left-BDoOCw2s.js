@@ -1,2 +1,0 @@
-import{m as o,o as t,c as n,a as r}from"./index-BXraeObG.js";const s={class:"lucide lucide-chevron-left",xmlns:"http://www.w3.org/2000/svg",width:"24",height:"24",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.5","stroke-linecap":"round","stroke-linejoin":"round"};function l(c,e){return t(),n("svg",s,[...e[0]||(e[0]=[r("path",{d:"m15 18-6-6 6-6"},null,-1)])])}const i=o({name:"lucide-chevron-left",render:l});export{i as I};
-//# sourceMappingURL=chevron-left-BDoOCw2s.js.map
