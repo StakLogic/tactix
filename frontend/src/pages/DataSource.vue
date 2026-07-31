@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
       <div class="min-w-0">
-        <h1 class="text-xl font-black text-slate-900 leading-tight">Master Data & Integrations</h1>
-        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Manage system configurations, data sources, and record masters</p>
+        <h1 class="text-xl font-black text-slate-900 leading-tight">Master Data</h1>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Manage system record masters, projects, departments, customers, and teams</p>
       </div>
       <Button 
         variant="ghost" 
@@ -21,100 +21,8 @@
       <template #tab-panel="{ tab }">
         <div class="pt-4 space-y-6 animate-fade-in">
           
-          <!-- Tab 1: GitHub Settings (Sync) -->
-          <div v-if="activeTab === 'github'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card class="!shadow-sm bg-white border border-slate-200/60 p-6 space-y-6 lg:col-span-2 flex flex-col justify-between hover:shadow-md transition-all duration-300">
-              <div class="space-y-4">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100">
-                      <IconGitBranch class="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">GitHub Integration Settings</h3>
-                      <p class="text-xs text-slate-400 font-medium">Sync pull requests and reviewer contributions</p>
-                    </div>
-                  </div>
-                  <Badge 
-                    :theme="configResource.data?.has_token ? 'green' : 'gray'" 
-                    variant="subtle" 
-                    class="font-black text-[9px] uppercase tracking-wide px-2.5 py-0.5"
-                  >
-                    {{ configResource.data?.has_token ? 'Connected' : 'Disconnected' }}
-                  </Badge>
-                </div>
-
-                <!-- Configuration Form -->
-                <div v-if="isAdmin" class="space-y-4 pt-2 border-t border-slate-100">
-                  <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settings</h4>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Personal Access Token</label>
-                      <input 
-                        type="password"
-                        v-model="githubForm.token"
-                        placeholder="••••••••••••••••••••"
-                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
-                      />
-                    </div>
-                    <div class="space-y-1">
-                      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Organization Names</label>
-                      <input 
-                        type="text"
-                        v-model="githubForm.organization_name"
-                        placeholder="e.g. Teciza-Solutions"
-                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2 pt-2">
-                    <Button 
-                      variant="solid" 
-                      class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-                      :loading="saving"
-                      @click="saveGithubConfig"
-                    >
-                      Save Config
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      class="!text-slate-600 !h-8 !px-3 border border-slate-200 hover:bg-slate-50 font-semibold text-xs flex-1 sm:flex-none justify-center"
-                      :loading="syncing"
-                      @click="syncPRs"
-                    >
-                      <template #prefix><IconRefresh class="w-3.5 h-3.5" /></template>
-                      Sync PRs Now
-                    </Button>
-                  </div>
-                  <div v-if="feedback" class="mt-1">
-                    <ErrorMessage v-if="feedback.type === 'error'" :message="feedback.message" />
-                    <Badge v-else-if="feedback.type === 'success'" theme="green" variant="subtle" size="md">{{ feedback.message }}</Badge>
-                  </div>
-                </div>
-                <div v-else class="pt-4 border-t border-slate-100 text-xs text-slate-400 italic">
-                  GitHub settings are configured by system administrators. Only connected state is displayed.
-                </div>
-              </div>
-
-              <!-- Webhook details -->
-              <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
-                <div class="flex items-center gap-1.5 font-bold text-slate-700">
-                  <IconSettings class="w-3.5 h-3.5 text-slate-400" />
-                  <span>Webhook Integration Details</span>
-                </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">
-                  To enable real-time pull request notifications, register this Webhook URL in your GitHub repository/organization settings under the <b class="text-slate-700">pull_request</b> events scope:
-                </p>
-                <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-xl font-mono text-[10px] text-slate-600 break-all select-all flex items-center justify-between gap-2">
-                  <span>{{ webhookUrl }}</span>
-                  <IconExternalLink class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-700" @click="copyWebhook" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
           <!-- Master Lists (Project, Department, Tactix Dept, Tactix Customer, Tactix Team) -->
-          <div v-else class="space-y-4">
+          <div class="space-y-4">
             <!-- Controls & Search -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
               <div class="relative w-full sm:max-w-xs">
@@ -241,11 +149,9 @@
 
 <script setup>
 import {
-	Badge,
 	Button,
 	Card,
 	Dialog,
-	ErrorMessage,
 	FormControl,
 	Tabs,
 	createResource,
@@ -254,18 +160,13 @@ import { computed, reactive, ref, watch } from "vue"
 
 // Icons
 import IconArrowLeft from "~icons/lucide/arrow-left"
-import IconExternalLink from "~icons/lucide/external-link"
-import IconGitBranch from "~icons/lucide/git-branch"
 import IconEdit from "~icons/lucide/pencil"
 import IconPlus from "~icons/lucide/plus"
-import IconRefresh from "~icons/lucide/refresh-cw"
 import IconSearch from "~icons/lucide/search"
-import IconSettings from "~icons/lucide/settings"
 import IconTrash from "~icons/lucide/trash-2"
 
 const tabIndex = ref(0)
 const tabs = [
-	{ label: "GitHub Sync", id: "github" },
 	{ label: "Projects", id: "project" },
 	{ label: "Departments", id: "department" },
 	{ label: "Tactix Departments", id: "tactix_dept" },
@@ -273,7 +174,7 @@ const tabs = [
 	{ label: "Tactix Teams", id: "tactix_team" },
 ]
 
-const activeTab = computed(() => tabs[tabIndex.value]?.id || "github")
+const activeTab = computed(() => tabs[tabIndex.value]?.id || "project")
 const searchQuery = ref("")
 const loadingRecords = ref(false)
 const masterRecords = ref([])
@@ -320,266 +221,181 @@ const employeeInfoResource = createResource({
 
 const isAdmin = computed(() => employeeInfoResource.data?.is_system_manager)
 
-// GitHub Settings
-const configResource = createResource({
-	url: "tactix.api.github.get_github_config",
-	initialData: { has_token: false, organization_name: "" },
+// Link Options for Dropdowns
+const linkOptions = reactive({
+	companies: [],
+})
+
+const usersResource = createResource({
+	url: "tactix.api.generic.get_users_list",
 	auto: true,
 })
 
-const githubForm = reactive({
-	token: "",
-	organization_name: "",
+const userOptions = computed(() => {
+	if (!usersResource.data) return []
+	return usersResource.data.map((u) => ({
+		label: `${u.full_name} (${u.name})`,
+		value: u.name,
+	}))
 })
 
-watch(
-	() => configResource.data,
-	(data) => {
-		if (data) {
-			githubForm.token = data.has_token ? "******" : ""
-			githubForm.organization_name = data.organization_name || ""
-		}
-	},
-	{ immediate: true },
-)
-
-const saving = ref(false)
-const syncing = ref(false)
-const feedback = ref(null)
-
-const webhookUrl = computed(() => {
-	return `${window.location.origin}/api/method/tactix.api.github.handle_webhook`
-})
-
-async function saveGithubConfig() {
-	saving.value = true
-	feedback.value = null
-	try {
-		const res = await fetch(
-			"/api/method/tactix.api.github.save_github_config",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(githubForm),
-			},
-		)
-		const data = await res.json()
-		if (data.message?.status === "success") {
-			feedback.value = {
-				type: "success",
-				message: "Configuration saved successfully!",
-			}
-			configResource.reload()
-		} else {
-			feedback.value = {
-				type: "error",
-				message: "Failed to save configuration.",
-			}
-		}
-	} catch (err) {
-		feedback.value = {
-			type: "error",
-			message: "An error occurred while saving.",
-		}
-	} finally {
-		saving.value = false
-	}
-}
-
-async function syncPRs() {
-	syncing.value = true
-	feedback.value = null
-	try {
-		const res = await fetch(
-			"/api/method/tactix.api.github.sync_all_pull_requests",
-			{
-				method: "POST",
-			},
-		)
-		const data = await res.json()
-		if (data.message?.status === "success") {
-			feedback.value = {
-				type: "success",
-				message: "Synchronized pull requests successfully!",
-			}
-		} else if (data.message?.error) {
-			feedback.value = {
-				type: "error",
-				message: `Sync error: ${data.message.error}`,
-			}
-		} else {
-			feedback.value = {
-				type: "success",
-				message: "Sync job dispatched successfully in background!",
-			}
-		}
-	} catch (err) {
-		feedback.value = {
-			type: "error",
-			message: "An error occurred while synchronizing.",
-		}
-	} finally {
-		syncing.value = false
-	}
-}
-
-function copyWebhook() {
-	navigator.clipboard.writeText(webhookUrl.value)
-	alert("Webhook URL copied to clipboard!")
-}
-
-// Master Data Management Logic
-const linkOptions = reactive({
-	companies: [],
-	users: [],
-})
-
-const userOptions = computed(() => [
-	{ label: "No Head of Dept", value: "" },
-	...linkOptions.users.map((u) => ({ label: u, value: u })),
-])
-
-async function fetchLinkOptions() {
+// Fetch Link Options
+const fetchLinkOptions = async () => {
 	try {
 		const res = await fetch("/api/method/tactix.api.masters.get_link_options")
 		const data = await res.json()
 		if (data.message) {
-			linkOptions.companies = data.message.companies || []
-			linkOptions.users = data.message.users || []
+			linkOptions.companies = (data.message.companies || []).map((c) => ({
+				label: c,
+				value: c,
+			}))
 		}
 	} catch (err) {
-		console.error("Failed to load options", err)
+		console.error("Error fetching link options:", err)
 	}
 }
 
-async function fetchMasterRecords() {
-	if (activeTab.value === "github") return
+// Fetch Master Records based on activeTab
+const fetchMasterRecords = async () => {
 	loadingRecords.value = true
 	try {
+		const doctype = currentTabDoctype.value
+		if (!doctype) {
+			masterRecords.value = []
+			return
+		}
 		const res = await fetch(
-			`/api/method/tactix.api.masters.get_master_records?doctype=${currentTabDoctype.value}`,
+			`/api/method/tactix.api.masters.get_master_records?doctype=${encodeURIComponent(doctype)}`,
 		)
 		const data = await res.json()
 		masterRecords.value = data.message || []
 	} catch (err) {
-		console.error("Failed to load master records", err)
+		console.error("Error fetching master records:", err)
+		masterRecords.value = []
 	} finally {
 		loadingRecords.value = false
 	}
 }
 
 watch(activeTab, () => {
-	searchQuery.value = ""
 	fetchMasterRecords()
 })
 
-const filteredRecords = computed(() => {
-	const query = searchQuery.value.toLowerCase().trim()
-	if (!query) return masterRecords.value
+watch(
+	isAdmin,
+	(val) => {
+		if (val) {
+			fetchLinkOptions()
+		}
+	},
+	{ immediate: true },
+)
 
-	return masterRecords.value.filter((row) => {
-		return Object.values(row).some((val) =>
-			String(val).toLowerCase().includes(query),
+fetchMasterRecords()
+
+// Filtered Records based on Search Query
+const filteredRecords = computed(() => {
+	if (!searchQuery.value) return masterRecords.value
+	const q = searchQuery.value.toLowerCase()
+	return masterRecords.value.filter((r) => {
+		return (
+			(r.name && r.name.toLowerCase().includes(q)) ||
+			(r.project_name && r.project_name.toLowerCase().includes(q)) ||
+			(r.company && r.company.toLowerCase().includes(q)) ||
+			(r.department_name && r.department_name.toLowerCase().includes(q)) ||
+			(r.department_head && r.department_head.toLowerCase().includes(q)) ||
+			(r.team_name && r.team_name.toLowerCase().includes(q)) ||
+			(r.team_lead && r.team_lead.toLowerCase().includes(q))
 		)
 	})
 })
 
+// Modal State
+const modal = reactive({
+	show: false,
+	isEdit: false,
+	recordId: null,
+	form: {},
+})
+
 const dialogOptions = computed(() => ({
-	title: `${modal.isEdit ? "Edit" : "Create New"} ${currentTabLabelSingular.value}`,
+	title: `${modal.isEdit ? "Edit" : "Create"} ${currentTabLabelSingular.value}`,
 	size: "md",
 	actions: [
 		{
-			label: "Save Record",
+			label: modal.isEdit ? "Update" : "Save",
 			variant: "solid",
-			loading: modal.saving,
-			onClick: saveRecord,
-		},
-		{
-			label: "Cancel",
-			variant: "ghost",
-			onClick: () => {
-				modal.show = false
-			},
+			onClick: submitModalForm,
 		},
 	],
 }))
 
-// Modal & Actions Setup
-const modal = reactive({
-	show: false,
-	isEdit: false,
-	saving: false,
-	name: "",
-	form: {},
-})
-
 function openCreateModal() {
-	modal.show = true
 	modal.isEdit = false
-	modal.name = ""
-	modal.form = {
-		project_name: "",
-		company: linkOptions.companies[0] || "",
-		department_name: "",
-		department_head: "",
-		team_name: "",
-		team_lead: "",
-		name: "",
+	modal.recordId = null
+	modal.form = {}
+	if (activeTab.value === "project") {
+		if (linkOptions.companies.length > 0) {
+			modal.form.company = linkOptions.companies[0].value
+		}
+	} else if (activeTab.value === "department") {
+		if (linkOptions.companies.length > 0) {
+			modal.form.company = linkOptions.companies[0].value
+		}
 	}
+	modal.show = true
 }
 
 function openEditModal(row) {
-	modal.show = true
 	modal.isEdit = true
-	modal.name = row.name
+	modal.recordId = row.name
 	modal.form = { ...row }
+	modal.show = true
 }
 
-async function saveRecord() {
-	modal.saving = true
+async function submitModalForm() {
 	try {
-		let url = "/api/method/tactix.api.masters.create_master_record"
-		const body = {
+		const action = modal.isEdit ? "update" : "create"
+		const payload = {
+			action,
 			doctype: currentTabDoctype.value,
-			doc_data: JSON.stringify(modal.form),
+			data: { ...modal.form },
 		}
-
 		if (modal.isEdit) {
-			url = "/api/method/tactix.api.masters.update_master_record"
-			body.name = modal.name
+			payload.name = modal.recordId
 		}
 
-		const res = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(body),
-		})
+		const res = await fetch(
+			"/api/method/tactix.api.masters.save_master_record",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			},
+		)
 		const data = await res.json()
 		if (data.message?.status === "success") {
 			modal.show = false
 			fetchMasterRecords()
 		} else {
-			alert(
-				data.message?.error ||
-					"Failed to save record. Ensure required fields are correct.",
-			)
+			alert(data.message?.error || "Error saving record")
 		}
 	} catch (err) {
-		alert("An error occurred while saving the record.")
-	} finally {
-		modal.saving = false
+		console.error("Error submitting form:", err)
+		alert("Failed to submit form")
 	}
 }
 
 async function deleteRecord(name) {
-	if (!confirm("Are you sure you want to delete this record?")) return
+	if (!confirm(`Are you sure you want to delete ${name}?`)) return
 	try {
 		const res = await fetch(
-			"/api/method/tactix.api.masters.delete_master_record",
+			"/api/method/tactix.api.masters.save_master_record",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
+					action: "delete",
 					doctype: currentTabDoctype.value,
 					name,
 				}),
@@ -589,25 +405,23 @@ async function deleteRecord(name) {
 		if (data.message?.status === "success") {
 			fetchMasterRecords()
 		} else {
-			alert("Failed to delete record.")
+			alert(data.message?.error || "Error deleting record")
 		}
 	} catch (err) {
-		alert("An error occurred while deleting the record.")
+		console.error("Error deleting record:", err)
+		alert("Failed to delete record")
 	}
 }
-
-// Initial triggers
-fetchLinkOptions()
 </script>
 
 <style scoped>
 .animate-fade-in {
-	animation: fadeIn 0.4s ease-out;
+	animation: fadeIn 0.2s ease-out forwards;
 }
 @keyframes fadeIn {
 	from {
 		opacity: 0;
-		transform: translateY(8px);
+		transform: translateY(4px);
 	}
 	to {
 		opacity: 1;
