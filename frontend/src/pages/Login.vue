@@ -80,10 +80,11 @@
 			</div>
 
 			<Transition name="slide-up">
-			  <div v-if="session.login.error" class="flex items-center gap-3 bg-red-50 text-red-600 text-[13px] p-4 rounded-2xl border border-red-100 font-medium">
-				<IconAlertCircle class="w-5 h-5 shrink-0" />
-				{{ session.login.error.message || 'Access denied. Please check credentials.' }}
-			  </div>
+			  <ErrorMessage 
+			    v-if="session.login.error" 
+			    :message="session.login.error.message || 'Access denied. Please check credentials.'" 
+			    class="p-4 bg-red-50 text-red-600 text-xs rounded-2xl border border-red-100 font-medium" 
+			  />
 			</Transition>
 
 			<Button 
@@ -109,6 +110,7 @@
 </template>
 
 <script setup>
+import { Button, ErrorMessage } from "frappe-ui"
 import { ref, watch } from "vue" // Added watch
 import { useRouter } from "vue-router" // Added router
 import { session } from "../data/session"

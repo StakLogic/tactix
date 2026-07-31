@@ -16,198 +16,190 @@
       </Button>
     </div>
 
-    <!-- Navigation Tabs (Button-based group matching Performance page style) -->
-    <div class="flex gap-1.5 border-b border-slate-200 pb-3 overflow-x-auto whitespace-nowrap">
-      <Button 
-        v-for="tab in tabs" 
-        :key="tab.id"
-        :variant="activeTab === tab.id ? 'subtle' : 'ghost'"
-        class="!text-xs font-bold uppercase tracking-wider !px-3"
-        @click="activeTab = tab.id"
-      >
-        {{ tab.label }}
-      </Button>
-    </div>
-
-    <!-- Tab Contents -->
-    <div class="space-y-6 animate-fade-in">
-      
-      <!-- Tab 1: GitHub Settings (Sync) -->
-      <div v-if="activeTab === 'github'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card class="!shadow-sm bg-white border border-slate-200/60 p-6 space-y-6 lg:col-span-2 flex flex-col justify-between hover:shadow-md transition-all duration-300">
-          <div class="space-y-4">
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                <div class="p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100">
-                  <IconGitBranch class="w-6 h-6" />
+    <!-- Navigation Tabs (Frappe UI Tabs component) -->
+    <Tabs :tabs="tabs" v-model="tabIndex">
+      <template #tab-panel="{ tab }">
+        <div class="pt-4 space-y-6 animate-fade-in">
+          
+          <!-- Tab 1: GitHub Settings (Sync) -->
+          <div v-if="activeTab === 'github'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card class="!shadow-sm bg-white border border-slate-200/60 p-6 space-y-6 lg:col-span-2 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+              <div class="space-y-4">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100">
+                      <IconGitBranch class="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">GitHub Integration Settings</h3>
+                      <p class="text-xs text-slate-400 font-medium">Sync pull requests and reviewer contributions</p>
+                    </div>
+                  </div>
+                  <Badge 
+                    :theme="configResource.data?.has_token ? 'green' : 'gray'" 
+                    variant="subtle" 
+                    class="font-black text-[9px] uppercase tracking-wide px-2.5 py-0.5"
+                  >
+                    {{ configResource.data?.has_token ? 'Connected' : 'Disconnected' }}
+                  </Badge>
                 </div>
-                <div>
-                  <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">GitHub Integration Settings</h3>
-                  <p class="text-xs text-slate-400 font-medium">Sync pull requests and reviewer contributions</p>
+
+                <!-- Configuration Form -->
+                <div v-if="isAdmin" class="space-y-4 pt-2 border-t border-slate-100">
+                  <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settings</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Personal Access Token</label>
+                      <input 
+                        type="password"
+                        v-model="githubForm.token"
+                        placeholder="••••••••••••••••••••"
+                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
+                      />
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Organization Names</label>
+                      <input 
+                        type="text"
+                        v-model="githubForm.organization_name"
+                        placeholder="e.g. Teciza-Solutions"
+                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2 pt-2">
+                    <Button 
+                      variant="solid" 
+                      class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
+                      :loading="saving"
+                      @click="saveGithubConfig"
+                    >
+                      Save Config
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      class="!text-slate-600 !h-8 !px-3 border border-slate-200 hover:bg-slate-50 font-semibold text-xs flex-1 sm:flex-none justify-center"
+                      :loading="syncing"
+                      @click="syncPRs"
+                    >
+                      <template #prefix><IconRefresh class="w-3.5 h-3.5" /></template>
+                      Sync PRs Now
+                    </Button>
+                  </div>
+                  <div v-if="feedback" class="mt-1">
+                    <ErrorMessage v-if="feedback.type === 'error'" :message="feedback.message" />
+                    <Badge v-else-if="feedback.type === 'success'" theme="green" variant="subtle" size="md">{{ feedback.message }}</Badge>
+                  </div>
+                </div>
+                <div v-else class="pt-4 border-t border-slate-100 text-xs text-slate-400 italic">
+                  GitHub settings are configured by system administrators. Only connected state is displayed.
                 </div>
               </div>
-              <Badge 
-                :theme="configResource.data?.has_token ? 'green' : 'gray'" 
-                variant="subtle" 
-                class="font-black text-[9px] uppercase tracking-wide px-2.5 py-0.5"
+
+              <!-- Webhook details -->
+              <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
+                <div class="flex items-center gap-1.5 font-bold text-slate-700">
+                  <IconSettings class="w-3.5 h-3.5 text-slate-400" />
+                  <span>Webhook Integration Details</span>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                  To enable real-time pull request notifications, register this Webhook URL in your GitHub repository/organization settings under the <b class="text-slate-700">pull_request</b> events scope:
+                </p>
+                <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-xl font-mono text-[10px] text-slate-600 break-all select-all flex items-center justify-between gap-2">
+                  <span>{{ webhookUrl }}</span>
+                  <IconExternalLink class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-700" @click="copyWebhook" />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <!-- Master Lists (Project, Department, Tactix Dept, Tactix Customer, Tactix Team) -->
+          <div v-else class="space-y-4">
+            <!-- Controls & Search -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <div class="relative w-full sm:max-w-xs">
+                <input 
+                  type="text" 
+                  v-model="searchQuery"
+                  placeholder="Search records..."
+                  class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
+                />
+                <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <Button 
+                v-if="isAdmin"
+                variant="solid" 
+                class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
+                @click="openCreateModal"
               >
-                {{ configResource.data?.has_token ? 'Connected' : 'Disconnected' }}
-              </Badge>
+                <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
+                Create New {{ currentTabLabelSingular }}
+              </Button>
             </div>
 
-            <!-- Configuration Form -->
-            <div v-if="isAdmin" class="space-y-4 pt-2 border-t border-slate-100">
-              <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settings</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Personal Access Token</label>
-                  <input 
-                    type="password"
-                    v-model="githubForm.token"
-                    placeholder="••••••••••••••••••••"
-                    class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
-                  />
-                </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Organization Names</label>
-                  <input 
-                    type="text"
-                    v-model="githubForm.organization_name"
-                    placeholder="e.g. Teciza-Solutions"
-                    class="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
-                  />
-                </div>
+            <!-- Master List Table -->
+            <Card class="!shadow-sm bg-white border border-slate-200/60 overflow-hidden">
+              <div v-if="loadingRecords" class="flex justify-center py-12">
+                <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
               </div>
-              <div class="flex flex-wrap items-center gap-2 pt-2">
-                <Button 
-                  variant="solid" 
-                  class="!h-8 !px-3 font-semibold text-xs flex-1 sm:flex-none justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-                  :loading="saving"
-                  @click="saveGithubConfig"
-                >
-                  Save Config
-                </Button>
-                <Button 
-                  variant="outline" 
-                  class="!text-slate-600 !h-8 !px-3 border border-slate-200 hover:bg-slate-50 font-semibold text-xs flex-1 sm:flex-none justify-center"
-                  :loading="syncing"
-                  @click="syncPRs"
-                >
-                  <template #prefix><IconRefresh class="w-3.5 h-3.5" /></template>
-                  Sync PRs Now
-                </Button>
+              <div v-else-if="filteredRecords.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
+                No records found.
               </div>
-              <p v-if="feedback" :class="`text-[10px] font-bold uppercase tracking-wider mt-1 ${feedback.type === 'success' ? 'text-green-600' : 'text-red-500'}`">
-                {{ feedback.message }}
-              </p>
-            </div>
-            <div v-else class="pt-4 border-t border-slate-100 text-xs text-slate-400 italic">
-              GitHub settings are configured by system administrators. Only connected state is displayed.
-            </div>
+              <div v-else class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <th class="p-4">Name / ID</th>
+                      <th class="p-4" v-if="activeTab === 'project'">Project Name</th>
+                      <th class="p-4" v-if="activeTab === 'project' || activeTab === 'department'">Company</th>
+                      <th class="p-4" v-if="activeTab === 'department'">Department Name</th>
+                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Department Name</th>
+                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Head of Dept</th>
+                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Name</th>
+                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Lead</th>
+                      <th class="p-4 text-right" v-if="isAdmin">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    <tr 
+                      v-for="row in filteredRecords" 
+                      :key="row.name" 
+                      class="hover:bg-slate-50/40 transition-colors"
+                    >
+                      <td class="p-4 font-semibold text-slate-800">{{ row.name }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'project'">{{ row.project_name }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'project' || activeTab === 'department'">{{ row.company }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'department'">{{ row.department_name }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_name }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_head || 'None' }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_name }}</td>
+                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_lead || 'None' }}</td>
+                      <td class="p-4 text-right space-x-1.5" v-if="isAdmin">
+                        <Button 
+                          variant="ghost" 
+                          class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
+                          @click="openEditModal(row)"
+                        >
+                          <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                          @click="deleteRecord(row.name)"
+                        >
+                          <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                        </Button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
 
-          <!-- Webhook details -->
-          <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
-            <div class="flex items-center gap-1.5 font-bold text-slate-700">
-              <IconSettings class="w-3.5 h-3.5 text-slate-400" />
-              <span>Webhook Integration Details</span>
-            </div>
-            <p class="text-[11px] text-slate-500 leading-relaxed">
-              To enable real-time pull request notifications, register this Webhook URL in your GitHub repository/organization settings under the <b class="text-slate-700">pull_request</b> events scope:
-            </p>
-            <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-xl font-mono text-[10px] text-slate-600 break-all select-all flex items-center justify-between gap-2">
-              <span>{{ webhookUrl }}</span>
-              <IconExternalLink class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-700" @click="copyWebhook" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <!-- Tab 2: Masters (Project, Department, Tactix Department, Tactix Customer) -->
-      <div v-else class="space-y-4">
-        <!-- Controls & Search -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <div class="relative w-full sm:max-w-xs">
-            <input 
-              type="text" 
-              v-model="searchQuery"
-              placeholder="Search records..."
-              class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/30 transition-all"
-            />
-            <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
-          </div>
-          <Button 
-            v-if="isAdmin"
-            variant="solid" 
-            class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-            @click="openCreateModal"
-          >
-            <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
-            Create New {{ currentTabLabelSingular }}
-          </Button>
         </div>
-
-        <!-- Master List Table -->
-        <Card class="!shadow-sm bg-white border border-slate-200/60 overflow-hidden">
-          <div v-if="loadingRecords" class="flex justify-center py-12">
-            <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-          </div>
-          <div v-else-if="filteredRecords.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
-            No records found.
-          </div>
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                  <th class="p-4">Name / ID</th>
-                  <th class="p-4" v-if="activeTab === 'project'">Project Name</th>
-                  <th class="p-4" v-if="activeTab === 'project' || activeTab === 'department'">Company</th>
-                  <th class="p-4" v-if="activeTab === 'department'">Department Name</th>
-                  <th class="p-4" v-if="activeTab === 'tactix_dept'">Department Name</th>
-                  <th class="p-4" v-if="activeTab === 'tactix_dept'">Head of Dept</th>
-                  <th class="p-4" v-if="activeTab === 'tactix_team'">Team Name</th>
-                  <th class="p-4" v-if="activeTab === 'tactix_team'">Team Lead</th>
-                  <th class="p-4 text-right" v-if="isAdmin">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr 
-                  v-for="row in filteredRecords" 
-                  :key="row.name" 
-                  class="hover:bg-slate-50/40 transition-colors"
-                >
-                  <td class="p-4 font-semibold text-slate-800">{{ row.name }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'project'">{{ row.project_name }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'project' || activeTab === 'department'">{{ row.company }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'department'">{{ row.department_name }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_name }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_head || 'None' }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_name }}</td>
-                  <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_lead || 'None' }}</td>
-                  <td class="p-4 text-right space-x-1.5" v-if="isAdmin">
-                    <Button 
-                      variant="ghost" 
-                      class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
-                      @click="openEditModal(row)"
-                    >
-                      <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                      @click="deleteRecord(row.name)"
-                    >
-                      <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-
-    </div>
+      </template>
+    </Tabs>
 
     <!-- Create/Edit Modal Dialog -->
     <Dialog v-model="modal.show" :options="dialogOptions">
@@ -253,7 +245,9 @@ import {
 	Button,
 	Card,
 	Dialog,
+	ErrorMessage,
 	FormControl,
+	Tabs,
 	createResource,
 } from "frappe-ui"
 import { computed, reactive, ref, watch } from "vue"
@@ -269,16 +263,17 @@ import IconSearch from "~icons/lucide/search"
 import IconSettings from "~icons/lucide/settings"
 import IconTrash from "~icons/lucide/trash-2"
 
+const tabIndex = ref(0)
 const tabs = [
-	{ id: "github", label: "GitHub Sync" },
-	{ id: "project", label: "Projects" },
-	{ id: "department", label: "Departments" },
-	{ id: "tactix_dept", label: "Tactix Departments" },
-	{ id: "tactix_cust", label: "Tactix Customers" },
-	{ id: "tactix_team", label: "Tactix Teams" },
+	{ label: "GitHub Sync", id: "github" },
+	{ label: "Projects", id: "project" },
+	{ label: "Departments", id: "department" },
+	{ label: "Tactix Departments", id: "tactix_dept" },
+	{ label: "Tactix Customers", id: "tactix_cust" },
+	{ label: "Tactix Teams", id: "tactix_team" },
 ]
 
-const activeTab = ref("github")
+const activeTab = computed(() => tabs[tabIndex.value]?.id || "github")
 const searchQuery = ref("")
 const loadingRecords = ref(false)
 const masterRecords = ref([])

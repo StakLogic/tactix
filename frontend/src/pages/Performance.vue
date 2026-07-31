@@ -13,32 +13,36 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Timespan Selector -->
-        <select 
+        <!-- Timespan Selector using Frappe UI FormControl -->
+        <FormControl 
+          type="select"
           v-model="selectedTimespan"
-          class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[130px] hover:bg-slate-100/50 transition-all"
-        >
-          <option value="">All Time</option>
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="this_week">This Week</option>
-          <option value="last_week">Last Week</option>
-          <option value="this_month">This Month</option>
-          <option value="last_month">Last Month</option>
-          <option value="this_year">This Year</option>
-        </select>
+          :options="[
+            { label: 'All Time', value: '' },
+            { label: 'Today', value: 'today' },
+            { label: 'Yesterday', value: 'yesterday' },
+            { label: 'This Week', value: 'this_week' },
+            { label: 'Last Week', value: 'last_week' },
+            { label: 'This Month', value: 'this_month' },
+            { label: 'Last Month', value: 'last_month' },
+            { label: 'This Year', value: 'this_year' }
+          ]"
+          size="sm"
+          class="min-w-[130px]"
+        />
 
-        <!-- Employee Selector (Admin only) -->
-        <select 
+        <!-- Employee Selector (Admin only) using Frappe UI FormControl -->
+        <FormControl 
           v-if="employeeInfoResource.data?.is_system_manager"
+          type="select"
           v-model="selectedEmployee"
-          class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer min-w-[160px] hover:bg-slate-100/50 transition-all"
-        >
-          <option value="">All Employees</option>
-          <option v-for="emp in employeeOptionsResource.data" :key="emp.value" :value="emp.value">
-            {{ emp.label }}
-          </option>
-        </select>
+          :options="[
+            { label: 'All Employees', value: '' },
+            ...(employeeOptionsResource.data || [])
+          ]"
+          size="sm"
+          class="min-w-[160px]"
+        />
 
         <Button
           variant="outline"
@@ -490,7 +494,7 @@
 </template>
 
 <script setup>
-import { Badge, Button, Card, createResource } from "frappe-ui"
+import { Badge, Button, Card, FormControl, createResource } from "frappe-ui"
 import { computed, ref, watch } from "vue"
 
 import IconActivity from "~icons/lucide/activity"

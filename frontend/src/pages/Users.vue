@@ -160,27 +160,14 @@
             </div>
           </div>
 
-          <!-- Enabled switch -->
-          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div>
-              <span class="text-xs font-bold text-slate-700 block">User Account Enabled</span>
-              <span class="text-[10px] text-slate-400 font-medium">Toggle login permissions for this user</span>
-            </div>
-            <button
-              type="button"
-              :class="[
-                modal.form.enabled ? 'bg-blue-600' : 'bg-slate-200',
-                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none'
-              ]"
-              @click="modal.form.enabled = !modal.form.enabled"
-            >
-              <span
-                :class="[
-                  modal.form.enabled ? 'translate-x-4' : 'translate-x-0',
-                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
-                ]"
-              />
-            </button>
+          <!-- Enabled switch using Frappe UI Switch component -->
+          <div class="p-2 bg-slate-50 rounded-xl border border-slate-100">
+            <Switch
+              v-model="modal.form.enabled"
+              label="User Account Enabled"
+              description="Toggle login permissions for this user"
+              size="md"
+            />
           </div>
 
           <!-- Roles Selection Checklist -->
@@ -226,8 +213,10 @@ import {
 	Badge,
 	Button,
 	Card,
+	Checkbox,
 	Dialog,
 	FormControl,
+	Switch,
 	createResource,
 } from "frappe-ui"
 import { computed, reactive, ref, watch } from "vue"
