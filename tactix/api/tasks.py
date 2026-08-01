@@ -17,8 +17,17 @@ def _normalize_task_filters(filters):
 	filters = dict(filters or {})
 
 	if filters.get("assigned_to"):
-		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": ["in", filters.get("assigned_to")]}, pluck="parent")
-		filters["name"] = ["in", assigned_tasks]
+		val = filters.get("assigned_to")
+		user_list = [val] if isinstance(val, str) else list(val)
+		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": ["in", user_list]}, pluck="parent") or [""]
+		if "name" in filters:
+			existing_names = filters["name"][1] if isinstance(filters["name"], list) and len(filters["name"]) > 1 else filters["name"]
+			if not isinstance(existing_names, list):
+				existing_names = [existing_names]
+			intersected_names = list(set(existing_names) & set(assigned_tasks)) or [""]
+			filters["name"] = ["in", intersected_names]
+		else:
+			filters["name"] = ["in", assigned_tasks]
 		filters.pop("assigned_to")
 
 	if filters.get("subject") and isinstance(filters["subject"], list) and len(filters["subject"]) == 2 and filters["subject"][0] == "like":

@@ -1,20 +1,20 @@
 <template>
-  <div class="space-y-4 p-1 flex flex-col h-full overflow-hidden min-h-0">
-	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 flex-shrink-0">
+  <div class="space-y-3 p-1 flex flex-col h-full overflow-hidden min-h-0">
+	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 flex-shrink-0">
 	  <Card 
 		v-for="stat in kpiStats" 
 		:key="stat.label" 
 		:class="[
-			'!shadow-sm bg-white cursor-pointer transition-all duration-200 border active:scale-[0.98]',
-			'border-slate-100 hover:border-slate-200'
+			'!shadow-xs bg-white cursor-pointer transition-all duration-150 border active:scale-[0.98]',
+			'border-slate-200/80 hover:border-slate-300'
 		]"
 		@click="filterByStat(stat.label)"
 	  >
 		<div class="flex items-center justify-between">
-		  <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</span>
+		  <span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
 		  <component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
 		</div>
-		<div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+		<div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
 			<template v-if="tasksResource.loading">
 				<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
 			</template>
@@ -23,37 +23,237 @@
 	  </Card>
 	</div>
 
-	<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 flex-shrink-0">
+	<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
 	  <!-- Top Row: Search & Actions -->
-	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pb-2 border-b border-slate-100">
+	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100">
 		<div class="relative w-full sm:w-80">
 		  <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
 		  <input 
 			v-model="searchQuery"
 			type="text" 
 			placeholder="Search subject, description..." 
-			class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+			class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
 		  />
 		</div>
 
 		<div class="flex items-center gap-2 ml-auto sm:ml-0">
 		  <!-- View Mode Toggle -->
-		  <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200/50">
+		  <div class="flex bg-slate-100 p-0.5 rounded-md border border-slate-200/60">
 			<button @click="viewMode = 'list'" :class="viewBtnClass('list')">
-			  <IconList class="w-4 h-4" />
+			  <IconList class="w-3.5 h-3.5" />
 			</button>
 			<button @click="viewMode = 'board'" :class="viewBtnClass('board')">
-			  <IconLayoutGrid class="w-4 h-4" />
+			  <IconLayoutGrid class="w-3.5 h-3.5" />
 			</button>
 		  </div>
+
+		  <!-- Dynamic Multi-Field Filter Popover -->
+		  <Popover placement="bottom-end">
+			<template #target="{ open, togglePopover }">
+			  <Button
+				variant="outline"
+				:class="[
+				  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
+				  activeFilterCount > 0
+					? 'border-blue-500 text-blue-600 bg-blue-50/50'
+					: '!text-slate-600 border-slate-200 hover:bg-slate-50'
+				]"
+				@click="syncActiveFilterRules(); togglePopover()"
+				title="Filter Tasks"
+			  >
+				<template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+				<span>Filter</span>
+				<span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+				  {{ activeFilterCount }}
+				</span>
+			  </Button>
+			</template>
+			<template #body-main="{ close }">
+			  <div class="w-80 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-3">
+				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
+				  <div class="flex items-center gap-1.5 font-semibold text-slate-800 text-xs">
+					<IconFilter class="w-3.5 h-3.5 text-blue-600" />
+					<span>Filter Tasks</span>
+				  </div>
+				  <button 
+					v-if="hasActiveFilters"
+					@click="clearFilters" 
+					class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+				  >
+					<IconX class="w-3 h-3" /> Clear All
+				  </button>
+				</div>
+
+				<!-- Dynamic Filter Rules -->
+				<div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+				  <div 
+					v-for="rule in activeFilterRules" 
+					:key="rule.id"
+					class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-md border border-slate-200/80"
+				  >
+					<div class="w-1/3 shrink-0">
+					  <Select 
+						v-model="rule.field"
+						:options="FILTERABLE_FIELDS"
+						placeholder="Field"
+						size="sm"
+						variant="subtle"
+						@update:modelValue="rule.value = ''"
+					  />
+					</div>
+
+					<span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+
+					<div class="flex-1 min-w-0">
+					  <Select
+						v-model="rule.value"
+						:options="getFieldOptionsForSelect(rule.field)"
+						placeholder="Select value"
+						size="sm"
+						variant="subtle"
+						class="w-full"
+					  />
+					</div>
+
+					<button 
+					  @click="removeFilterRule(rule.id)"
+					  class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+					  title="Remove Filter"
+					>
+					  <IconX class="w-3.5 h-3.5" />
+					</button>
+				  </div>
+				</div>
+
+				<div class="flex items-center justify-between pt-2 border-t border-slate-100">
+				  <button
+					@click="addFilterRule"
+					class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+				  >
+					<IconPlus class="w-3.5 h-3.5" /> Add Filter
+				  </button>
+
+				  <Button 
+					variant="solid" 
+					class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+					@click="applyFilterRules(); close()"
+				  >
+					Apply
+				  </Button>
+				</div>
+			  </div>
+			</template>
+		  </Popover>
+
+		  <!-- Column Picker Popover (Frappe UI Style) -->
+		  <Popover v-if="viewMode === 'list'" placement="bottom-end">
+			<template #target="{ open, togglePopover }">
+			  <Button
+				variant="outline"
+				class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1.5 rounded-md text-xs font-medium"
+				@click="togglePopover"
+				title="Customize Columns"
+			  >
+				<template #prefix><IconSlidersHorizontal class="w-3.5 h-3.5 text-slate-500" /></template>
+				<span class="hidden md:inline">Columns</span>
+			  </Button>
+			</template>
+			<template #body-main="{ close }">
+			  <div class="w-60 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-2.5">
+				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
+				  <span class="font-semibold text-slate-800 text-xs">Columns</span>
+				  <button 
+					@click="resetColumns" 
+					class="text-[11px] font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+					title="Reset to default columns"
+				  >
+					<IconRotateCcw class="w-3 h-3" /> Reset
+				  </button>
+				</div>
+
+				<div class="relative">
+				  <input
+					v-model="columnSearchQuery"
+					type="text"
+					placeholder="Search columns..."
+					class="w-full pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+				  />
+				  <IconSearch class="w-3 h-3 absolute left-2 top-2 text-slate-400" />
+				</div>
+
+				<div class="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
+				  <div 
+					v-for="(colKey, index) in activeColumnKeys" 
+					:key="colKey"
+					v-show="!columnSearchQuery || getColumnLabel(colKey).toLowerCase().includes(columnSearchQuery.toLowerCase())"
+					class="flex items-center justify-between p-1 rounded hover:bg-slate-50 group transition-all"
+				  >
+					<label class="flex items-center gap-2 cursor-pointer select-none truncate flex-1 mr-1">
+					  <input
+						type="checkbox"
+						:checked="true"
+						:disabled="colKey === 'subject'"
+						@change="toggleColumn(colKey)"
+						class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer disabled:opacity-40"
+					  />
+					  <span :class="colKey === 'subject' ? 'font-semibold text-slate-900' : 'text-slate-700'" class="truncate">
+						{{ getColumnLabel(colKey) }}
+					  </span>
+					  <span v-if="colKey === 'subject'" class="text-[9px] bg-slate-100 text-slate-400 px-1 rounded font-medium ml-auto">Fixed</span>
+					</label>
+
+					<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+					  <button
+						@click.stop="moveColumnUp(index)"
+						:disabled="index === 0"
+						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						title="Move Up"
+					  >
+						<IconArrowUp class="w-3 h-3" />
+					  </button>
+					  <button
+						@click.stop="moveColumnDown(index)"
+						:disabled="index === activeColumnKeys.length - 1"
+						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						title="Move Down"
+					  >
+						<IconArrowDown class="w-3 h-3" />
+					  </button>
+					</div>
+				  </div>
+
+				  <!-- Inactive columns available to add -->
+				  <div v-if="inactiveColumns.length > 0 && !columnSearchQuery" class="pt-2 border-t border-slate-100 mt-1">
+					<span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">More Columns</span>
+					<div
+					  v-for="col in inactiveColumns"
+					  :key="col.key"
+					  class="flex items-center justify-between p-1 rounded hover:bg-slate-50 cursor-pointer"
+					  @click="toggleColumn(col.key)"
+					>
+					  <label class="flex items-center gap-2 cursor-pointer select-none truncate">
+						<input
+						  type="checkbox"
+						  :checked="false"
+						  @change="toggleColumn(col.key)"
+						  class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
+						/>
+						<span class="text-slate-500 truncate">{{ col.label }}</span>
+					  </label>
+					</div>
+				  </div>
+				</div>
+			  </div>
+			</template>
+		  </Popover>
 
 		  <!-- Refresh Button -->
 		  <Button
 			variant="outline"
-			class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all"
+			class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all rounded-md"
 			@click="tasksResource.reload()"
 		  >
-			<template #prefix><IconRefresh class="w-4 h-4 text-slate-500" /></template>
+			<template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500" /></template>
 		  </Button>
 
 		  <!-- Actions Dropdown / New Task Button -->
@@ -64,31 +264,74 @@
 		  >
 			<Button
 			  variant="solid"
-			  class="!bg-slate-800 !text-white !text-xs !px-5 !h-9 !shadow-md hover:!bg-slate-900 transition-all"
+			  class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
 			>
 			  Actions
-			  <template #suffix><FeatherIcon name="chevron-down" class="w-4 h-4 shrink-0" /></template>
+			  <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
 			</Button>
 		  </Dropdown>
 
 		  <Button
 			v-else
 			variant="solid"
-			class="!text-xs !px-5 !h-9 !shadow-md transition-all"
-			style="background-color: var(--primary-color); box-shadow: 0 4px 6px -1px var(--primary-color-shadow);"
+			class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
+			style="background-color: var(--primary-color);"
 			@click="openCreateDialog"
 		>
-			<template #prefix><IconPlus class="w-4 h-4" /></template>
+			<template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
 			New Task
 		</Button>
 
-		  
 		</div>
 	  </div>
 
-	  <!-- Bottom Row: Filters -->
-	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
-		<div class="w-32 shrink-0">
+	  <!-- Active Filter Chips Bar -->
+	  <div v-if="hasActiveFilterChips" class="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-100">
+		<span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Filters:</span>
+		
+		<span 
+		  v-for="chip in activeFilterChips" 
+		  :key="chip.key"
+		  class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200/80 px-2 py-0.5 rounded-md text-xs font-medium transition-all"
+		>
+		  <span class="text-blue-500 font-normal">{{ chip.label }}:</span>
+		  <span class="font-semibold">{{ chip.displayValue }}</span>
+		  <button 
+			@click="removeFilterByKey(chip.key)" 
+			class="hover:bg-blue-200/60 rounded p-0.5 text-blue-500 hover:text-blue-800 transition-colors ml-0.5 cursor-pointer"
+			title="Remove filter"
+		  >
+			<IconX class="w-3 h-3" />
+		  </button>
+		</span>
+
+		<button 
+		  @click="clearFilters" 
+		  class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline px-1 py-0.5 cursor-pointer ml-1"
+		>
+		  Clear All
+		</button>
+	  </div>
+
+	  <!-- Bottom Row: Quick Filter Bar -->
+	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
+		<!-- Quick Filter: Assigned to Me -->
+		<Button
+		  variant="outline"
+		  :class="[
+			'!px-2.5 !h-7 border transition-all rounded-md text-xs font-medium shrink-0 flex items-center gap-1.5 cursor-pointer',
+			selectedFilters.assigned_to === session.user
+			  ? '!border-blue-500 !text-blue-600 !bg-blue-50/50 font-semibold'
+			  : '!text-slate-600 border-[--surface-gray-2] bg-surface-gray-2 hover:bg-surface-gray-3'
+		  ]"
+		  @click="toggleAssignedToMe"
+		  title="Filter tasks assigned to me"
+		>
+		  <template #prefix><IconUser class="w-3.5 h-3.5" :class="selectedFilters.assigned_to === session.user ? 'text-blue-600' : 'text-slate-500'" /></template>
+		  <span>Assigned to Me</span>
+		</Button>
+		<!-- Searchable non-static filter: Project -->
+		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="projectAutocomplete"
 			  :options="projectResource?.data || []"
@@ -101,20 +344,21 @@
 				  type="button"
 				  @click="() => projectAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.project !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getProjectLabel(selectedFilters.project) }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-		<div class="w-32 shrink-0">
+		<!-- Searchable non-static filter: Department -->
+		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="departmentAutocomplete"
 			  :options="departmentResource?.data || []"
@@ -127,46 +371,43 @@
 				  type="button"
 				  @click="() => departmentAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.department !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getDepartmentLabel(selectedFilters.department) }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-		<select 
-		  v-model="selectedFilters.status"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.status !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="">Status</option>
-		  <option v-for="opt in filterStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
-
-		<select 
-		  v-model="selectedFilters.priority"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.priority !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="">Priority</option>
-		  <option v-for="opt in priorityOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
-
+		<!-- Static filter: Status -->
 		<div class="w-32 shrink-0">
+			<Select
+			  v-model="statusFilterValue"
+			  placeholder="Select status"
+			  :options="statusFilterOptionsList"
+			  size="sm"
+			  variant="subtle"
+			/>
+		</div>
+
+		<!-- Static filter: Priority -->
+		<div class="w-32 shrink-0">
+			<Select
+			  v-model="priorityFilterValue"
+			  placeholder="Select priority"
+			  :options="priorityFilterOptionsList"
+			  size="sm"
+			  variant="subtle"
+			/>
+		</div>
+
+		<!-- Searchable non-static filter: Assigned By -->
+		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="assignedByAutocomplete"
 			  :options="userResource?.data || []"
@@ -179,20 +420,21 @@
 				  type="button"
 				  @click="() => assignedByAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.assigned_by !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getUserLabel(selectedFilters.assigned_by, 'Assigned By') }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-		<div class="w-32 shrink-0">
+		<!-- Searchable non-static filter: Assigned To -->
+		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="assignedToAutocomplete"
 			  :options="userResource?.data || []"
@@ -205,35 +447,34 @@
 				  type="button"
 				  @click="() => assignedToAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.assigned_to !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 border-slate-200 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getUserLabel(selectedFilters.assigned_to, 'Assigned To') }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-		<select 
-		  v-model="selectedFilters.deadline"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.deadline !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option v-for="opt in deadlineOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-		</select>
+		<!-- Static filter: Deadline -->
+		<div class="w-36 shrink-0">
+			<Select
+			  v-model="deadlineFilterValue"
+			  placeholder="Select deadline"
+			  :options="deadlineOptionsList"
+			  size="sm"
+			  variant="subtle"
+			/>
+		</div>
 
 		<Button 
 		  v-if="hasActiveFilters"
 		  variant="ghost" 
-		  class="!text-red-500 hover:!bg-red-50 !px-2.5 !h-9 shrink-0"
+		  class="!text-red-500 hover:!bg-red-50 !px-2 !h-7 text-xs font-medium shrink-0"
 		  @click="clearFilters"
 		>
 		  <template #prefix><IconX class="w-3.5 h-3.5" /></template>
@@ -325,6 +566,31 @@
 								{{ row.exp_end_date ? formatDate(row.exp_end_date) : '' }}
 							</span>
 						</div>
+				  </template>
+				  <template v-if="column.key === 'tactix_team'">
+						<span class="text-xs text-slate-600 font-medium truncate">
+							{{ getTeamLabel(row.tactix_team) }}
+						</span>
+				  </template>
+				  <template v-if="column.key === 'assigned_by'">
+						<span class="text-xs text-slate-600 font-medium truncate">
+							{{ getUserLabel(row.assigned_by) }}
+						</span>
+				  </template>
+				  <template v-if="column.key === 'completed_by'">
+						<span class="text-xs text-slate-600 font-medium truncate">
+							{{ row.completed_by ? getUserLabel(row.completed_by) : '—' }}
+						</span>
+				  </template>
+				  <template v-if="column.key === 'expected_time'">
+						<span class="text-xs text-slate-600 font-medium truncate">
+							{{ row.expected_time ? row.expected_time + ' hrs' : '—' }}
+						</span>
+				  </template>
+				  <template v-if="column.key === 'name'">
+						<span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+							{{ row.name }}
+						</span>
 				  </template>
 				  <template v-if="column.key === 'has_unseen_comments'">
 					<div class="flex justify-end pr-2">
@@ -1080,6 +1346,8 @@ import {
 	ListView,
 	LoadingIndicator,
 	MultiSelect,
+	Popover,
+	Select,
 	TextEditor,
 	createListResource,
 	createResource,
@@ -1092,6 +1360,8 @@ import { session } from "../data/session"
 import { useSocket } from "@/socket"
 
 import IconAlertCircle from "~icons/lucide/alert-circle"
+import IconArrowDown from "~icons/lucide/arrow-down"
+import IconArrowUp from "~icons/lucide/arrow-up"
 import IconBriefcase from "~icons/lucide/briefcase"
 import IconCheck from "~icons/lucide/check"
 import IconCheckCircle from "~icons/lucide/check-circle"
@@ -1099,6 +1369,7 @@ import IconChevronLeft from "~icons/lucide/chevron-left"
 import IconChevronRight from "~icons/lucide/chevron-right"
 import IconClock from "~icons/lucide/clock"
 import IconEdit3 from "~icons/lucide/edit-3"
+import IconFilter from "~icons/lucide/filter"
 import IconFlag from "~icons/lucide/flag"
 import IconLayoutGrid from "~icons/lucide/layout-grid"
 import IconList from "~icons/lucide/list"
@@ -1106,8 +1377,11 @@ import IconMessageSquare from "~icons/lucide/message-square"
 import IconPaperclip from "~icons/lucide/paperclip"
 import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
+import IconRotateCcw from "~icons/lucide/rotate-ccw"
 import IconSearch from "~icons/lucide/search"
+import IconSlidersHorizontal from "~icons/lucide/sliders-horizontal"
 import IconTrash2 from "~icons/lucide/trash-2"
+import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
 
 import dayjs from "dayjs"
@@ -1664,7 +1938,259 @@ const selectedFilters = reactive({
 	assigned_by: "",
 	assigned_to: "",
 	deadline: "",
+	tactix_team: "",
 })
+
+const FILTERABLE_FIELDS = [
+	{ label: "Project", value: "project", key: "project" },
+	{ label: "Department", value: "department", key: "department" },
+	{ label: "Status", value: "status", key: "status" },
+	{ label: "Priority", value: "priority", key: "priority" },
+	{ label: "Assigned By", value: "assigned_by", key: "assigned_by" },
+	{ label: "Assigned To", value: "assigned_to", key: "assigned_to" },
+	{ label: "Deadline", value: "deadline", key: "deadline" },
+	{ label: "Team", value: "tactix_team", key: "tactix_team" },
+]
+
+const activeFilterRules = ref([])
+
+function syncActiveFilterRules() {
+	const newRules = []
+	FILTERABLE_FIELDS.forEach((f) => {
+		const val = selectedFilters[f.value]
+		if (val) {
+			newRules.push({
+				id: "rule_" + f.value,
+				field: f.value,
+				value: val,
+			})
+		}
+	})
+	if (newRules.length === 0) {
+		newRules.push({
+			id: "rule_" + Date.now(),
+			field: "status",
+			value: "",
+		})
+	}
+	activeFilterRules.value = newRules
+}
+
+function toggleAssignedToMe() {
+	if (selectedFilters.assigned_to === session.user) {
+		selectedFilters.assigned_to = ""
+	} else {
+		selectedFilters.assigned_to = session.user
+	}
+}
+
+function addFilterRule() {
+	const unusedField = FILTERABLE_FIELDS.find(
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value),
+	)
+	const field = unusedField ? unusedField.value : "status"
+	activeFilterRules.value.push({
+		id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+		field,
+		value: "",
+	})
+}
+
+function removeFilterRule(id) {
+	const idx = activeFilterRules.value.findIndex((r) => r.id === id)
+	if (idx > -1) {
+		const removed = activeFilterRules.value[idx]
+		activeFilterRules.value.splice(idx, 1)
+		if (removed.field in selectedFilters) {
+			selectedFilters[removed.field] = ""
+		}
+	}
+	if (activeFilterRules.value.length === 0) {
+		activeFilterRules.value.push({
+			id: "rule_" + Date.now(),
+			field: "status",
+			value: "",
+		})
+	}
+}
+
+function applyFilterRules() {
+	FILTERABLE_FIELDS.forEach((f) => {
+		const hasRule = activeFilterRules.value.some((r) => r.field === f.key)
+		if (!hasRule) {
+			selectedFilters[f.key] = ""
+		}
+	})
+	activeFilterRules.value.forEach((r) => {
+		if (r.field in selectedFilters) {
+			selectedFilters[r.field] = r.value
+		}
+	})
+}
+
+function getFieldOptionsForSelect(fieldKey) {
+	if (fieldKey === "status") return filterStatusOptions
+	if (fieldKey === "priority") return priorityOptions
+	if (fieldKey === "deadline") return deadlineOptions.filter((d) => d.value !== "")
+	if (fieldKey === "tactix_team") return tactixTeamResource.data || []
+	if (fieldKey === "project") return projectResource.data || []
+	if (fieldKey === "department") return departmentResource.data || []
+	if (fieldKey === "assigned_by" || fieldKey === "assigned_to")
+		return userResource.data || []
+	return []
+}
+
+const projectOptions = computed(() => [
+	{ label: "All Projects", value: "all" },
+	...(projectResource.data || []),
+])
+
+function getRuleDisplayLabel(rule) {
+	if (!rule.value) return "Select value"
+	if (rule.field === "project") return getProjectLabel(rule.value)
+	if (rule.field === "department") return getDepartmentLabel(rule.value)
+	if (rule.field === "assigned_by" || rule.field === "assigned_to") return getUserLabel(rule.value)
+	return rule.value
+}
+
+const departmentOptions = computed(() => [
+	{ label: "All Departments", value: "all" },
+	...(departmentResource.data || []),
+])
+
+const statusFilterOptionsList = computed(() => [
+	{ label: "All Statuses", value: "all" },
+	...filterStatusOptions,
+])
+
+const priorityFilterOptionsList = computed(() => [
+	{ label: "All Priorities", value: "all" },
+	...priorityOptions,
+])
+
+const assignedByOptions = computed(() => [
+	{ label: "Assigned By", value: "all" },
+	...(userResource.data || []),
+])
+
+const assignedToOptionsList = computed(() => [
+	{ label: "Assigned To", value: "all" },
+	...(userResource.data || []),
+])
+
+const deadlineOptionsList = computed(() => [
+	{ label: "All Deadlines", value: "all" },
+	...deadlineOptions.filter((d) => d.value !== ""),
+])
+
+const projectFilterValue = computed({
+	get: () => selectedFilters.project || "all",
+	set: (val) => {
+		selectedFilters.project = val === "all" ? "" : val
+	},
+})
+
+const departmentFilterValue = computed({
+	get: () => selectedFilters.department || "all",
+	set: (val) => {
+		selectedFilters.department = val === "all" ? "" : val
+	},
+})
+
+const statusFilterValue = computed({
+	get: () => selectedFilters.status || "all",
+	set: (val) => {
+		selectedFilters.status = val === "all" ? "" : val
+	},
+})
+
+const priorityFilterValue = computed({
+	get: () => selectedFilters.priority || "all",
+	set: (val) => {
+		selectedFilters.priority = val === "all" ? "" : val
+	},
+})
+
+const assignedByFilterValue = computed({
+	get: () => selectedFilters.assigned_by || "all",
+	set: (val) => {
+		selectedFilters.assigned_by = val === "all" ? "" : val
+	},
+})
+
+const assignedToFilterValue = computed({
+	get: () => selectedFilters.assigned_to || "all",
+	set: (val) => {
+		selectedFilters.assigned_to = val === "all" ? "" : val
+	},
+})
+
+const deadlineFilterValue = computed({
+	get: () => selectedFilters.deadline || "all",
+	set: (val) => {
+		selectedFilters.deadline = val === "all" ? "" : val
+	},
+})
+
+watch(
+	selectedFilters,
+	(newFilters) => {
+		Object.entries(newFilters).forEach(([key, val]) => {
+			if (val) {
+				const rule = activeFilterRules.value.find((r) => r.field === key)
+				if (rule) {
+					rule.value = val
+				} else {
+					activeFilterRules.value.push({
+						id:
+							"rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+						field: key,
+						value: val,
+					})
+				}
+			} else {
+				const idx = activeFilterRules.value.findIndex((r) => r.field === key)
+				if (idx > -1) {
+					activeFilterRules.value.splice(idx, 1)
+				}
+			}
+		})
+	},
+	{ deep: true },
+)
+
+const activeFilterCount = computed(() => {
+	return Object.values(selectedFilters).filter((v) => v !== "").length
+})
+
+const activeFilterChips = computed(() => {
+	const chips = []
+	Object.entries(selectedFilters).forEach(([key, val]) => {
+		if (val) {
+			const fieldObj = FILTERABLE_FIELDS.find((f) => f.key === key)
+			const fieldLabel = fieldObj ? fieldObj.label : key
+			let displayVal = val
+			if (key === "project") displayVal = getProjectLabel(val)
+			else if (key === "department") displayVal = getDepartmentLabel(val)
+			else if (key === "assigned_by" || key === "assigned_to")
+				displayVal = getUserLabel(val)
+			else if (key === "tactix_team") displayVal = getTeamLabel(val)
+			else if (key === "status" || key === "priority") displayVal = val
+			else if (key === "deadline") {
+				const match = deadlineOptions.find((d) => d.value === val)
+				displayVal = match ? match.label : val
+			}
+			chips.push({ key, label: fieldLabel, displayValue: displayVal })
+		}
+	})
+	return chips
+})
+
+function removeFilterByKey(key) {
+	if (key in selectedFilters) {
+		selectedFilters[key] = ""
+	}
+}
 
 const statusOptions = [
 	{ label: "Open", value: "Open" },
@@ -1716,8 +2242,8 @@ const tactixTeamResource = createListResource({
 	pageLength: 10000,
 })
 
-const columns = [
-	{ label: "Task Name", key: "subject", icon: IconCheckCircle, width: "280px" },
+const ALL_COLUMNS = [
+	{ label: "Task Name", key: "subject", icon: IconCheckCircle, width: "280px", mandatory: true },
 	{
 		label: "Description",
 		key: "description_for_list",
@@ -1731,18 +2257,123 @@ const columns = [
 		width: "150px",
 	},
 	{ label: "Department", key: "department", icon: IconBriefcase },
-	{ label: "Assigned DateTime", key: "assigned_datetime", icon: IconBriefcase },
+	{ label: "Assigned DateTime", key: "assigned_datetime", icon: IconClock },
 	{ label: "Priority", key: "priority", icon: IconFlag },
 	{ label: "Status", key: "status", icon: IconAlertCircle },
 	{ label: "Deadline", key: "exp_end_date", icon: IconClock },
 	{ label: "Task ID", key: "name", icon: IconCheckCircle },
+	{ label: "Team", key: "tactix_team", icon: IconBriefcase },
+	{ label: "Assigned By", key: "assigned_by", icon: IconClock },
+	{ label: "Completed By", key: "completed_by", icon: IconCheck },
+	{ label: "Expected Time", key: "expected_time", icon: IconClock },
 	{
-		label: "",
+		label: "Comments",
 		key: "has_unseen_comments",
 		icon: IconMessageSquare,
 		width: "90px",
 	},
 ]
+
+const DEFAULT_COLUMN_KEYS = [
+	"subject",
+	"description_for_list",
+	"project_name",
+	"department",
+	"assigned_datetime",
+	"priority",
+	"status",
+	"exp_end_date",
+	"name",
+	"has_unseen_comments",
+]
+
+const STORAGE_KEY = "tactix_tasks_columns_config"
+
+function loadSavedColumns() {
+	try {
+		const saved = localStorage.getItem(STORAGE_KEY)
+		if (saved) {
+			const parsed = JSON.parse(saved)
+			if (Array.isArray(parsed) && parsed.length > 0) {
+				const validKeys = parsed.filter((k) =>
+					ALL_COLUMNS.some((c) => c.key === k),
+				)
+				if (!validKeys.includes("subject")) {
+					validKeys.unshift("subject")
+				}
+				if (validKeys.length > 0) return validKeys
+			}
+		}
+	} catch (e) {
+		console.error("Failed to load column settings", e)
+	}
+	return [...DEFAULT_COLUMN_KEYS]
+}
+
+const activeColumnKeys = ref(loadSavedColumns())
+const columnSearchQuery = ref("")
+
+watch(
+	activeColumnKeys,
+	(newVal) => {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
+		} catch (e) {
+			console.error("Failed to save column settings", e)
+		}
+	},
+	{ deep: true },
+)
+
+function getColumnLabel(key) {
+	const col = ALL_COLUMNS.find((c) => c.key === key)
+	return col ? col.label : key
+}
+
+function getTeamLabel(val) {
+	if (!val) return "—"
+	const match = tactixTeamResource.data?.find((t) => t.value === val)
+	return match ? match.label : val
+}
+
+const inactiveColumns = computed(() => {
+	return ALL_COLUMNS.filter((c) => !activeColumnKeys.value.includes(c.key))
+})
+
+function resetColumns() {
+	activeColumnKeys.value = [...DEFAULT_COLUMN_KEYS]
+}
+
+function toggleColumn(key) {
+	if (key === "subject") return
+	const idx = activeColumnKeys.value.indexOf(key)
+	if (idx > -1) {
+		activeColumnKeys.value.splice(idx, 1)
+	} else {
+		activeColumnKeys.value.push(key)
+	}
+}
+
+function moveColumnUp(index) {
+	if (index <= 0) return
+	const temp = activeColumnKeys.value[index]
+	activeColumnKeys.value[index] = activeColumnKeys.value[index - 1]
+	activeColumnKeys.value[index - 1] = temp
+}
+
+function moveColumnDown(index) {
+	if (index >= activeColumnKeys.value.length - 1) return
+	const temp = activeColumnKeys.value[index]
+	activeColumnKeys.value[index] = activeColumnKeys.value[index + 1]
+	activeColumnKeys.value[index + 1] = temp
+}
+
+const columns = computed(() => {
+	const map = new Map(ALL_COLUMNS.map((c) => [c.key, c]))
+	return activeColumnKeys.value
+		.map((key) => map.get(key))
+		.filter(Boolean)
+})
 
 // Resources
 const userResource = createResource({
@@ -1791,6 +2422,7 @@ const taskFilters = computed(() => {
 	if (selectedFilters.assigned_by) f.assigned_by = selectedFilters.assigned_by
 	if (selectedFilters.assigned_to) f.assigned_to = selectedFilters.assigned_to
 	if (selectedFilters.department) f.department = selectedFilters.department
+	if (selectedFilters.tactix_team) f.tactix_team = selectedFilters.tactix_team
 
 	if (selectedFilters.deadline) {
 		const today = dayjs().format("YYYY-MM-DD")
@@ -1912,6 +2544,8 @@ function clearFilters() {
 	selectedFilters.assigned_by = ""
 	selectedFilters.assigned_to = ""
 	selectedFilters.deadline = ""
+	selectedFilters.tactix_team = ""
+	syncActiveFilterRules()
 }
 
 function filterByStat(label) {
