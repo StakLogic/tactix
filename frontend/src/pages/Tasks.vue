@@ -384,26 +384,56 @@
 			</Autocomplete>
 		</div>
 
-		<!-- Static filter: Status -->
-		<div class="w-32 shrink-0">
-			<Select
-			  v-model="statusFilterValue"
-			  placeholder="Select status"
-			  :options="statusFilterOptionsList"
-			  size="sm"
-			  variant="subtle"
-			/>
+		<!-- Searchable non-static filter: Status -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="statusAutocomplete"
+			  :options="filterStatusOptions"
+			  :modelValue="selectedFilters.status"
+			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => statusAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+					selectedFilters.status !== ''
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
+				  ]"
+				>
+				  <span class="truncate">{{ getStatusLabel(selectedFilters.status) }}</span>
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
 		</div>
 
-		<!-- Static filter: Priority -->
-		<div class="w-32 shrink-0">
-			<Select
-			  v-model="priorityFilterValue"
-			  placeholder="Select priority"
-			  :options="priorityFilterOptionsList"
-			  size="sm"
-			  variant="subtle"
-			/>
+		<!-- Searchable non-static filter: Priority -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="priorityAutocomplete"
+			  :options="priorityOptions"
+			  :modelValue="selectedFilters.priority"
+			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => priorityAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+					selectedFilters.priority !== ''
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
+				  ]"
+				>
+				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority) }}</span>
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
 		</div>
 
 		<!-- Searchable non-static filter: Assigned By -->
@@ -460,15 +490,30 @@
 			</Autocomplete>
 		</div>
 
-		<!-- Static filter: Deadline -->
+		<!-- Searchable non-static filter: Deadline -->
 		<div class="w-36 shrink-0">
-			<Select
-			  v-model="deadlineFilterValue"
-			  placeholder="Select deadline"
-			  :options="deadlineOptionsList"
-			  size="sm"
-			  variant="subtle"
-			/>
+			<Autocomplete
+			  ref="deadlineAutocomplete"
+			  :options="deadlineOptions.filter(d => d.value !== '')"
+			  :modelValue="selectedFilters.deadline"
+			  @update:modelValue="val => selectedFilters.deadline = val?.value || val || ''"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => deadlineAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+					selectedFilters.deadline !== ''
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
+				  ]"
+				>
+				  <span class="truncate">{{ getDeadlineLabel(selectedFilters.deadline) }}</span>
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
 		</div>
 
 		<Button 
@@ -1352,7 +1397,7 @@ import {
 	createListResource,
 	createResource,
 } from "frappe-ui"
-import { computed, h, nextTick, onUnmounted, reactive, ref, watch } from "vue"
+import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import CommentBox from "../components/CommentBox.vue"
 import { session } from "../data/session"
@@ -1789,6 +1834,9 @@ const projectAutocomplete = ref(null)
 const departmentAutocomplete = ref(null)
 const assignedByAutocomplete = ref(null)
 const assignedToAutocomplete = ref(null)
+const statusAutocomplete = ref(null)
+const priorityAutocomplete = ref(null)
+const deadlineAutocomplete = ref(null)
 
 function getProjectLabel(val) {
 	if (!val) return "Project"
@@ -1805,6 +1853,24 @@ function getDepartmentLabel(val) {
 function getUserLabel(val, defaultLabel = "User") {
 	if (!val) return defaultLabel
 	const match = userResource.data?.find((u) => u.value === val)
+	return match ? match.label : val
+}
+
+function getStatusLabel(val) {
+	if (!val) return "Status"
+	const match = filterStatusOptions.find((s) => s.value === val)
+	return match ? match.label : val
+}
+
+function getPriorityLabel(val) {
+	if (!val) return "Priority"
+	const match = priorityOptions.find((p) => p.value === val)
+	return match ? match.label : val
+}
+
+function getDeadlineLabel(val) {
+	if (!val) return "Deadline"
+	const match = deadlineOptions.find((d) => d.value === val)
 	return match ? match.label : val
 }
 
