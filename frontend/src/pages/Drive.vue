@@ -129,17 +129,7 @@
 
       <!-- Bottom Row: Filter Quick Chips & Dropdowns -->
       <div class="flex flex-wrap items-center gap-2 pt-0.5">
-        <div class="flex items-center gap-1.5 overflow-x-auto pr-2 custom-scrollbar">
-          <button
-            v-for="typeOpt in ['All', 'Documents', 'Images', 'Audio/Video', 'Others']"
-            :key="typeOpt"
-            @click="fileTypeFilter = typeOpt"
-            class="px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border border-transparent whitespace-nowrap"
-            :class="fileTypeFilter === typeOpt ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
-          >
-            {{ typeOpt === 'All' ? 'All Types' : typeOpt }}
-          </button>
-        </div>
+        <Tabs :tabs="fileTypeTabs" v-model="fileTypeTabIndex" class="shrink-0" />
 
         <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
 
@@ -1095,7 +1085,7 @@
 
 <script setup>
 import dayjs from "dayjs"
-import { Avatar, Badge, Button, Dialog, FormControl, LoadingIndicator, createResource } from "frappe-ui"
+import { Avatar, Badge, Button, Dialog, FormControl, LoadingIndicator, Tabs, createResource } from "frappe-ui"
 import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { session } from "../data/session"
@@ -1147,7 +1137,19 @@ const selectedItems = ref([])
 const loading = ref(false)
 
 const searchQuery = ref("")
+const fileTypeTabIndex = ref(0)
+const fileTypeTabs = [
+	{ label: "All Types", value: "All" },
+	{ label: "Documents", value: "Documents" },
+	{ label: "Images", value: "Images" },
+	{ label: "Audio/Video", value: "Audio/Video" },
+	{ label: "Others", value: "Others" },
+]
 const fileTypeFilter = ref("All")
+
+watch(fileTypeTabIndex, (idx) => {
+	fileTypeFilter.value = fileTypeTabs[idx]?.value || "All"
+})
 const sourceFilter = ref("All")
 const accessFilter = ref("All")
 const viewMode = ref("grid")

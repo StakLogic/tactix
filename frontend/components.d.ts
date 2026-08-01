@@ -11,7 +11,6 @@ declare module 'vue' {
     AudioPlayer: typeof import('./src/components/AudioPlayer.vue')['default']
     CommentBox: typeof import('./src/components/CommentBox.vue')['default']
     LucideCheck: typeof import('~icons/lucide/check')['default']
-    LucideExternalLink: typeof import('~icons/lucide/external-link')['default']
     LucideTrash: typeof import('~icons/lucide/trash')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

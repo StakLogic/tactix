@@ -17,8 +17,17 @@ def _normalize_task_filters(filters):
 	filters = dict(filters or {})
 
 	if filters.get("assigned_to"):
-		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": ["in", filters.get("assigned_to")]}, pluck="parent")
-		filters["name"] = ["in", assigned_tasks]
+		val = filters.get("assigned_to")
+		user_list = [val] if isinstance(val, str) else list(val)
+		assigned_tasks = frappe.db.get_all("Task Assigned To", {"user": ["in", user_list]}, pluck="parent") or [""]
+		if "name" in filters:
+			existing_names = filters["name"][1] if isinstance(filters["name"], list) and len(filters["name"]) > 1 else filters["name"]
+			if not isinstance(existing_names, list):
+				existing_names = [existing_names]
+			intersected_names = list(set(existing_names) & set(assigned_tasks)) or [""]
+			filters["name"] = ["in", intersected_names]
+		else:
+			filters["name"] = ["in", assigned_tasks]
 		filters.pop("assigned_to")
 
 	if filters.get("subject") and isinstance(filters["subject"], list) and len(filters["subject"]) == 2 and filters["subject"][0] == "like":
@@ -78,7 +87,7 @@ def get_tasks(filters={}, start=0, page_length=20):
 		fields=[
 			"name", "subject", "project", "priority", "expected_time", "owner", "is_overdue", "department",
 			"status", "exp_end_date", "assigned_by", "description", "assigned_datetime", "completed_by", "fullfilled_in_display_text",
-			"security_impact"
+			"tactix_team"
 		],
 		filters=filters or {},
 		or_filters=or_filters,
@@ -181,7 +190,7 @@ def create_task(doc):
 			"expected_time": doc.get("expected_time"),
 			"department": doc.get("department"),
 			"tactix_ticket": doc.get("ticket"),
-			"security_impact": doc.get("security_impact"),
+			"tactix_team": doc.get("tactix_team") or doc.get("team"),
 			# Custom logic for assigned_to if it's a link or user field
 			# "assigned_to": doc.get("assigned_to"),
 		})
@@ -248,7 +257,7 @@ def edit_task(name, doc):
 		"assigned_by": doc.get("assigned_by"),
 		"expected_time": doc.get("expected_time"),
 		"department": doc.get("department"),
-		"security_impact": doc.get("security_impact"),
+		"tactix_team": doc.get("tactix_team") or doc.get("team"),
 	})
 
 	# Current users in Task
