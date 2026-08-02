@@ -72,7 +72,7 @@
                 v-else
                 class="h-full flex flex-col min-h-0"
                 :columns="columns"
-                :rows="filteredRecords || []"
+                :rows="paginatedRecords || []"
                 :options="{ selectable: isAdmin, showTooltip: true, resizeColumn: true, onRowClick: (row) => isAdmin && openEditModal(row) }"
                 row-key="name"
                 v-model:selections="selectedRecords"
@@ -86,7 +86,7 @@
                 </ListHeader>
                 <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
                   <ListRows>
-                    <ListRow v-for="row in (filteredRecords || [])" :key="row.name" v-slot="{ column, item }" :row="row">
+                    <ListRow v-for="row in (paginatedRecords || [])" :key="row.name" v-slot="{ column, item }" :row="row">
                       <ListRowItem :item="item">
                         <template v-if="column.key === 'name'">
                           <span class="font-semibold text-slate-800">{{ row.name }}</span>
@@ -149,6 +149,94 @@
                   </ListRows>
                 </div>
               </ListView>
+
+              <!-- Pagination Bar -->
+              <div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-2 shrink-0">
+                <div class="flex items-center gap-1">
+                  <!-- First Page (<<) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage === 1"
+                    @click="currentPage = 1"
+                    title="First Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Previous Page (<) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage === 1"
+                    @click="currentPage = Math.max(1, currentPage - 1)"
+                    title="Previous Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Compact Popover Page Selector -->
+                  <Popover>
+                    <template #target="{ togglePopover }">
+                      <button
+                        @click="togglePopover"
+                        class="h-6 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 rounded border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <span>{{ currentPage }} / {{ totalPages }}</span>
+                        <IconChevronDown class="w-3 h-3 text-slate-400" />
+                      </button>
+                    </template>
+                    <template #body="{ close }">
+                      <div class="p-1 max-h-48 overflow-y-auto w-32 bg-white rounded-lg shadow-lg border border-slate-200 custom-scrollbar">
+                        <button
+                          v-for="p in totalPages"
+                          :key="p"
+                          @click="currentPage = p; close()"
+                          :class="[
+                            'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
+                            currentPage === p
+                              ? 'bg-slate-900 text-white font-bold'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          ]"
+                        >
+                          <span>Page {{ p }}</span>
+                          <IconCheck v-if="currentPage === p" class="w-3 h-3" />
+                        </button>
+                      </div>
+                    </template>
+                  </Popover>
+
+                  <!-- Next Page (>) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage >= totalPages"
+                    @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                    title="Next Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Last Page (>>) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage >= totalPages"
+                    @click="currentPage = totalPages"
+                    title="Last Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
+                  </Button>
+                </div>
+
+                <div class="text-xs text-slate-500 font-medium">
+                  Showing <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800">{{ totalCount }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -243,6 +331,8 @@ import {
 	ListRows,
 	ListView,
 	MultiSelect,
+	Popover,
+	Select,
 	Tabs,
 	createResource,
 } from "frappe-ui"
@@ -250,6 +340,12 @@ import { computed, reactive, ref, watch } from "vue"
 
 // Icons
 import IconArrowLeft from "~icons/lucide/arrow-left"
+import IconCheck from "~icons/lucide/check"
+import IconChevronDown from "~icons/lucide/chevron-down"
+import IconChevronLeft from "~icons/lucide/chevron-left"
+import IconChevronRight from "~icons/lucide/chevron-right"
+import IconChevronsLeft from "~icons/lucide/chevrons-left"
+import IconChevronsRight from "~icons/lucide/chevrons-right"
 import IconEdit from "~icons/lucide/pencil"
 import IconPlus from "~icons/lucide/plus"
 import IconSearch from "~icons/lucide/search"
@@ -269,6 +365,13 @@ const searchQuery = ref("")
 const loadingRecords = ref(false)
 const masterRecords = ref([])
 const selectedRecords = ref(new Set())
+
+const currentPage = ref(1)
+const pageLength = ref(20)
+
+watch([activeTab, searchQuery], () => {
+	currentPage.value = 1
+})
 
 const deleteConfirm = reactive({
 	show: false,
@@ -463,6 +566,49 @@ const filteredRecords = computed(() => {
 			(r.team_lead && r.team_lead.toLowerCase().includes(q))
 		)
 	})
+})
+
+const totalCount = computed(() => filteredRecords.value.length)
+const totalPages = computed(() => Math.ceil(totalCount.value / pageLength.value) || 1)
+
+const pageOptions = computed(() =>
+	Array.from({ length: totalPages.value }, (_, i) => ({
+		label: `${i + 1} / ${totalPages.value}`,
+		value: i + 1,
+	})),
+)
+const paginatedRecords = computed(() =>
+	filteredRecords.value.slice(
+		(currentPage.value - 1) * pageLength.value,
+		currentPage.value * pageLength.value,
+	),
+)
+
+const paginationPages = computed(() => {
+	const current = currentPage.value
+	const total = totalPages.value
+	if (total <= 7) {
+		return Array.from({ length: total }, (_, i) => i + 1)
+	}
+
+	const pages = [1]
+	if (current > 3) {
+		pages.push("...")
+	}
+
+	const start = Math.max(2, current - 1)
+	const end = Math.min(total - 1, current + 1)
+
+	for (let i = start; i <= end; i++) {
+		pages.push(i)
+	}
+
+	if (current < total - 2) {
+		pages.push("...")
+	}
+	pages.push(total)
+
+	return pages
 })
 
 // Modal State
