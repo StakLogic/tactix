@@ -64,7 +64,7 @@
     </div>
 
     <!-- Actions & Filter Header -->
-    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-4 my-2 flex-shrink-0">
+    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-2 my-2 flex-shrink-0">
       <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
         <select 
           v-model="selectedStatus"
@@ -116,6 +116,19 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <Dropdown
+          v-if="employeeInfoResource.data?.is_system_manager && selectedTimesheets.size > 0"
+          :options="actionsOptions"
+        >
+          <Button
+            variant="solid"
+            class="!bg-slate-800 !text-white !text-xs !px-4 !h-9 rounded-lg hover:!bg-slate-900 transition-all font-medium"
+          >
+            Actions
+            <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+          </Button>
+        </Dropdown>
+
         <Button
           variant="outline"
           class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all"
@@ -135,19 +148,20 @@
     </div>
 
     <!-- Timesheets List Table -->
-    <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-4 flex flex-col min-h-0">
       <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
           :rows="timesheets.data?.timesheets || []"
           :options="{
-            selectable: false,
+            selectable: employeeInfoResource.data?.is_system_manager,
             showTooltip: true,
             resizeColumn: true,
             onRowClick: (row) => openTimesheetDetails(row)
           }"
           row-key="name"
+          v-model:selections="selectedTimesheets"
         >
           <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
             <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
@@ -191,44 +205,109 @@
                       {{ row.status }}
                     </Badge>
                   </template>
+
+                  <template v-if="column.key === 'actions'">
+                    <div class="flex items-center justify-end space-x-1.5" v-if="employeeInfoResource.data?.is_system_manager">
+                      <Button 
+                        variant="ghost" 
+                        class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                        @click.stop="confirmSingleDelete(row.name)"
+                      >
+                        <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                      </Button>
+                    </div>
+                  </template>
                 </ListRowItem>
               </ListRow>
             </ListRows>
           </div>
         </ListView>
 
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-3 sm:px-6">
-          <div class="flex flex-1 justify-between sm:hidden">
-            <Button :disabled="currentPage === 1" @click="currentPage--" variant="ghost">Previous</Button>
-            <Button :disabled="currentPage >= totalPages" @click="currentPage--" variant="ghost">Next</Button>
+        <!-- Pagination Bar -->
+        <div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-2 shrink-0">
+          <div class="flex items-center gap-1">
+            <!-- First Page (<<) -->
+            <Button
+              variant="ghost"
+              size="sm"
+              :disabled="currentPage === 1"
+              @click="currentPage = 1"
+              title="First Page"
+              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+            >
+              <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
+            </Button>
+
+            <!-- Previous Page (<) -->
+            <Button
+              variant="ghost"
+              size="sm"
+              :disabled="currentPage === 1"
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              title="Previous Page"
+              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+            >
+              <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
+            </Button>
+
+            <!-- Compact Popover Page Selector -->
+            <Popover>
+              <template #target="{ togglePopover }">
+                <button
+                  @click="togglePopover"
+                  class="h-6 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 rounded border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <span>{{ currentPage }} / {{ totalPages }}</span>
+                  <IconChevronDown class="w-3 h-3 text-slate-400" />
+                </button>
+              </template>
+              <template #body="{ close }">
+                <div class="p-1 max-h-48 overflow-y-auto w-32 bg-white rounded-lg shadow-lg border border-slate-200 custom-scrollbar">
+                  <button
+                    v-for="p in totalPages"
+                    :key="p"
+                    @click="currentPage = p; close()"
+                    :class="[
+                      'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
+                      currentPage === p
+                        ? 'bg-slate-900 text-white font-bold'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    ]"
+                  >
+                    <span>Page {{ p }}</span>
+                    <IconCheck v-if="currentPage === p" class="w-3 h-3" />
+                  </button>
+                </div>
+              </template>
+            </Popover>
+
+            <!-- Next Page (>) -->
+            <Button
+              variant="ghost"
+              size="sm"
+              :disabled="currentPage >= totalPages"
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              title="Next Page"
+              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+            >
+              <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
+            </Button>
+
+            <!-- Last Page (>>) -->
+            <Button
+              variant="ghost"
+              size="sm"
+              :disabled="currentPage >= totalPages"
+              @click="currentPage = totalPages"
+              title="Last Page"
+              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+            >
+              <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
+            </Button>
           </div>
-          <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <p class="text-xs text-slate-500">
-              Showing
-              <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }}</span>
-              to
-              <span class="font-bold text-slate-800">{{ Math.min(currentPage * pageLength, totalCount) }}</span>
-              of
-              <span class="font-bold text-slate-800">{{ totalCount }}</span>
-              results
-            </p>
-            <nav class="isolate inline-flex -space-x-px rounded-lg bg-slate-50 p-1 border border-slate-200/50">
-              <button
-                @click="currentPage = Math.max(1, currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="relative inline-flex items-center rounded-md p-1 text-slate-400 hover:bg-white hover:text-slate-700 disabled:opacity-50 transition-all mr-1"
-              >
-                <IconChevronLeft class="w-3.5 h-3.5" />
-              </button>
-              <button
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="relative inline-flex items-center rounded-md p-1 text-slate-400 hover:bg-white hover:text-slate-700 disabled:opacity-50 transition-all ml-1"
-              >
-                <IconChevronRight class="w-3.5 h-3.5" />
-              </button>
-            </nav>
+
+          <div class="text-xs text-slate-500 font-medium">
+            Showing <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800">{{ totalCount }}</span>
           </div>
         </div>
       </div>
@@ -442,6 +521,31 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model="deleteConfirm.show" 
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? 'Delete Selected Timesheets' : 'Delete Timesheet',
+        size: 'sm',
+        actions: [
+          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeTimesheetDelete },
+          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected timesheet(s). This action cannot be undone.
+          </span>
+          <span v-else>
+            This will permanently remove timesheet <span class="font-bold text-slate-900">#{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
+          </span>
+        </p>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -452,6 +556,8 @@ import {
 	Button,
 	Card,
 	Dialog,
+	Dropdown,
+	FeatherIcon,
 	FormControl,
 	ListHeader,
 	ListHeaderItem,
@@ -459,21 +565,28 @@ import {
 	ListRowItem,
 	ListRows,
 	ListView,
+	Popover,
+	Select,
 	createResource,
 } from "frappe-ui"
 import { computed, onMounted, reactive, ref, watch } from "vue"
 
 import IconAlertCircle from "~icons/lucide/alert-circle"
 import IconCalendar from "~icons/lucide/calendar"
+import IconCheck from "~icons/lucide/check"
 import IconCheckCircle from "~icons/lucide/check-circle"
+import IconChevronDown from "~icons/lucide/chevron-down"
 import IconChevronLeft from "~icons/lucide/chevron-left"
 import IconChevronRight from "~icons/lucide/chevron-right"
+import IconChevronsLeft from "~icons/lucide/chevrons-left"
+import IconChevronsRight from "~icons/lucide/chevrons-right"
 // Icons
 import IconClock from "~icons/lucide/clock"
 import IconHash from "~icons/lucide/hash"
 import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
 import IconSearch from "~icons/lucide/search"
+import IconTrash from "~icons/lucide/trash-2"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
 
@@ -488,6 +601,66 @@ const pageLength = 20
 const saving = ref(false)
 const formError = ref("")
 const viewError = ref("")
+
+const selectedTimesheets = ref(new Set())
+const deleteConfirm = reactive({
+	show: false,
+	isBulk: false,
+	targetName: null,
+	count: 0,
+	loading: false,
+})
+
+const actionsOptions = computed(() => [
+	{
+		label: `Delete Selected (${selectedTimesheets.value.size})`,
+		icon: "trash-2",
+		onClick: confirmBulkDelete,
+	},
+])
+
+function confirmSingleDelete(name) {
+	deleteConfirm.isBulk = false
+	deleteConfirm.targetName = name
+	deleteConfirm.count = 1
+	deleteConfirm.show = true
+}
+
+function confirmBulkDelete() {
+	deleteConfirm.isBulk = true
+	deleteConfirm.targetName = null
+	deleteConfirm.count = selectedTimesheets.value.size
+	deleteConfirm.show = true
+}
+
+async function executeTimesheetDelete() {
+	deleteConfirm.loading = true
+	try {
+		if (deleteConfirm.isBulk) {
+			for (const name of Array.from(selectedTimesheets.value)) {
+				await createResource({
+					url: "frappe.client.delete",
+					params: { doctype: "Timesheet", name },
+				}).submit()
+			}
+			selectedTimesheets.value.clear()
+		} else if (deleteConfirm.targetName) {
+			await createResource({
+				url: "frappe.client.delete",
+				params: { doctype: "Timesheet", name: deleteConfirm.targetName },
+			}).submit()
+			selectedTimesheets.value.delete(deleteConfirm.targetName)
+		}
+		deleteConfirm.show = false
+		timesheets.reload()
+		timesheetsSummary.reload()
+	} catch (err) {
+		console.error("Error deleting timesheet(s):", err)
+		alert("Failed to delete timesheet(s).")
+	} finally {
+		deleteConfirm.loading = false
+	}
+}
 
 // Selected timesheet for viewing
 const selectedTimesheet = ref(null)
@@ -545,13 +718,14 @@ const timesheetFilters = computed(() => {
 })
 
 // Columns
-const columns = [
+const columns = computed(() => [
 	{ label: "Timesheet ID", key: "name", width: "160px", icon: IconHash },
 	{ label: "Date", key: "start_date", width: "160px", icon: IconCalendar },
 	{ label: "Employee", key: "employee_name", width: "2.5fr", icon: IconUser },
 	{ label: "Total Hours", key: "total_hours", width: "150px", icon: IconClock },
 	{ label: "Status", key: "status", width: "130px", icon: IconAlertCircle },
-]
+	...(employeeInfoResource.data?.is_system_manager ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+])
 
 // API Resources
 const timesheets = createResource({
@@ -646,6 +820,40 @@ const totalCount = computed(() => timesheets.data?.total_count || 0)
 const totalPages = computed(() =>
 	Math.max(1, Math.ceil(totalCount.value / pageLength)),
 )
+
+const pageOptions = computed(() =>
+	Array.from({ length: totalPages.value }, (_, i) => ({
+		label: `${i + 1} / ${totalPages.value}`,
+		value: i + 1,
+	})),
+)
+
+const paginationPages = computed(() => {
+	const current = currentPage.value
+	const total = totalPages.value
+	if (total <= 7) {
+		return Array.from({ length: total }, (_, i) => i + 1)
+	}
+
+	const pages = [1]
+	if (current > 3) {
+		pages.push("...")
+	}
+
+	const start = Math.max(2, current - 1)
+	const end = Math.min(total - 1, current + 1)
+
+	for (let i = start; i <= end; i++) {
+		pages.push(i)
+	}
+
+	if (current < total - 2) {
+		pages.push("...")
+	}
+	pages.push(total)
+
+	return pages
+})
 
 // Form logic
 function addRow() {

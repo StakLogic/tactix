@@ -19,7 +19,25 @@ def get_master_records(doctype):
 	elif doctype == "Tactix Customer":
 		return frappe.get_list(doctype, fields=["name"])
 	elif doctype == "Tactix Team":
-		return frappe.get_list(doctype, fields=["name", "team_name", "team_lead", "description"])
+		teams = frappe.get_list(doctype, fields=["name", "team_name", "team_lead", "description"])
+		for t in teams:
+			try:
+				doc = frappe.get_doc("Tactix Team", t.name)
+				t["members"] = [m.user for m in doc.get("members", [])]
+			except Exception:
+				t["members"] = []
+		return teams
+
+@frappe.whitelist()
+def save_master_record(action, doctype, name=None, data=None):
+	if action == "create":
+		return create_master_record(doctype, data)
+	elif action == "update":
+		return update_master_record(doctype, name, data)
+	elif action == "delete":
+		return delete_master_record(doctype, name)
+	else:
+		frappe.throw(_("Invalid action"))
 
 @frappe.whitelist()
 def create_master_record(doctype, doc_data):
@@ -30,7 +48,7 @@ def create_master_record(doctype, doc_data):
 	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
-	data = frappe.parse_json(doc_data)
+	data = frappe.parse_json(doc_data) if isinstance(doc_data, str) else (doc_data or {})
 	
 	if doctype == "Project":
 		doc = frappe.get_doc({
@@ -49,7 +67,7 @@ def create_master_record(doctype, doc_data):
 		doc = frappe.get_doc({
 			"doctype": "Tactix Department",
 			"department_name": data.get("department_name"),
-			"department_head": data.get("department_head")
+			"department_head": data.get("department_head") or None
 		})
 	elif doctype == "Tactix Customer":
 		doc = frappe.get_doc({
@@ -60,9 +78,14 @@ def create_master_record(doctype, doc_data):
 		doc = frappe.get_doc({
 			"doctype": "Tactix Team",
 			"team_name": data.get("team_name"),
-			"team_lead": data.get("team_lead"),
-			"description": data.get("description")
+			"team_lead": data.get("team_lead") or None,
+			"description": data.get("description") or None
 		})
+		if data.get("members"):
+			for u in data.get("members"):
+				val = u.get("value") if isinstance(u, dict) else u
+				if val:
+					doc.append("members", {"user": val})
 		
 	doc.insert()
 	frappe.db.commit()
@@ -77,7 +100,7 @@ def update_master_record(doctype, name, doc_data):
 	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
-	data = frappe.parse_json(doc_data)
+	data = frappe.parse_json(doc_data) if isinstance(doc_data, str) else (doc_data or {})
 	doc = frappe.get_doc(doctype, name)
 	
 	if doctype == "Project":
@@ -90,14 +113,19 @@ def update_master_record(doctype, name, doc_data):
 			doc.company = data.get("company")
 	elif doctype == "Tactix Department":
 		doc.department_name = data.get("department_name")
-		doc.department_head = data.get("department_head")
+		doc.department_head = data.get("department_head") or None
 	elif doctype == "Tactix Customer":
-		# Tactix Customer's primary key is name, which can be renamed if allowed
 		pass
 	elif doctype == "Tactix Team":
 		doc.team_name = data.get("team_name")
-		doc.team_lead = data.get("team_lead")
-		doc.description = data.get("description")
+		doc.team_lead = data.get("team_lead") or None
+		doc.description = data.get("description") or None
+		doc.set("members", [])
+		if data.get("members"):
+			for u in data.get("members"):
+				val = u.get("value") if isinstance(u, dict) else u
+				if val:
+					doc.append("members", {"user": val})
 		
 	doc.save()
 	frappe.db.commit()

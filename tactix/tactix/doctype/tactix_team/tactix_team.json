@@ -8,6 +8,7 @@
  "field_order": [
   "team_name",
   "team_lead",
+  "members",
   "description"
  ],
  "fields": [
@@ -25,6 +26,12 @@
    "in_list_view": 1,
    "label": "Team Lead",
    "options": "User"
+  },
+  {
+   "fieldname": "members",
+   "fieldtype": "Table",
+   "label": "Team Members",
+   "options": "Task Assigned To"
   },
   {
    "fieldname": "description",

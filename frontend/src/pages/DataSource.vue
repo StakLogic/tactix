@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50">
+  <div class="h-full overflow-y-auto p-2 space-y-6 custom-scrollbar bg-slate-50/50">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
       <div class="min-w-0">
@@ -19,7 +19,7 @@
     <!-- Navigation Tabs (Frappe UI Tabs component) -->
     <Tabs :tabs="tabs" v-model="tabIndex">
       <template #tab-panel="{ tab }">
-        <div class="pt-4 space-y-6 animate-fade-in">
+        <div class="pt-2 space-y-6 animate-fade-in">
           
           <!-- Master Lists (Project, Department, Tactix Dept, Tactix Customer, Tactix Team) -->
           <div class="space-y-4">
@@ -34,75 +34,210 @@
                 />
                 <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               </div>
-              <Button 
-                v-if="isAdmin"
-                variant="solid" 
-                class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-                @click="openCreateModal"
-              >
-                <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
-                Create New {{ currentTabLabelSingular }}
-              </Button>
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <Dropdown
+                  v-if="isAdmin && selectedRecords.size > 0"
+                  :options="actionsOptions"
+                >
+                  <Button
+                    variant="solid"
+                    class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+                  >
+                    Actions
+                    <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+                  </Button>
+                </Dropdown>
+
+                <Button 
+                  v-if="isAdmin"
+                  variant="solid" 
+                  class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
+                  @click="openCreateModal"
+                >
+                  <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
+                  Create New {{ currentTabLabelSingular }}
+                </Button>
+              </div>
             </div>
 
             <!-- Master List Table -->
-            <Card class="!shadow-sm bg-white border border-slate-200/60 overflow-hidden">
+            <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
               <div v-if="loadingRecords" class="flex justify-center py-12">
                 <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
               </div>
               <div v-else-if="filteredRecords.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
                 No records found.
               </div>
-              <div v-else class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                      <th class="p-4">Name / ID</th>
-                      <th class="p-4" v-if="activeTab === 'project'">Project Name</th>
-                      <th class="p-4" v-if="activeTab === 'project' || activeTab === 'department'">Company</th>
-                      <th class="p-4" v-if="activeTab === 'department'">Department Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Department Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Head of Dept</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Lead</th>
-                      <th class="p-4 text-right" v-if="isAdmin">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    <tr 
-                      v-for="row in filteredRecords" 
-                      :key="row.name" 
-                      class="hover:bg-slate-50/40 transition-colors"
-                    >
-                      <td class="p-4 font-semibold text-slate-800">{{ row.name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'project'">{{ row.project_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'project' || activeTab === 'department'">{{ row.company }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'department'">{{ row.department_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_head || 'None' }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_lead || 'None' }}</td>
-                      <td class="p-4 text-right space-x-1.5" v-if="isAdmin">
-                        <Button 
-                          variant="ghost" 
-                          class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
-                          @click="openEditModal(row)"
+              <ListView
+                v-else
+                class="h-full flex flex-col min-h-0"
+                :columns="columns"
+                :rows="paginatedRecords || []"
+                :options="{ selectable: isAdmin, showTooltip: true, resizeColumn: true, onRowClick: (row) => isAdmin && openEditModal(row) }"
+                row-key="name"
+                v-model:selections="selectedRecords"
+              >
+                <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
+                  <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
+                    <template #prefix="{ item }">
+                      <component :is="item.icon" class="size-3.5 text-slate-400" v-if="item.icon" />
+                    </template>
+                  </ListHeaderItem>
+                </ListHeader>
+                <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
+                  <ListRows>
+                    <ListRow v-for="row in (paginatedRecords || [])" :key="row.name" v-slot="{ column, item }" :row="row">
+                      <ListRowItem :item="item">
+                        <template v-if="column.key === 'name'">
+                          <span class="font-semibold text-slate-800">{{ row.name }}</span>
+                        </template>
+                        <template v-if="column.key === 'project_name'">
+                          <span class="text-slate-600">{{ row.project_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'company'">
+                          <span class="text-slate-600">{{ row.company }}</span>
+                        </template>
+                        <template v-if="column.key === 'department_name'">
+                          <span class="text-slate-600">{{ row.department_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'department_head'">
+                          <span class="text-slate-600">{{ row.department_head || 'None' }}</span>
+                        </template>
+                        <template v-if="column.key === 'team_name'">
+                          <span class="text-slate-600">{{ row.team_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'team_lead'">
+                          <span class="text-slate-600">{{ getUserLabel(row.team_lead) }}</span>
+                        </template>
+                        <template v-if="column.key === 'members'">
+                          <div class="flex flex-wrap gap-1 max-w-xs items-center">
+                            <Badge 
+                              v-for="m in (row.members || []).slice(0, 3)" 
+                              :key="m" 
+                              theme="blue" 
+                              variant="subtle" 
+                              class="font-semibold text-[9px]"
+                            >
+                              {{ getUserLabel(m) }}
+                            </Badge>
+                            <span v-if="(row.members || []).length > 3" class="text-[10px] text-slate-400 font-bold pl-1">
+                              +{{ (row.members || []).length - 3 }} more
+                            </span>
+                            <span v-if="!(row.members && row.members.length)" class="text-slate-400 text-xs">—</span>
+                          </div>
+                        </template>
+                        <template v-if="column.key === 'actions'">
+                          <div class="flex items-center justify-end space-x-1.5" v-if="isAdmin">
+                            <Button 
+                              variant="ghost" 
+                              class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
+                              @click.stop="openEditModal(row)"
+                            >
+                              <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                              @click.stop="confirmSingleDelete(row.name)"
+                            >
+                              <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                            </Button>
+                          </div>
+                        </template>
+                      </ListRowItem>
+                    </ListRow>
+                  </ListRows>
+                </div>
+              </ListView>
+
+              <!-- Pagination Bar -->
+              <div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-2 shrink-0">
+                <div class="flex items-center gap-1">
+                  <!-- First Page (<<) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage === 1"
+                    @click="currentPage = 1"
+                    title="First Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Previous Page (<) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage === 1"
+                    @click="currentPage = Math.max(1, currentPage - 1)"
+                    title="Previous Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Compact Popover Page Selector -->
+                  <Popover>
+                    <template #target="{ togglePopover }">
+                      <button
+                        @click="togglePopover"
+                        class="h-6 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 rounded border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <span>{{ currentPage }} / {{ totalPages }}</span>
+                        <IconChevronDown class="w-3 h-3 text-slate-400" />
+                      </button>
+                    </template>
+                    <template #body="{ close }">
+                      <div class="p-1 max-h-48 overflow-y-auto w-32 bg-white rounded-lg shadow-lg border border-slate-200 custom-scrollbar">
+                        <button
+                          v-for="p in totalPages"
+                          :key="p"
+                          @click="currentPage = p; close()"
+                          :class="[
+                            'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
+                            currentPage === p
+                              ? 'bg-slate-900 text-white font-bold'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          ]"
                         >
-                          <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                          @click="deleteRecord(row.name)"
-                        >
-                          <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
-                        </Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                          <span>Page {{ p }}</span>
+                          <IconCheck v-if="currentPage === p" class="w-3 h-3" />
+                        </button>
+                      </div>
+                    </template>
+                  </Popover>
+
+                  <!-- Next Page (>) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage >= totalPages"
+                    @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                    title="Next Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
+                  </Button>
+
+                  <!-- Last Page (>>) -->
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="currentPage >= totalPages"
+                    @click="currentPage = totalPages"
+                    title="Last Page"
+                    class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+                  >
+                    <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
+                  </Button>
+                </div>
+
+                <div class="text-xs text-slate-500 font-medium">
+                  Showing <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800">{{ totalCount }}</span>
+                </div>
               </div>
-            </Card>
+            </div>
           </div>
 
         </div>
@@ -140,8 +275,41 @@
           <template v-if="activeTab === 'tactix_team'">
             <FormControl type="text" label="Team Name *" v-model="modal.form.team_name" placeholder="Enter team name" />
             <FormControl type="select" label="Team Lead" v-model="modal.form.team_lead" :options="userOptions" />
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-600">Team Members (Employees Only)</label>
+              <MultiSelect
+                :options="userOptions"
+                v-model="modal.form.members"
+                placeholder="Select team members"
+              />
+            </div>
           </template>
         </div>
+      </template>
+    </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model="deleteConfirm.show" 
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? `Delete ${deleteConfirm.count} ${currentTabLabelSingular}(s)` : `Delete ${currentTabLabelSingular}`,
+        size: 'sm',
+        actions: [
+          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeDelete },
+          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected {{ currentTabLabelSingular.toLowerCase() }}(s). This action cannot be undone.
+          </span>
+          <span v-else>
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
+          </span>
+        </p>
       </template>
     </Dialog>
   </div>
@@ -149,10 +317,22 @@
 
 <script setup>
 import {
+	Badge,
 	Button,
 	Card,
 	Dialog,
+	Dropdown,
+	FeatherIcon,
 	FormControl,
+	ListHeader,
+	ListHeaderItem,
+	ListRow,
+	ListRowItem,
+	ListRows,
+	ListView,
+	MultiSelect,
+	Popover,
+	Select,
 	Tabs,
 	createResource,
 } from "frappe-ui"
@@ -160,6 +340,12 @@ import { computed, reactive, ref, watch } from "vue"
 
 // Icons
 import IconArrowLeft from "~icons/lucide/arrow-left"
+import IconCheck from "~icons/lucide/check"
+import IconChevronDown from "~icons/lucide/chevron-down"
+import IconChevronLeft from "~icons/lucide/chevron-left"
+import IconChevronRight from "~icons/lucide/chevron-right"
+import IconChevronsLeft from "~icons/lucide/chevrons-left"
+import IconChevronsRight from "~icons/lucide/chevrons-right"
 import IconEdit from "~icons/lucide/pencil"
 import IconPlus from "~icons/lucide/plus"
 import IconSearch from "~icons/lucide/search"
@@ -178,6 +364,30 @@ const activeTab = computed(() => tabs[tabIndex.value]?.id || "project")
 const searchQuery = ref("")
 const loadingRecords = ref(false)
 const masterRecords = ref([])
+const selectedRecords = ref(new Set())
+
+const currentPage = ref(1)
+const pageLength = ref(20)
+
+watch([activeTab, searchQuery], () => {
+	currentPage.value = 1
+})
+
+const deleteConfirm = reactive({
+	show: false,
+	isBulk: false,
+	targetName: null,
+	count: 0,
+	loading: false,
+})
+
+const actionsOptions = computed(() => [
+	{
+		label: `Delete Selected (${selectedRecords.value.size})`,
+		icon: "trash-2",
+		onClick: confirmBulkDelete,
+	},
+])
 
 const currentTabLabelSingular = computed(() => {
 	switch (activeTab.value) {
@@ -213,6 +423,47 @@ const currentTabDoctype = computed(() => {
 	}
 })
 
+const columns = computed(() => {
+	switch (activeTab.value) {
+		case "project":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Project Name", key: "project_name" },
+				{ label: "Company", key: "company", width: "200px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "department":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Department Name", key: "department_name" },
+				{ label: "Company", key: "company", width: "200px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_dept":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Department Name", key: "department_name" },
+				{ label: "Head of Dept", key: "department_head", width: "250px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_cust":
+			return [
+				{ label: "Name / ID", key: "name" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_team":
+			return [
+				{ label: "Name / ID", key: "name", width: "160px" },
+				{ label: "Team Name", key: "team_name", width: "180px" },
+				{ label: "Team Lead", key: "team_lead", width: "200px" },
+				{ label: "Team Members", key: "members" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		default:
+			return []
+	}
+})
+
 const employeeInfoResource = createResource({
 	url: "tactix.api.timesheet.get_employee_info",
 	initialData: {},
@@ -234,10 +485,16 @@ const usersResource = createResource({
 const userOptions = computed(() => {
 	if (!usersResource.data) return []
 	return usersResource.data.map((u) => ({
-		label: `${u.full_name} (${u.name})`,
+		label: u.full_name ? `${u.full_name} (${u.name})` : u.name,
 		value: u.name,
 	}))
 })
+
+function getUserLabel(userName) {
+	if (!userName) return "—"
+	const match = usersResource.data?.find((u) => u.name === userName || u.value === userName)
+	return match ? (match.full_name || match.label || userName) : userName
+}
 
 // Fetch Link Options
 const fetchLinkOptions = async () => {
@@ -278,6 +535,7 @@ const fetchMasterRecords = async () => {
 }
 
 watch(activeTab, () => {
+	selectedRecords.value.clear()
 	fetchMasterRecords()
 })
 
@@ -310,6 +568,49 @@ const filteredRecords = computed(() => {
 	})
 })
 
+const totalCount = computed(() => filteredRecords.value.length)
+const totalPages = computed(() => Math.ceil(totalCount.value / pageLength.value) || 1)
+
+const pageOptions = computed(() =>
+	Array.from({ length: totalPages.value }, (_, i) => ({
+		label: `${i + 1} / ${totalPages.value}`,
+		value: i + 1,
+	})),
+)
+const paginatedRecords = computed(() =>
+	filteredRecords.value.slice(
+		(currentPage.value - 1) * pageLength.value,
+		currentPage.value * pageLength.value,
+	),
+)
+
+const paginationPages = computed(() => {
+	const current = currentPage.value
+	const total = totalPages.value
+	if (total <= 7) {
+		return Array.from({ length: total }, (_, i) => i + 1)
+	}
+
+	const pages = [1]
+	if (current > 3) {
+		pages.push("...")
+	}
+
+	const start = Math.max(2, current - 1)
+	const end = Math.min(total - 1, current + 1)
+
+	for (let i = start; i <= end; i++) {
+		pages.push(i)
+	}
+
+	if (current < total - 2) {
+		pages.push("...")
+	}
+	pages.push(total)
+
+	return pages
+})
+
 // Modal State
 const modal = reactive({
 	show: false,
@@ -333,7 +634,7 @@ const dialogOptions = computed(() => ({
 function openCreateModal() {
 	modal.isEdit = false
 	modal.recordId = null
-	modal.form = {}
+	modal.form = { members: [] }
 	if (activeTab.value === "project") {
 		if (linkOptions.companies.length > 0) {
 			modal.form.company = linkOptions.companies[0].value
@@ -349,7 +650,7 @@ function openCreateModal() {
 function openEditModal(row) {
 	modal.isEdit = true
 	modal.recordId = row.name
-	modal.form = { ...row }
+	modal.form = { ...row, members: row.members ? [...row.members] : [] }
 	modal.show = true
 }
 
@@ -386,30 +687,55 @@ async function submitModalForm() {
 	}
 }
 
-async function deleteRecord(name) {
-	if (!confirm(`Are you sure you want to delete ${name}?`)) return
+function confirmSingleDelete(name) {
+	deleteConfirm.isBulk = false
+	deleteConfirm.targetName = name
+	deleteConfirm.count = 1
+	deleteConfirm.show = true
+}
+
+function confirmBulkDelete() {
+	deleteConfirm.isBulk = true
+	deleteConfirm.targetName = null
+	deleteConfirm.count = selectedRecords.value.size
+	deleteConfirm.show = true
+}
+
+async function executeDelete() {
+	deleteConfirm.loading = true
 	try {
-		const res = await fetch(
-			"/api/method/tactix.api.masters.save_master_record",
-			{
+		if (deleteConfirm.isBulk) {
+			for (const name of Array.from(selectedRecords.value)) {
+				await fetch("/api/method/tactix.api.masters.save_master_record", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						action: "delete",
+						doctype: currentTabDoctype.value,
+						name,
+					}),
+				})
+			}
+			selectedRecords.value.clear()
+		} else if (deleteConfirm.targetName) {
+			await fetch("/api/method/tactix.api.masters.save_master_record", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					action: "delete",
 					doctype: currentTabDoctype.value,
-					name,
+					name: deleteConfirm.targetName,
 				}),
-			},
-		)
-		const data = await res.json()
-		if (data.message?.status === "success") {
-			fetchMasterRecords()
-		} else {
-			alert(data.message?.error || "Error deleting record")
+			})
+			selectedRecords.value.delete(deleteConfirm.targetName)
 		}
+		deleteConfirm.show = false
+		fetchMasterRecords()
 	} catch (err) {
-		console.error("Error deleting record:", err)
-		alert("Failed to delete record")
+		console.error("Error deleting record(s):", err)
+		alert("Failed to delete record(s)")
+	} finally {
+		deleteConfirm.loading = false
 	}
 }
 </script>
