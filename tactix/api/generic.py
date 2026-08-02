@@ -71,6 +71,11 @@ def get_users_excluding_ticket_users():
 	return users
 
 
+@frappe.whitelist()
+def get_users_list():
+	return get_users_excluding_ticket_users()
+
+
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import redirect as wz_redirect
 

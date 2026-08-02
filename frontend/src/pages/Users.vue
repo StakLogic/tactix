@@ -39,87 +39,96 @@
 
     <!-- Users Table -->
     <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
-      <div v-if="loading" class="flex justify-center py-12">
-        <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-      <div v-else-if="filteredUsers.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
-        No users found.
-      </div>
-      <div v-else class="flex-1 overflow-y-auto custom-scrollbar overflow-x-auto min-h-0">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-semibold text-slate-500 uppercase tracking-wider sticky top-0 bg-slate-50 z-10">
-              <th class="px-4 py-3">User</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Team / Department</th>
-              <th class="px-4 py-3">Assigned Roles</th>
-              <th class="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr 
-              v-for="user in filteredUsers" 
-              :key="user.email" 
-              class="hover:bg-slate-50/40 transition-colors"
-            >
-              <td class="px-4 py-3 flex items-center gap-3">
-                <Avatar :image="user.user_image" :label="user.first_name || user.email" size="md" class="shadow-sm border border-slate-100" />
-                <div class="flex flex-col">
-                  <span class="font-semibold text-slate-800">{{ user.first_name }} {{ user.last_name || '' }}</span>
-                  <span class="text-[10px] text-slate-400 font-medium">{{ user.email }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3">
-                <Badge 
-                  :theme="user.enabled ? 'green' : 'gray'" 
-                  variant="subtle" 
-                  class="font-black text-[9px] uppercase tracking-wide px-2 py-0.5"
-                >
-                  {{ user.enabled ? 'Active' : 'Disabled' }}
-                </Badge>
-              </td>
-              <td class="px-4 py-3 font-medium text-slate-600">
-                {{ user.department || 'Unassigned' }}
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex flex-wrap gap-1 max-w-sm">
-                  <Badge 
-                    v-for="role in mapDbToUiRoles(user.roles || []).slice(0, 3)" 
-                    :key="role"
-                    theme="blue" 
-                    variant="subtle" 
-                    class="font-bold text-[8px] uppercase tracking-wide px-1.5 py-px"
-                  >
-                    {{ role }}
-                  </Badge>
-                  <span v-if="mapDbToUiRoles(user.roles || []).length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
-                    +{{ mapDbToUiRoles(user.roles || []).length - 3 }} more
-                  </span>
-                </div>
-              </td>
-              <td class="px-4 py-3 text-right space-x-1.5">
-                <Button 
-                  variant="ghost" 
-                  class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
-                  @click="openEditModal(user)"
-                >
-                  <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                  @click="deleteUserRecord(user.email)"
-                >
-                  <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
+        <div v-if="loading" class="flex justify-center py-12">
+          <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+        </div>
+        <div v-else-if="filteredUsers.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
+          No users found.
+        </div>
+        <ListView
+          v-else
+          class="h-full flex flex-col min-h-0"
+          :columns="columns"
+          :rows="filteredUsers || []"
+          :options="{ showTooltip: true, resizeColumn: true, onRowClick: (row) => openEditModal(row) }"
+          row-key="email"
+        >
+          <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
+            <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
+              <template #prefix="{ item }">
+                <component :is="item.icon" class="size-3.5 text-slate-400" v-if="item.icon" />
+              </template>
+            </ListHeaderItem>
+          </ListHeader>
+          <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
+            <ListRows>
+              <ListRow v-for="row in (filteredUsers || [])" :key="row.email" v-slot="{ column, item }" :row="row">
+                <ListRowItem :item="item">
+                  <template v-if="column.key === 'user'">
+                    <div class="flex items-center gap-3 py-1">
+                      <Avatar :image="row.user_image" :label="row.first_name || row.email" size="md" class="shadow-sm border border-slate-100 shrink-0" />
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-semibold text-slate-800 truncate">{{ row.first_name }} {{ row.last_name || '' }}</span>
+                        <span class="text-[10px] text-slate-400 font-medium truncate">{{ row.email }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'status'">
+                    <Badge 
+                      :theme="row.enabled ? 'green' : 'gray'" 
+                      variant="subtle" 
+                      class="font-black text-[9px] uppercase tracking-wide px-2 py-0.5"
+                    >
+                      {{ row.enabled ? 'Active' : 'Disabled' }}
+                    </Badge>
+                  </template>
+                  <template v-if="column.key === 'department'">
+                    <span class="font-medium text-slate-600 text-xs">
+                      {{ row.department || 'Unassigned' }}
+                    </span>
+                  </template>
+                  <template v-if="column.key === 'roles'">
+                    <div class="flex flex-wrap gap-1 max-w-sm">
+                      <Badge 
+                        v-for="role in mapDbToUiRoles(row.roles || []).slice(0, 3)" 
+                        :key="role"
+                        theme="blue" 
+                        variant="subtle" 
+                        class="font-bold text-[8px] uppercase tracking-wide px-1.5 py-px"
+                      >
+                        {{ role }}
+                      </Badge>
+                      <span v-if="mapDbToUiRoles(row.roles || []).length > 3" class="text-[9px] text-slate-400 font-bold self-center pl-1">
+                        +{{ mapDbToUiRoles(row.roles || []).length - 3 }} more
+                      </span>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'actions'">
+                    <div class="flex items-center justify-end space-x-1.5">
+                      <Button 
+                        variant="ghost" 
+                        class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
+                        @click.stop="openEditModal(row)"
+                      >
+                        <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                        @click.stop="deleteUserRecord(row.email)"
+                      >
+                        <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                      </Button>
+                    </div>
+                  </template>
+                </ListRowItem>
+              </ListRow>
+            </ListRows>
+          </div>
+        </ListView>
       </div>
     </div>
-  </div>
 
     <!-- Create/Edit User Modal Dialog -->
     <Dialog v-model="modal.show" :disable-outside-click-to-close="true" :options="dialogOptions">
@@ -216,9 +225,23 @@ import {
 	Checkbox,
 	Dialog,
 	FormControl,
+	ListHeader,
+	ListHeaderItem,
+	ListRow,
+	ListRowItem,
+	ListRows,
+	ListView,
 	Switch,
 	createResource,
 } from "frappe-ui"
+
+const columns = [
+	{ label: "User", key: "user", width: "280px" },
+	{ label: "Status", key: "status", width: "130px" },
+	{ label: "Team / Department", key: "department", width: "200px" },
+	{ label: "Assigned Roles", key: "roles" },
+	{ label: "Actions", key: "actions", width: "100px" },
+]
 import { computed, reactive, ref, watch } from "vue"
 
 // Icons

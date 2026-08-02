@@ -46,63 +46,94 @@
             </div>
 
             <!-- Master List Table -->
-            <Card class="!shadow-sm bg-white border border-slate-200/60 overflow-hidden">
+            <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
               <div v-if="loadingRecords" class="flex justify-center py-12">
                 <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
               </div>
               <div v-else-if="filteredRecords.length === 0" class="text-center py-12 text-slate-400 italic text-xs font-semibold">
                 No records found.
               </div>
-              <div v-else class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                      <th class="p-4">Name / ID</th>
-                      <th class="p-4" v-if="activeTab === 'project'">Project Name</th>
-                      <th class="p-4" v-if="activeTab === 'project' || activeTab === 'department'">Company</th>
-                      <th class="p-4" v-if="activeTab === 'department'">Department Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Department Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_dept'">Head of Dept</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Name</th>
-                      <th class="p-4" v-if="activeTab === 'tactix_team'">Team Lead</th>
-                      <th class="p-4 text-right" v-if="isAdmin">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    <tr 
-                      v-for="row in filteredRecords" 
-                      :key="row.name" 
-                      class="hover:bg-slate-50/40 transition-colors"
-                    >
-                      <td class="p-4 font-semibold text-slate-800">{{ row.name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'project'">{{ row.project_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'project' || activeTab === 'department'">{{ row.company }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'department'">{{ row.department_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_dept'">{{ row.department_head || 'None' }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_name }}</td>
-                      <td class="p-4 text-slate-600" v-if="activeTab === 'tactix_team'">{{ row.team_lead || 'None' }}</td>
-                      <td class="p-4 text-right space-x-1.5" v-if="isAdmin">
-                        <Button 
-                          variant="ghost" 
-                          class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
-                          @click="openEditModal(row)"
-                        >
-                          <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                          @click="deleteRecord(row.name)"
-                        >
-                          <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
-                        </Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+              <ListView
+                v-else
+                class="h-full flex flex-col min-h-0"
+                :columns="columns"
+                :rows="filteredRecords || []"
+                :options="{ showTooltip: true, resizeColumn: true, onRowClick: (row) => isAdmin && openEditModal(row) }"
+                row-key="name"
+              >
+                <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
+                  <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
+                    <template #prefix="{ item }">
+                      <component :is="item.icon" class="size-3.5 text-slate-400" v-if="item.icon" />
+                    </template>
+                  </ListHeaderItem>
+                </ListHeader>
+                <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none">
+                  <ListRows>
+                    <ListRow v-for="row in (filteredRecords || [])" :key="row.name" v-slot="{ column, item }" :row="row">
+                      <ListRowItem :item="item">
+                        <template v-if="column.key === 'name'">
+                          <span class="font-semibold text-slate-800">{{ row.name }}</span>
+                        </template>
+                        <template v-if="column.key === 'project_name'">
+                          <span class="text-slate-600">{{ row.project_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'company'">
+                          <span class="text-slate-600">{{ row.company }}</span>
+                        </template>
+                        <template v-if="column.key === 'department_name'">
+                          <span class="text-slate-600">{{ row.department_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'department_head'">
+                          <span class="text-slate-600">{{ row.department_head || 'None' }}</span>
+                        </template>
+                        <template v-if="column.key === 'team_name'">
+                          <span class="text-slate-600">{{ row.team_name }}</span>
+                        </template>
+                        <template v-if="column.key === 'team_lead'">
+                          <span class="text-slate-600">{{ getUserLabel(row.team_lead) }}</span>
+                        </template>
+                        <template v-if="column.key === 'members'">
+                          <div class="flex flex-wrap gap-1 max-w-xs items-center">
+                            <Badge 
+                              v-for="m in (row.members || []).slice(0, 3)" 
+                              :key="m" 
+                              theme="blue" 
+                              variant="subtle" 
+                              class="font-semibold text-[9px]"
+                            >
+                              {{ getUserLabel(m) }}
+                            </Badge>
+                            <span v-if="(row.members || []).length > 3" class="text-[10px] text-slate-400 font-bold pl-1">
+                              +{{ (row.members || []).length - 3 }} more
+                            </span>
+                            <span v-if="!(row.members && row.members.length)" class="text-slate-400 text-xs">—</span>
+                          </div>
+                        </template>
+                        <template v-if="column.key === 'actions'">
+                          <div class="flex items-center justify-end space-x-1.5" v-if="isAdmin">
+                            <Button 
+                              variant="ghost" 
+                              class="!text-slate-600 hover:!bg-slate-100 !p-1.5 rounded-lg"
+                              @click.stop="openEditModal(row)"
+                            >
+                              <template #prefix><IconEdit class="w-3.5 h-3.5" /></template>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                              @click.stop="deleteRecord(row.name)"
+                            >
+                              <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                            </Button>
+                          </div>
+                        </template>
+                      </ListRowItem>
+                    </ListRow>
+                  </ListRows>
+                </div>
+              </ListView>
+            </div>
           </div>
 
         </div>
@@ -140,6 +171,14 @@
           <template v-if="activeTab === 'tactix_team'">
             <FormControl type="text" label="Team Name *" v-model="modal.form.team_name" placeholder="Enter team name" />
             <FormControl type="select" label="Team Lead" v-model="modal.form.team_lead" :options="userOptions" />
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-600">Team Members (Employees Only)</label>
+              <MultiSelect
+                :options="userOptions"
+                v-model="modal.form.members"
+                placeholder="Select team members"
+              />
+            </div>
           </template>
         </div>
       </template>
@@ -149,10 +188,18 @@
 
 <script setup>
 import {
+	Badge,
 	Button,
 	Card,
 	Dialog,
 	FormControl,
+	ListHeader,
+	ListHeaderItem,
+	ListRow,
+	ListRowItem,
+	ListRows,
+	ListView,
+	MultiSelect,
 	Tabs,
 	createResource,
 } from "frappe-ui"
@@ -213,6 +260,47 @@ const currentTabDoctype = computed(() => {
 	}
 })
 
+const columns = computed(() => {
+	switch (activeTab.value) {
+		case "project":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Project Name", key: "project_name" },
+				{ label: "Company", key: "company", width: "200px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "department":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Department Name", key: "department_name" },
+				{ label: "Company", key: "company", width: "200px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_dept":
+			return [
+				{ label: "Name / ID", key: "name", width: "200px" },
+				{ label: "Department Name", key: "department_name" },
+				{ label: "Head of Dept", key: "department_head", width: "250px" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_cust":
+			return [
+				{ label: "Name / ID", key: "name" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		case "tactix_team":
+			return [
+				{ label: "Name / ID", key: "name", width: "160px" },
+				{ label: "Team Name", key: "team_name", width: "180px" },
+				{ label: "Team Lead", key: "team_lead", width: "200px" },
+				{ label: "Team Members", key: "members" },
+				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+			]
+		default:
+			return []
+	}
+})
+
 const employeeInfoResource = createResource({
 	url: "tactix.api.timesheet.get_employee_info",
 	initialData: {},
@@ -234,10 +322,16 @@ const usersResource = createResource({
 const userOptions = computed(() => {
 	if (!usersResource.data) return []
 	return usersResource.data.map((u) => ({
-		label: `${u.full_name} (${u.name})`,
+		label: u.full_name ? `${u.full_name} (${u.name})` : u.name,
 		value: u.name,
 	}))
 })
+
+function getUserLabel(userName) {
+	if (!userName) return "—"
+	const match = usersResource.data?.find((u) => u.name === userName || u.value === userName)
+	return match ? (match.full_name || match.label || userName) : userName
+}
 
 // Fetch Link Options
 const fetchLinkOptions = async () => {
@@ -333,7 +427,7 @@ const dialogOptions = computed(() => ({
 function openCreateModal() {
 	modal.isEdit = false
 	modal.recordId = null
-	modal.form = {}
+	modal.form = { members: [] }
 	if (activeTab.value === "project") {
 		if (linkOptions.companies.length > 0) {
 			modal.form.company = linkOptions.companies[0].value
@@ -349,7 +443,7 @@ function openCreateModal() {
 function openEditModal(row) {
 	modal.isEdit = true
 	modal.recordId = row.name
-	modal.form = { ...row }
+	modal.form = { ...row, members: row.members ? [...row.members] : [] }
 	modal.show = true
 }
 
