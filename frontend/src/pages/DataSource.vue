@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50">
+  <div class="h-full overflow-y-auto p-2 space-y-6 custom-scrollbar bg-slate-50/50">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
       <div class="min-w-0">
@@ -19,7 +19,7 @@
     <!-- Navigation Tabs (Frappe UI Tabs component) -->
     <Tabs :tabs="tabs" v-model="tabIndex">
       <template #tab-panel="{ tab }">
-        <div class="pt-4 space-y-6 animate-fade-in">
+        <div class="pt-2 space-y-6 animate-fade-in">
           
           <!-- Master Lists (Project, Department, Tactix Dept, Tactix Customer, Tactix Team) -->
           <div class="space-y-4">

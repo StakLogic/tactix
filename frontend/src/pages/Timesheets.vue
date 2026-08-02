@@ -64,7 +64,7 @@
     </div>
 
     <!-- Actions & Filter Header -->
-    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-4 my-2 flex-shrink-0">
+    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-2 my-2 flex-shrink-0">
       <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
         <select 
           v-model="selectedStatus"
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Timesheets List Table -->
-    <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-4 flex flex-col min-h-0">
       <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
         <ListView
           class="h-full flex flex-col min-h-0"
