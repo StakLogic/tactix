@@ -116,6 +116,19 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <Dropdown
+          v-if="employeeInfoResource.data?.is_system_manager && selectedTimesheets.size > 0"
+          :options="actionsOptions"
+        >
+          <Button
+            variant="solid"
+            class="!bg-slate-800 !text-white !text-xs !px-4 !h-9 rounded-lg hover:!bg-slate-900 transition-all font-medium"
+          >
+            Actions
+            <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+          </Button>
+        </Dropdown>
+
         <Button
           variant="outline"
           class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all"
@@ -142,12 +155,13 @@
           :columns="columns"
           :rows="timesheets.data?.timesheets || []"
           :options="{
-            selectable: false,
+            selectable: employeeInfoResource.data?.is_system_manager,
             showTooltip: true,
             resizeColumn: true,
             onRowClick: (row) => openTimesheetDetails(row)
           }"
           row-key="name"
+          v-model:selections="selectedTimesheets"
         >
           <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
             <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
@@ -190,6 +204,18 @@
                     >
                       {{ row.status }}
                     </Badge>
+                  </template>
+
+                  <template v-if="column.key === 'actions'">
+                    <div class="flex items-center justify-end space-x-1.5" v-if="employeeInfoResource.data?.is_system_manager">
+                      <Button 
+                        variant="ghost" 
+                        class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                        @click.stop="confirmSingleDelete(row.name)"
+                      >
+                        <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
+                      </Button>
+                    </div>
                   </template>
                 </ListRowItem>
               </ListRow>
@@ -442,6 +468,31 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model="deleteConfirm.show" 
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? 'Delete Selected Timesheets' : 'Delete Timesheet',
+        size: 'sm',
+        actions: [
+          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeTimesheetDelete },
+          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected timesheet(s). This action cannot be undone.
+          </span>
+          <span v-else>
+            This will permanently remove timesheet <span class="font-bold text-slate-900">#{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
+          </span>
+        </p>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -452,6 +503,8 @@ import {
 	Button,
 	Card,
 	Dialog,
+	Dropdown,
+	FeatherIcon,
 	FormControl,
 	ListHeader,
 	ListHeaderItem,
@@ -474,6 +527,7 @@ import IconHash from "~icons/lucide/hash"
 import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
 import IconSearch from "~icons/lucide/search"
+import IconTrash from "~icons/lucide/trash-2"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
 
@@ -488,6 +542,66 @@ const pageLength = 20
 const saving = ref(false)
 const formError = ref("")
 const viewError = ref("")
+
+const selectedTimesheets = ref(new Set())
+const deleteConfirm = reactive({
+	show: false,
+	isBulk: false,
+	targetName: null,
+	count: 0,
+	loading: false,
+})
+
+const actionsOptions = computed(() => [
+	{
+		label: `Delete Selected (${selectedTimesheets.value.size})`,
+		icon: "trash-2",
+		onClick: confirmBulkDelete,
+	},
+])
+
+function confirmSingleDelete(name) {
+	deleteConfirm.isBulk = false
+	deleteConfirm.targetName = name
+	deleteConfirm.count = 1
+	deleteConfirm.show = true
+}
+
+function confirmBulkDelete() {
+	deleteConfirm.isBulk = true
+	deleteConfirm.targetName = null
+	deleteConfirm.count = selectedTimesheets.value.size
+	deleteConfirm.show = true
+}
+
+async function executeTimesheetDelete() {
+	deleteConfirm.loading = true
+	try {
+		if (deleteConfirm.isBulk) {
+			for (const name of Array.from(selectedTimesheets.value)) {
+				await createResource({
+					url: "frappe.client.delete",
+					params: { doctype: "Timesheet", name },
+				}).submit()
+			}
+			selectedTimesheets.value.clear()
+		} else if (deleteConfirm.targetName) {
+			await createResource({
+				url: "frappe.client.delete",
+				params: { doctype: "Timesheet", name: deleteConfirm.targetName },
+			}).submit()
+			selectedTimesheets.value.delete(deleteConfirm.targetName)
+		}
+		deleteConfirm.show = false
+		timesheets.reload()
+		timesheetsSummary.reload()
+	} catch (err) {
+		console.error("Error deleting timesheet(s):", err)
+		alert("Failed to delete timesheet(s).")
+	} finally {
+		deleteConfirm.loading = false
+	}
+}
 
 // Selected timesheet for viewing
 const selectedTimesheet = ref(null)
@@ -545,13 +659,14 @@ const timesheetFilters = computed(() => {
 })
 
 // Columns
-const columns = [
+const columns = computed(() => [
 	{ label: "Timesheet ID", key: "name", width: "160px", icon: IconHash },
 	{ label: "Date", key: "start_date", width: "160px", icon: IconCalendar },
 	{ label: "Employee", key: "employee_name", width: "2.5fr", icon: IconUser },
 	{ label: "Total Hours", key: "total_hours", width: "150px", icon: IconClock },
 	{ label: "Status", key: "status", width: "130px", icon: IconAlertCircle },
-]
+	...(employeeInfoResource.data?.is_system_manager ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+])
 
 // API Resources
 const timesheets = createResource({

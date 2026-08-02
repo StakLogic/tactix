@@ -17,7 +17,7 @@
     </div>
 
     <!-- Controls & Search -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm mx-4 my-2 flex-shrink-0">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm mx-2 my-2 flex-shrink-0">
       <div class="relative w-full sm:max-w-xs">
         <input 
           type="text" 
@@ -27,18 +27,33 @@
         />
         <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
       </div>
-      <Button 
-        variant="solid" 
-        class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-        @click="openCreateModal"
-      >
-        <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
-        Add New User
-      </Button>
+      <div class="flex items-center gap-2">
+        <Dropdown
+          v-if="selectedUsers.size > 0"
+          :options="actionsOptions"
+        >
+          <Button
+            variant="solid"
+            class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+          >
+            Actions
+            <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+          </Button>
+        </Dropdown>
+
+        <Button 
+          variant="solid" 
+          class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
+          @click="openCreateModal"
+        >
+          <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
+          Add New User
+        </Button>
+      </div>
     </div>
 
     <!-- Users Table -->
-    <div class="flex-1 overflow-y-auto md:overflow-hidden px-4 pb-4 flex flex-col min-h-0">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-4 flex flex-col min-h-0">
       <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
         <div v-if="loading" class="flex justify-center py-12">
           <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -51,8 +66,9 @@
           class="h-full flex flex-col min-h-0"
           :columns="columns"
           :rows="filteredUsers || []"
-          :options="{ showTooltip: true, resizeColumn: true, onRowClick: (row) => openEditModal(row) }"
+          :options="{ selectable: true, showTooltip: true, resizeColumn: true, onRowClick: (row) => openEditModal(row) }"
           row-key="email"
+          v-model:selections="selectedUsers"
         >
           <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
             <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
@@ -116,7 +132,7 @@
                       <Button 
                         variant="ghost" 
                         class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                        @click.stop="deleteUserRecord(row.email)"
+                        @click.stop="confirmSingleDelete(row.email)"
                       >
                         <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
                       </Button>
@@ -213,6 +229,31 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model="deleteConfirm.show" 
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? 'Delete Selected Users' : 'Delete User Account',
+        size: 'sm',
+        actions: [
+          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeUserDelete },
+          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected user account(s). This action cannot be undone.
+          </span>
+          <span v-else>
+            This will permanently remove user account <span class="font-bold text-slate-900">{{ deleteConfirm.targetEmail }}</span>. This action cannot be undone.
+          </span>
+        </p>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -224,6 +265,8 @@ import {
 	Card,
 	Checkbox,
 	Dialog,
+	Dropdown,
+	FeatherIcon,
 	FormControl,
 	ListHeader,
 	ListHeaderItem,
@@ -257,6 +300,23 @@ const loading = ref(false)
 const users = ref([])
 const roles = ref([])
 const departments = ref([])
+
+const selectedUsers = ref(new Set())
+const deleteConfirm = reactive({
+	show: false,
+	isBulk: false,
+	targetEmail: null,
+	count: 0,
+	loading: false,
+})
+
+const actionsOptions = computed(() => [
+	{
+		label: `Delete Selected (${selectedUsers.value.size})`,
+		icon: "trash-2",
+		onClick: confirmBulkDelete,
+	},
+])
 
 const displayRoles = [
 	"Employee (Developer)",
@@ -457,27 +517,47 @@ async function saveUserRecord() {
 	}
 }
 
-async function deleteUserRecord(email) {
-	if (
-		!confirm(
-			`Are you sure you want to permanently delete user account ${email}?`,
-		)
-	)
-		return
+function confirmSingleDelete(email) {
+	deleteConfirm.isBulk = false
+	deleteConfirm.targetEmail = email
+	deleteConfirm.count = 1
+	deleteConfirm.show = true
+}
+
+function confirmBulkDelete() {
+	deleteConfirm.isBulk = true
+	deleteConfirm.targetEmail = null
+	deleteConfirm.count = selectedUsers.value.size
+	deleteConfirm.show = true
+}
+
+async function executeUserDelete() {
+	deleteConfirm.loading = true
 	try {
-		const res = await fetch("/api/method/tactix.api.users.delete_user", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ email }),
-		})
-		const data = await res.json()
-		if (data.message?.status === "success") {
-			fetchUsersData()
-		} else {
-			alert("Failed to delete user account.")
+		if (deleteConfirm.isBulk) {
+			for (const email of Array.from(selectedUsers.value)) {
+				await fetch("/api/method/tactix.api.users.delete_user", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ email }),
+				})
+			}
+			selectedUsers.value.clear()
+		} else if (deleteConfirm.targetEmail) {
+			await fetch("/api/method/tactix.api.users.delete_user", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email: deleteConfirm.targetEmail }),
+			})
+			selectedUsers.value.delete(deleteConfirm.targetEmail)
 		}
+		deleteConfirm.show = false
+		fetchUsersData()
 	} catch (err) {
-		alert("An error occurred while deleting the user account.")
+		console.error("Failed to delete user account(s):", err)
+		alert("Failed to delete user account(s).")
+	} finally {
+		deleteConfirm.loading = false
 	}
 }
 

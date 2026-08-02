@@ -34,15 +34,30 @@
                 />
                 <IconSearch class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               </div>
-              <Button 
-                v-if="isAdmin"
-                variant="solid" 
-                class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
-                @click="openCreateModal"
-              >
-                <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
-                Create New {{ currentTabLabelSingular }}
-              </Button>
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <Dropdown
+                  v-if="isAdmin && selectedRecords.size > 0"
+                  :options="actionsOptions"
+                >
+                  <Button
+                    variant="solid"
+                    class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+                  >
+                    Actions
+                    <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+                  </Button>
+                </Dropdown>
+
+                <Button 
+                  v-if="isAdmin"
+                  variant="solid" 
+                  class="!h-8 !px-3 font-semibold text-xs flex items-center gap-1 w-full sm:w-auto justify-center !bg-slate-800 hover:!bg-slate-900 !text-white transition-all"
+                  @click="openCreateModal"
+                >
+                  <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
+                  Create New {{ currentTabLabelSingular }}
+                </Button>
+              </div>
             </div>
 
             <!-- Master List Table -->
@@ -58,8 +73,9 @@
                 class="h-full flex flex-col min-h-0"
                 :columns="columns"
                 :rows="filteredRecords || []"
-                :options="{ showTooltip: true, resizeColumn: true, onRowClick: (row) => isAdmin && openEditModal(row) }"
+                :options="{ selectable: isAdmin, showTooltip: true, resizeColumn: true, onRowClick: (row) => isAdmin && openEditModal(row) }"
                 row-key="name"
+                v-model:selections="selectedRecords"
               >
                 <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
                   <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
@@ -122,7 +138,7 @@
                             <Button 
                               variant="ghost" 
                               class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
-                              @click.stop="deleteRecord(row.name)"
+                              @click.stop="confirmSingleDelete(row.name)"
                             >
                               <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
                             </Button>
@@ -183,6 +199,31 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model="deleteConfirm.show" 
+      :disable-outside-click-to-close="true"
+      :options="{
+        title: deleteConfirm.isBulk ? `Delete ${deleteConfirm.count} ${currentTabLabelSingular}(s)` : `Delete ${currentTabLabelSingular}`,
+        size: 'sm',
+        actions: [
+          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeDelete },
+          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
+        ]
+      }"
+    >
+      <template #body-content>
+        <p class="text-sm text-slate-600 leading-relaxed py-2">
+          <span v-if="deleteConfirm.isBulk">
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected {{ currentTabLabelSingular.toLowerCase() }}(s). This action cannot be undone.
+          </span>
+          <span v-else>
+            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
+          </span>
+        </p>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -192,6 +233,8 @@ import {
 	Button,
 	Card,
 	Dialog,
+	Dropdown,
+	FeatherIcon,
 	FormControl,
 	ListHeader,
 	ListHeaderItem,
@@ -225,6 +268,23 @@ const activeTab = computed(() => tabs[tabIndex.value]?.id || "project")
 const searchQuery = ref("")
 const loadingRecords = ref(false)
 const masterRecords = ref([])
+const selectedRecords = ref(new Set())
+
+const deleteConfirm = reactive({
+	show: false,
+	isBulk: false,
+	targetName: null,
+	count: 0,
+	loading: false,
+})
+
+const actionsOptions = computed(() => [
+	{
+		label: `Delete Selected (${selectedRecords.value.size})`,
+		icon: "trash-2",
+		onClick: confirmBulkDelete,
+	},
+])
 
 const currentTabLabelSingular = computed(() => {
 	switch (activeTab.value) {
@@ -372,6 +432,7 @@ const fetchMasterRecords = async () => {
 }
 
 watch(activeTab, () => {
+	selectedRecords.value.clear()
 	fetchMasterRecords()
 })
 
@@ -480,30 +541,55 @@ async function submitModalForm() {
 	}
 }
 
-async function deleteRecord(name) {
-	if (!confirm(`Are you sure you want to delete ${name}?`)) return
+function confirmSingleDelete(name) {
+	deleteConfirm.isBulk = false
+	deleteConfirm.targetName = name
+	deleteConfirm.count = 1
+	deleteConfirm.show = true
+}
+
+function confirmBulkDelete() {
+	deleteConfirm.isBulk = true
+	deleteConfirm.targetName = null
+	deleteConfirm.count = selectedRecords.value.size
+	deleteConfirm.show = true
+}
+
+async function executeDelete() {
+	deleteConfirm.loading = true
 	try {
-		const res = await fetch(
-			"/api/method/tactix.api.masters.save_master_record",
-			{
+		if (deleteConfirm.isBulk) {
+			for (const name of Array.from(selectedRecords.value)) {
+				await fetch("/api/method/tactix.api.masters.save_master_record", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						action: "delete",
+						doctype: currentTabDoctype.value,
+						name,
+					}),
+				})
+			}
+			selectedRecords.value.clear()
+		} else if (deleteConfirm.targetName) {
+			await fetch("/api/method/tactix.api.masters.save_master_record", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					action: "delete",
 					doctype: currentTabDoctype.value,
-					name,
+					name: deleteConfirm.targetName,
 				}),
-			},
-		)
-		const data = await res.json()
-		if (data.message?.status === "success") {
-			fetchMasterRecords()
-		} else {
-			alert(data.message?.error || "Error deleting record")
+			})
+			selectedRecords.value.delete(deleteConfirm.targetName)
 		}
+		deleteConfirm.show = false
+		fetchMasterRecords()
 	} catch (err) {
-		console.error("Error deleting record:", err)
-		alert("Failed to delete record")
+		console.error("Error deleting record(s):", err)
+		alert("Failed to delete record(s)")
+	} finally {
+		deleteConfirm.loading = false
 	}
 }
 </script>
