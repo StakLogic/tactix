@@ -64,85 +64,255 @@
     </div>
 
     <!-- Actions & Filter Header -->
-    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 mx-2 my-2 flex-shrink-0">
-      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
-        <select 
-          v-model="selectedStatus"
-          :class="[
-            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[130px] shrink-0 transition-all duration-200',
-            selectedStatus !== ''
-              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-          ]"
-        >
-          <option value="">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="Submitted">Submitted</option>
-        </select>
+    <div class="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-2.5 mx-2 my-2 flex-shrink-0">
+      <!-- Top Row: Search & Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-800/80">
 
-        <select 
-          v-model="selectedTimespan"
-          :class="[
-            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[130px] shrink-0 transition-all duration-200',
-            selectedTimespan !== ''
-              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-          ]"
-        >
-          <option value="">All Time</option>
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="this_week">This Week</option>
-          <option value="last_week">Last Week</option>
-          <option value="this_month">This Month</option>
-          <option value="last_month">Last Month</option>
-        </select>
+        <!-- Search Bar with Clear Icon -->
+        <div class="relative w-full sm:w-80">
+          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search timesheets…"
+            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          />
+          <button
+            v-if="searchQuery"
+            @click="searchQuery = ''"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
+          >
+            <IconX class="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-        <select 
-          v-if="employeeInfoResource.data?.is_system_manager"
-          v-model="selectedEmployee"
-          :class="[
-            'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[150px] shrink-0 transition-all duration-200',
-            selectedEmployee !== ''
-              ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-              : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-          ]"
-        >
-          <option value="">All Employees</option>
-          <option v-for="emp in employeeOptionsResource.data" :key="emp.value" :value="emp.value">
-            {{ emp.label }}
-          </option>
-        </select>
-      </div>
+        <!-- Right Side Action Group -->
+        <div class="flex items-center gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
+          <!-- Dynamic Multi-Field Filter Popover -->
+          <Popover placement="bottom-end">
+            <template #target="{ open, togglePopover }">
+              <Button
+                variant="outline"
+                :class="[
+                  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
+                  activeFilterCount > 0
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ]"
+                @click="syncActiveFilterRules(); togglePopover()"
+                title="Filter Timesheets"
+              >
+                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <span>Filter</span>
+                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+                  {{ activeFilterCount }}
+                </span>
+              </Button>
+            </template>
+            <template #body-main="{ close }">
+              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
+                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
+                    <span>Filter Timesheets</span>
+                  </div>
+                  <button 
+                    v-if="hasActiveFilters"
+                    @click="resetFilters" 
+                    class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <IconX class="w-3 h-3" /> Clear All
+                  </button>
+                </div>
 
-      <div class="flex items-center gap-2">
-        <Dropdown
-          v-if="employeeInfoResource.data?.is_system_manager && selectedTimesheets.size > 0"
-          :options="actionsOptions"
-        >
+                <!-- Dynamic Filter Rules -->
+                <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  <div 
+                    v-for="rule in activeFilterRules" 
+                    :key="rule.id"
+                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                  >
+                    <div class="w-1/3 shrink-0">
+                      <Select 
+                        v-model="rule.field"
+                        :options="FILTERABLE_FIELDS"
+                        placeholder="Field"
+                        size="sm"
+                        variant="subtle"
+                        @update:modelValue="rule.value = ''"
+                      />
+                    </div>
+
+                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+
+                    <div class="flex-1 min-w-0">
+                      <Select
+                        v-model="rule.value"
+                        :options="getFieldOptionsForSelect(rule.field)"
+                        placeholder="Select value"
+                        size="sm"
+                        variant="subtle"
+                        class="w-full"
+                      />
+                    </div>
+
+                    <button 
+                      @click="removeFilterRule(rule.id)"
+                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      title="Remove Filter"
+                    >
+                      <IconX class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    @click="addFilterRule"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+                  >
+                    <IconPlus class="w-3.5 h-3.5" /> Add Filter
+                  </button>
+
+                  <Button 
+                    variant="solid" 
+                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+                    @click="applyFilterRules(); close()"
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            </template>
+          </Popover>
+
+          <!-- Refresh Button -->
+          <Button
+            variant="outline"
+            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md"
+            @click="reloadTimesheets"
+            title="Refresh timesheets"
+          >
+            <template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></template>
+          </Button>
+
+          <!-- Actions Dropdown -->
+          <Dropdown
+            v-if="employeeInfoResource.data?.is_system_manager && selectedTimesheets.size > 0"
+            :options="actionsOptions"
+          >
+            <Button
+              variant="solid"
+              class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+            >
+              Actions
+              <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+            </Button>
+          </Dropdown>
+
+          <!-- New Timesheet Button -->
           <Button
             variant="solid"
-            class="!bg-slate-800 !text-white !text-xs !px-4 !h-9 rounded-lg hover:!bg-slate-900 transition-all font-medium"
+            class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
+            style="background-color: var(--primary-color);"
+            @click="openCreateDialog"
           >
-            Actions
-            <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
+            <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
+            New Timesheet
           </Button>
-        </Dropdown>
+        </div>
+      </div>
 
-        <Button
-          variant="outline"
-          class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all"
-          @click="reloadTimesheets"
-        >
-          <template #prefix><IconRefresh class="w-4 h-4 text-slate-500" /></template>
-        </Button>
+      <!-- Bottom Row: Quick Filter Bar -->
+      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
+        <!-- Status Autocomplete Filter -->
+        <div class="w-36 shrink-0">
+          <Autocomplete
+            ref="statusAutocomplete"
+            :options="statusOptions"
+            :modelValue="selectedStatus"
+            @update:modelValue="val => selectedStatus = val?.value || val || ''"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => statusAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  selectedStatus !== ''
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('selectedStatus', selectedStatus, 'Status') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
 
-        <Button
-          variant="solid"
-          class="!text-xs !px-5 !h-9 !shadow-md transition-all !bg-blue-600 hover:!bg-blue-700 !text-white font-bold"
-          @click="openCreateDialog"
+        <!-- Timespan Autocomplete Filter -->
+        <div class="w-36 shrink-0">
+          <Autocomplete
+            ref="timespanAutocomplete"
+            :options="timespanOptions"
+            :modelValue="selectedTimespan"
+            @update:modelValue="val => selectedTimespan = val?.value || val || ''"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => timespanAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  selectedTimespan !== ''
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('selectedTimespan', selectedTimespan, 'Timespan') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
+
+        <!-- Employee Autocomplete Filter -->
+        <div v-if="employeeInfoResource.data?.is_system_manager" class="w-40 shrink-0">
+          <Autocomplete
+            ref="employeeAutocomplete"
+            :options="employeeOptions"
+            :modelValue="selectedEmployee"
+            @update:modelValue="val => selectedEmployee = val?.value || val || ''"
+            :max-options="100"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => employeeAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  selectedEmployee !== ''
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('selectedEmployee', selectedEmployee, 'Employee') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
+
+        <!-- Clear Button -->
+        <Button 
+          v-if="hasActiveFilters"
+          variant="ghost" 
+          class="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950/40 !px-2 !h-7 text-xs font-medium shrink-0"
+          @click="resetFilters"
         >
-          <template #prefix><IconPlus class="w-4 h-4" /></template> New Timesheet
+          <template #prefix><IconX class="w-3.5 h-3.5" /></template>
+          Clear
         </Button>
       </div>
     </div>
@@ -153,7 +323,7 @@
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
-          :rows="timesheets.data?.timesheets || []"
+          :rows="filteredTimesheets || []"
           :options="{
             selectable: employeeInfoResource.data?.is_system_manager,
             showTooltip: true,
@@ -552,6 +722,7 @@
 <script setup>
 import dayjs from "dayjs"
 import {
+	Autocomplete,
 	Badge,
 	Button,
 	Card,
@@ -582,6 +753,7 @@ import IconChevronsLeft from "~icons/lucide/chevrons-left"
 import IconChevronsRight from "~icons/lucide/chevrons-right"
 // Icons
 import IconClock from "~icons/lucide/clock"
+import IconFilter from "~icons/lucide/filter"
 import IconHash from "~icons/lucide/hash"
 import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
@@ -593,11 +765,180 @@ import IconX from "~icons/lucide/x"
 // State variables
 const showCreateDialog = ref(false)
 const showViewDialog = ref(false)
+const searchQuery = ref("")
 const selectedStatus = ref("")
 const selectedTimespan = ref("")
 const selectedEmployee = ref("")
 const currentPage = ref(1)
 const pageLength = 20
+
+// Filter options for Autocomplete dropdowns
+const statusOptions = [
+	{ label: "All Statuses", value: "" },
+	{ label: "Draft", value: "Draft" },
+	{ label: "Submitted", value: "Submitted" },
+]
+
+const timespanOptions = [
+	{ label: "All Time", value: "" },
+	{ label: "Today", value: "today" },
+	{ label: "Yesterday", value: "yesterday" },
+	{ label: "This Week", value: "this_week" },
+	{ label: "Last Week", value: "last_week" },
+	{ label: "This Month", value: "this_month" },
+	{ label: "Last Month", value: "last_month" },
+]
+
+const employeeOptions = computed(() => {
+	const opts = [{ label: "All Employees", value: "" }]
+	if (employeeOptionsResource.data && Array.isArray(employeeOptionsResource.data)) {
+		return opts.concat(employeeOptionsResource.data)
+	}
+	return opts
+})
+
+// Popover refs for Autocomplete programmatic toggling
+const statusAutocomplete = ref(null)
+const timespanAutocomplete = ref(null)
+const employeeAutocomplete = ref(null)
+
+const FILTERABLE_FIELDS = computed(() => {
+	const fields = [
+		{ label: "Status", value: "selectedStatus", key: "selectedStatus" },
+		{ label: "Timespan", value: "selectedTimespan", key: "selectedTimespan" },
+	]
+	if (employeeInfoResource.data?.is_system_manager) {
+		fields.push({ label: "Employee", value: "selectedEmployee", key: "selectedEmployee" })
+	}
+	return fields
+})
+
+const activeFilterRules = ref([])
+
+function syncActiveFilterRules() {
+	const newRules = []
+	if (selectedStatus.value) {
+		newRules.push({ id: "rule_selectedStatus", field: "selectedStatus", value: selectedStatus.value })
+	}
+	if (selectedTimespan.value) {
+		newRules.push({ id: "rule_selectedTimespan", field: "selectedTimespan", value: selectedTimespan.value })
+	}
+	if (selectedEmployee.value && employeeInfoResource.data?.is_system_manager) {
+		newRules.push({ id: "rule_selectedEmployee", field: "selectedEmployee", value: selectedEmployee.value })
+	}
+	if (newRules.length === 0) {
+		newRules.push({ id: "rule_" + Date.now(), field: "selectedStatus", value: "" })
+	}
+	activeFilterRules.value = newRules
+}
+
+function addFilterRule() {
+	const unusedField = FILTERABLE_FIELDS.value.find(
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+	)
+	const field = unusedField ? unusedField.value : "selectedStatus"
+	activeFilterRules.value.push({
+		id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+		field,
+		value: "",
+	})
+}
+
+function removeFilterRule(id) {
+	const idx = activeFilterRules.value.findIndex((r) => r.id === id)
+	if (idx > -1) {
+		const removed = activeFilterRules.value[idx]
+		activeFilterRules.value.splice(idx, 1)
+		if (removed.field === "selectedStatus") selectedStatus.value = ""
+		if (removed.field === "selectedTimespan") selectedTimespan.value = ""
+		if (removed.field === "selectedEmployee") selectedEmployee.value = ""
+	}
+	if (activeFilterRules.value.length === 0) {
+		activeFilterRules.value.push({
+			id: "rule_" + Date.now(),
+			field: "selectedStatus",
+			value: "",
+		})
+	}
+}
+
+function applyFilterRules() {
+	FILTERABLE_FIELDS.value.forEach((f) => {
+		const hasRule = activeFilterRules.value.some((r) => r.field === f.key)
+		if (!hasRule) {
+			if (f.key === "selectedStatus") selectedStatus.value = ""
+			if (f.key === "selectedTimespan") selectedTimespan.value = ""
+			if (f.key === "selectedEmployee") selectedEmployee.value = ""
+		}
+	})
+	activeFilterRules.value.forEach((r) => {
+		if (r.field === "selectedStatus") selectedStatus.value = r.value
+		if (r.field === "selectedTimespan") selectedTimespan.value = r.value
+		if (r.field === "selectedEmployee") selectedEmployee.value = r.value
+	})
+}
+
+function getFieldOptionsForSelect(fieldKey) {
+	if (fieldKey === "selectedStatus") return statusOptions.filter((o) => o.value !== "")
+	if (fieldKey === "selectedTimespan") return timespanOptions.filter((o) => o.value !== "")
+	if (fieldKey === "selectedEmployee") return employeeOptions.value.filter((o) => o.value !== "")
+	return []
+}
+
+function getFilterLabel(fieldKey, val, defaultText) {
+	if (!val) return defaultText
+	if (fieldKey === "selectedStatus") {
+		const found = statusOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "selectedTimespan") {
+		const found = timespanOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "selectedEmployee") {
+		const found = employeeOptions.value.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	return val
+}
+
+const activeFilterCount = computed(() => {
+	let count = 0
+	if (selectedStatus.value) count++
+	if (selectedTimespan.value) count++
+	if (selectedEmployee.value) count++
+	return count
+})
+
+const hasActiveFilters = computed(() => {
+	return (
+		searchQuery.value !== "" ||
+		selectedStatus.value !== "" ||
+		selectedTimespan.value !== "" ||
+		selectedEmployee.value !== ""
+	)
+})
+
+function resetFilters() {
+	searchQuery.value = ""
+	selectedStatus.value = ""
+	selectedTimespan.value = ""
+	selectedEmployee.value = ""
+}
+
+const filteredTimesheets = computed(() => {
+	const raw = timesheets.data?.timesheets || []
+	if (!searchQuery.value) return raw
+	const q = searchQuery.value.toLowerCase()
+	return raw.filter((row) => {
+		return (
+			(row.name && row.name.toLowerCase().includes(q)) ||
+			(row.employee_name && row.employee_name.toLowerCase().includes(q)) ||
+			(row.status && row.status.toLowerCase().includes(q)) ||
+			(row.start_date && row.start_date.toLowerCase().includes(q))
+		)
+	})
+})
 const saving = ref(false)
 const formError = ref("")
 const viewError = ref("")
@@ -1095,4 +1436,6 @@ const formatDate = (dateStr) => {
 :deep(*::-webkit-scrollbar-track) {
   background: transparent !important;
 }
+
+:global([data-radix-popper-content-wrapper]), :global([data-reka-popper-content-wrapper]), :global(.PopoverContent) { z-index: 100005 !important; }
 </style>

@@ -38,128 +38,281 @@
     </div>
 
     <!-- Top Action & Filter Bar -->
-    <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col gap-3 flex-shrink-0">
-      <!-- Top Row: Search (Left) & Right-Aligned Prominent Upload/Folder Action Buttons -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pb-2 border-b border-slate-100 dark:border-slate-800/80">
+    <div class="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
+      <!-- Top Row: Search & Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-800/80">
 
-        <!-- Google Drive Search Bar with Clear Icon -->
-        <div class="relative flex-1 max-w-lg">
-          <IconSearch class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+        <!-- Search Bar with Clear Icon -->
+        <div class="relative w-full sm:w-80">
+          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search files and folders in Drive…"
-            class="w-full pl-10 pr-9 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-800/90 border border-slate-200/60 dark:border-slate-700/60 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
           />
           <button
             v-if="searchQuery"
             @click="searchQuery = ''"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
           >
             <IconX class="w-3.5 h-3.5" />
           </button>
         </div>
 
         <!-- Right Side Action Group: Upload File, New Folder, View Mode & Refresh -->
-        <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          <!-- Primary Upload Button -->
-          <button
-            v-if="uploadAllowed"
-            @click="fileInput.click()"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-none"
-          >
-            <IconUploadCloud class="w-4 h-4" />
-            <span>Upload File</span>
-          </button>
-
-          <!-- New Folder Button -->
-          <button
-            v-if="uploadAllowed"
-            @click="showNewFolderModal = true"
-            class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-bold text-xs px-3.5 py-2 rounded-2xl flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all duration-200 cursor-pointer"
-          >
-            <IconFolderPlus class="w-4 h-4 text-amber-500" />
-            <span>New Folder</span>
-          </button>
-
-          <div class="h-5 w-px bg-slate-200 dark:bg-slate-700/60 mx-1 hidden sm:block"></div>
-
+        <div class="flex items-center gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
           <!-- View Mode Toggle -->
-          <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
+          <div class="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md border border-slate-200/60 dark:border-slate-700">
             <button
               @click="viewMode = 'grid'"
-              class="p-1.5 rounded-lg transition-colors cursor-pointer border-none"
-              :class="viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-transparent'"
+              :class="viewBtnClass('grid')"
               title="Grid View"
             >
-              <IconLayoutGrid class="w-4 h-4" />
+              <IconLayoutGrid class="w-3.5 h-3.5" />
             </button>
             <button
               @click="viewMode = 'list'"
-              class="p-1.5 rounded-lg transition-colors cursor-pointer border-none"
-              :class="viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-transparent'"
+              :class="viewBtnClass('list')"
               title="List View"
             >
-              <IconList class="w-4 h-4" />
+              <IconList class="w-3.5 h-3.5" />
             </button>
           </div>
+
+          <!-- Dynamic Multi-Field Filter Popover -->
+          <Popover placement="bottom-end">
+            <template #target="{ open, togglePopover }">
+              <Button
+                variant="outline"
+                :class="[
+                  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
+                  activeFilterCount > 0
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ]"
+                @click="syncActiveFilterRules(); togglePopover()"
+                title="Filter Drive Files"
+              >
+                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <span>Filter</span>
+                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+                  {{ activeFilterCount }}
+                </span>
+              </Button>
+            </template>
+            <template #body-main="{ close }">
+              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
+                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
+                    <span>Filter Drive Files</span>
+                  </div>
+                  <button 
+                    v-if="hasActiveFilters"
+                    @click="resetFilters" 
+                    class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <IconX class="w-3 h-3" /> Clear All
+                  </button>
+                </div>
+
+                <!-- Dynamic Filter Rules -->
+                <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  <div 
+                    v-for="rule in activeFilterRules" 
+                    :key="rule.id"
+                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                  >
+                    <div class="w-1/3 shrink-0">
+                      <Select 
+                        v-model="rule.field"
+                        :options="FILTERABLE_FIELDS"
+                        placeholder="Field"
+                        size="sm"
+                        variant="subtle"
+                        @update:modelValue="rule.value = ''"
+                      />
+                    </div>
+
+                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+
+                    <div class="flex-1 min-w-0">
+                      <Select
+                        v-model="rule.value"
+                        :options="getFieldOptionsForSelect(rule.field)"
+                        placeholder="Select value"
+                        size="sm"
+                        variant="subtle"
+                        class="w-full"
+                      />
+                    </div>
+
+                    <button 
+                      @click="removeFilterRule(rule.id)"
+                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      title="Remove Filter"
+                    >
+                      <IconX class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    @click="addFilterRule"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+                  >
+                    <IconPlus class="w-3.5 h-3.5" /> Add Filter
+                  </button>
+
+                  <Button 
+                    variant="solid" 
+                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+                    @click="applyFilterRules(); close()"
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            </template>
+          </Popover>
 
           <!-- Refresh Button -->
           <Button
             variant="outline"
-            class="!text-slate-700 dark:!text-slate-200 !px-3 !h-9 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 !rounded-xl"
+            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md"
             @click="refresh"
             title="Refresh drive"
           >
-            <template #prefix><IconRefreshCcw class="w-4 h-4 text-slate-500 dark:text-slate-400" :class="{ 'animate-spin': loading }" /></template>
+            <template #prefix><IconRefreshCcw class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" :class="{ 'animate-spin': loading }" /></template>
           </Button>
 
           <!-- Up Button -->
           <Button
             v-if="currentPath !== '/'"
             variant="outline"
-            class="!text-slate-700 dark:!text-slate-200 !px-3 !h-9 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 !rounded-xl"
+            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md text-xs font-medium"
             @click="navigateUp"
           >
-            <template #prefix><IconArrowLeft class="w-4 h-4 text-slate-500 dark:text-slate-400" /></template>
+            <template #prefix><IconArrowLeft class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></template>
             Up
+          </Button>
+
+          <!-- New Folder Button -->
+          <Button
+            v-if="uploadAllowed"
+            variant="outline"
+            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md text-xs font-medium"
+            @click="showNewFolderModal = true"
+          >
+            <template #prefix><IconFolderPlus class="w-3.5 h-3.5 text-amber-500" /></template>
+            New Folder
+          </Button>
+
+          <!-- Primary Upload Button -->
+          <Button
+            v-if="uploadAllowed"
+            variant="solid"
+            class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
+            style="background-color: var(--primary-color);"
+            @click="fileInput.click()"
+          >
+            <template #prefix><IconUploadCloud class="w-3.5 h-3.5" /></template>
+            Upload File
           </Button>
         </div>
       </div>
 
-      <!-- Bottom Row: Filter Quick Chips & Dropdowns -->
-      <div class="flex flex-wrap items-center gap-2 pt-0.5">
-        <Tabs :tabs="fileTypeTabs" v-model="fileTypeTabIndex" class="shrink-0" />
+      <!-- Bottom Row: Quick Filter Bar -->
+      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
+        <!-- Searchable Filter: File Type Autocomplete -->
+        <div class="w-36 shrink-0">
+          <Autocomplete
+            ref="fileTypeAutocomplete"
+            :options="fileTypeOptions"
+            :modelValue="fileTypeFilter"
+            @update:modelValue="val => fileTypeFilter = val?.value || val || 'All'"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => fileTypeAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  fileTypeFilter !== 'All'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('fileTypeFilter', fileTypeFilter, 'File Type') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
 
-        <div class="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
+        <!-- Searchable Filter: Source Autocomplete -->
+        <div class="w-36 shrink-0">
+          <Autocomplete
+            ref="sourceAutocomplete"
+            :options="sourceOptions"
+            :modelValue="sourceFilter"
+            @update:modelValue="val => sourceFilter = val?.value || val || 'All'"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => sourceAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  sourceFilter !== 'All'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('sourceFilter', sourceFilter, 'Source') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
 
-        <select
-          v-model="sourceFilter"
-          class="h-8 px-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors"
-        >
-          <option value="All" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">All Sources</option>
-          <option value="Direct" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Direct Upload</option>
-          <option value="Ticket" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Ticket Attachment</option>
-          <option value="Task" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Task Attachment</option>
-        </select>
+        <!-- Searchable Filter: Access Level Autocomplete -->
+        <div class="w-36 shrink-0">
+          <Autocomplete
+            ref="accessAutocomplete"
+            :options="accessOptions"
+            :modelValue="accessFilter"
+            @update:modelValue="val => accessFilter = val?.value || val || 'All'"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => accessAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  accessFilter !== 'All'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('accessFilter', accessFilter, 'Access') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
 
-        <select
-          v-model="accessFilter"
-          class="h-8 px-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors"
-        >
-          <option value="All" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">All Accessible</option>
-          <option value="My" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">My Files</option>
-          <option value="Shared" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Shared With Me</option>
-        </select>
-
-        <button
-          v-if="searchQuery || fileTypeFilter !== 'All' || sourceFilter !== 'All' || accessFilter !== 'All'"
-          class="h-8 px-3 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 rounded-xl transition-all flex items-center gap-1.5 border-none cursor-pointer shrink-0"
+        <Button 
+          v-if="hasActiveFilters"
+          variant="ghost" 
+          class="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950/40 !px-2 !h-7 text-xs font-medium shrink-0"
           @click="resetFilters"
         >
-          <IconX class="w-3.5 h-3.5" />
-          Clear filters
-        </button>
+          <template #prefix><IconX class="w-3.5 h-3.5" /></template>
+          Clear
+        </Button>
       </div>
     </div>
 
@@ -1085,7 +1238,7 @@
 
 <script setup>
 import dayjs from "dayjs"
-import { Avatar, Badge, Button, Dialog, FormControl, LoadingIndicator, Tabs, createResource } from "frappe-ui"
+import { Autocomplete, Avatar, Badge, Button, Dialog, FeatherIcon, FormControl, LoadingIndicator, Popover, Select, Tabs, createResource } from "frappe-ui"
 import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { session } from "../data/session"
@@ -1105,6 +1258,7 @@ import IconFileImage from "~icons/lucide/file-image"
 import IconFileSpreadsheet from "~icons/lucide/file-spreadsheet"
 import IconFileText from "~icons/lucide/file-text"
 import IconFileVideo from "~icons/lucide/file-video"
+import IconFilter from "~icons/lucide/filter"
 import IconFolder from "~icons/lucide/folder"
 import IconFolderOpen from "~icons/lucide/folder-open"
 import IconFolderPlus from "~icons/lucide/folder-plus"
@@ -1124,6 +1278,7 @@ import IconShare2 from "~icons/lucide/share-2"
 import IconTicket from "~icons/lucide/ticket"
 import IconTrash2 from "~icons/lucide/trash-2"
 import IconUploadCloud from "~icons/lucide/upload-cloud"
+import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
 
 const router = useRouter()
@@ -1146,13 +1301,197 @@ const fileTypeTabs = [
 	{ label: "Others", value: "Others" },
 ]
 const fileTypeFilter = ref("All")
+const sourceFilter = ref("All")
+const accessFilter = ref("All")
+
+watch(fileTypeFilter, (val) => {
+	const idx = fileTypeTabs.findIndex((t) => t.value === val)
+	fileTypeTabIndex.value = idx !== -1 ? idx : 0
+})
 
 watch(fileTypeTabIndex, (idx) => {
 	fileTypeFilter.value = fileTypeTabs[idx]?.value || "All"
 })
-const sourceFilter = ref("All")
-const accessFilter = ref("All")
+
+// Filter options for Autocomplete dropdowns
+const fileTypeOptions = [
+	{ label: "All Types", value: "All" },
+	{ label: "Documents", value: "Documents" },
+	{ label: "Images", value: "Images" },
+	{ label: "Audio/Video", value: "Audio/Video" },
+	{ label: "Others", value: "Others" },
+]
+
+const sourceOptions = [
+	{ label: "All Sources", value: "All" },
+	{ label: "Direct Upload", value: "Direct" },
+	{ label: "Ticket Attachment", value: "Ticket" },
+	{ label: "Task Attachment", value: "Task" },
+]
+
+const accessOptions = [
+	{ label: "All Accessible", value: "All" },
+	{ label: "My Files", value: "My" },
+	{ label: "Shared With Me", value: "Shared" },
+]
+
+// Popover refs for Autocomplete programmatic toggling
+const fileTypeAutocomplete = ref(null)
+const sourceAutocomplete = ref(null)
+const accessAutocomplete = ref(null)
+
+const FILTERABLE_FIELDS = [
+	{ label: "File Type", value: "fileTypeFilter", key: "fileTypeFilter" },
+	{ label: "Source", value: "sourceFilter", key: "sourceFilter" },
+	{ label: "Access Level", value: "accessFilter", key: "accessFilter" },
+]
+
+const activeFilterRules = ref([])
+
+function syncActiveFilterRules() {
+	const newRules = []
+	if (fileTypeFilter.value !== "All") {
+		newRules.push({ id: "rule_fileTypeFilter", field: "fileTypeFilter", value: fileTypeFilter.value })
+	}
+	if (sourceFilter.value !== "All") {
+		newRules.push({ id: "rule_sourceFilter", field: "sourceFilter", value: sourceFilter.value })
+	}
+	if (accessFilter.value !== "All") {
+		newRules.push({ id: "rule_accessFilter", field: "accessFilter", value: accessFilter.value })
+	}
+	if (newRules.length === 0) {
+		newRules.push({ id: "rule_" + Date.now(), field: "fileTypeFilter", value: "" })
+	}
+	activeFilterRules.value = newRules
+}
+
+function addFilterRule() {
+	const unusedField = FILTERABLE_FIELDS.find(
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+	)
+	const field = unusedField ? unusedField.value : "fileTypeFilter"
+	activeFilterRules.value.push({
+		id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+		field,
+		value: "",
+	})
+}
+
+function removeFilterRule(id) {
+	const idx = activeFilterRules.value.findIndex((r) => r.id === id)
+	if (idx > -1) {
+		const removed = activeFilterRules.value[idx]
+		activeFilterRules.value.splice(idx, 1)
+		if (removed.field === "fileTypeFilter") fileTypeFilter.value = "All"
+		if (removed.field === "sourceFilter") sourceFilter.value = "All"
+		if (removed.field === "accessFilter") accessFilter.value = "All"
+	}
+	if (activeFilterRules.value.length === 0) {
+		activeFilterRules.value.push({
+			id: "rule_" + Date.now(),
+			field: "fileTypeFilter",
+			value: "",
+		})
+	}
+}
+
+function applyFilterRules() {
+	FILTERABLE_FIELDS.forEach((f) => {
+		const hasRule = activeFilterRules.value.some((r) => r.field === f.key)
+		if (!hasRule) {
+			if (f.key === "fileTypeFilter") fileTypeFilter.value = "All"
+			if (f.key === "sourceFilter") sourceFilter.value = "All"
+			if (f.key === "accessFilter") accessFilter.value = "All"
+		}
+	})
+	activeFilterRules.value.forEach((r) => {
+		if (r.field === "fileTypeFilter" && r.value) fileTypeFilter.value = r.value
+		if (r.field === "sourceFilter" && r.value) sourceFilter.value = r.value
+		if (r.field === "accessFilter" && r.value) accessFilter.value = r.value
+	})
+}
+
+function getFieldOptionsForSelect(fieldKey) {
+	if (fieldKey === "fileTypeFilter") return fileTypeOptions.filter((o) => o.value !== "All")
+	if (fieldKey === "sourceFilter") return sourceOptions.filter((o) => o.value !== "All")
+	if (fieldKey === "accessFilter") return accessOptions.filter((o) => o.value !== "All")
+	return []
+}
+
+function getFilterLabel(fieldKey, val, defaultText) {
+	if (!val || val === "All") return defaultText
+	if (fieldKey === "fileTypeFilter") {
+		const found = fileTypeOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "sourceFilter") {
+		const found = sourceOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "accessFilter") {
+		const found = accessOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	return val
+}
+
+const activeFilterCount = computed(() => {
+	let count = 0
+	if (fileTypeFilter.value !== "All") count++
+	if (sourceFilter.value !== "All") count++
+	if (accessFilter.value !== "All") count++
+	return count
+})
+
+const hasActiveFilters = computed(() => {
+	return (
+		searchQuery.value !== "" ||
+		fileTypeFilter.value !== "All" ||
+		sourceFilter.value !== "All" ||
+		accessFilter.value !== "All"
+	)
+})
+
+const hasActiveFilterChips = computed(() => activeFilterChips.value.length > 0)
+
+const activeFilterChips = computed(() => {
+	const chips = []
+	if (fileTypeFilter.value !== "All") {
+		chips.push({ key: "fileTypeFilter", label: "File Type", displayValue: getFilterLabel("fileTypeFilter", fileTypeFilter.value) })
+	}
+	if (sourceFilter.value !== "All") {
+		chips.push({ key: "sourceFilter", label: "Source", displayValue: getFilterLabel("sourceFilter", sourceFilter.value) })
+	}
+	if (accessFilter.value !== "All") {
+		chips.push({ key: "accessFilter", label: "Access Level", displayValue: getFilterLabel("accessFilter", accessFilter.value) })
+	}
+	return chips
+})
+
+function removeFilterByKey(key) {
+	if (key === "fileTypeFilter") fileTypeFilter.value = "All"
+	if (key === "sourceFilter") sourceFilter.value = "All"
+	if (key === "accessFilter") accessFilter.value = "All"
+}
+
+function toggleMyFiles() {
+	if (accessFilter.value === "My") {
+		accessFilter.value = "All"
+	} else {
+		accessFilter.value = "My"
+	}
+}
+
 const viewMode = ref("grid")
+
+function viewBtnClass(mode) {
+	return [
+		"p-1 rounded-md transition-all cursor-pointer",
+		viewMode.value === mode
+			? "bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-medium"
+			: "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300",
+	]
+}
 
 const shareableUsers = ref([])
 const shareModal = reactive({
@@ -2008,4 +2347,6 @@ body div[data-dialog-backdrop],
   opacity: 0;
   transform: translateY(16px);
 }
+
+:global([data-radix-popper-content-wrapper]), :global([data-reka-popper-content-wrapper]), :global(.PopoverContent) { z-index: 100005 !important; }
 </style>
