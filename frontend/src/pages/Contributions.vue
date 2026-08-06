@@ -64,66 +64,234 @@
       </Card>
     </div>
 
-    <!-- Filter Controls & Search Panel -->
-    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 flex-shrink-0">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-        
+    <!-- Actions & Filter Header -->
+    <div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
+      <!-- Top Row: Search & Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-700/80">
+
         <!-- Search input -->
         <div class="relative w-full sm:w-80">
-          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <input 
-            type="text" 
+          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+          <input
             v-model="filters.search"
-            placeholder="Search PR title, number or author..." 
-            class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+            type="text"
+            placeholder="Search PR title, number or author…"
+            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
           />
+          <button
+            v-if="filters.search"
+            @click="filters.search = ''"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
+          >
+            <IconX class="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        <!-- Quick Filters Row -->
-        <div class="flex flex-wrap gap-2">
-          <!-- Repository filter -->
-          <select 
-            v-model="filters.repo" 
-            :class="[
-              'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer max-w-[200px] transition-all duration-200',
-              filters.repo !== ''
-                ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-                : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-            ]"
-          >
-            <option value="">All Repositories</option>
-            <option v-for="repo in uniqueRepos" :key="repo" :value="repo">{{ formatRepoName(repo) }}</option>
-          </select>
+        <!-- Right Side Action Group -->
+        <div class="flex items-center gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
+          <!-- Dynamic Multi-Field Filter Popover -->
+          <Popover placement="bottom-end">
+            <template #target="{ open, togglePopover }">
+              <Button
+                variant="outline"
+                :class="[
+                  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
+                  activeFilterCount > 0
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ]"
+                @click="syncActiveFilterRules(); togglePopover()"
+                title="Filter Contributions"
+              >
+                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <span>Filter</span>
+                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+                  {{ activeFilterCount }}
+                </span>
+              </Button>
+            </template>
+            <template #body-main="{ close }">
+              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
+                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
+                    <span>Filter Contributions</span>
+                  </div>
+                  <button 
+                    v-if="hasActiveFilters"
+                    @click="clearFilters" 
+                    class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <IconX class="w-3 h-3" /> Clear All
+                  </button>
+                </div>
 
-          <!-- Status filter -->
-          <select 
-            v-model="filters.status" 
-            :class="[
-              'px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer transition-all duration-200',
-              filters.status !== 'all'
-                ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-                : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-            ]"
-          >
-            <option value="all">All PR Statuses</option>
-            <option value="open">Open</option>
-            <option value="draft">Draft</option>
-            <option value="merged">Merged</option>
-            <option value="closed">Closed / Unmerged</option>
-          </select>
+                <!-- Dynamic Filter Rules -->
+                <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  <div 
+                    v-for="rule in activeFilterRules" 
+                    :key="rule.id"
+                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                  >
+                    <div class="w-1/3 shrink-0">
+                      <Select 
+                        v-model="rule.field"
+                        :options="FILTERABLE_FIELDS"
+                        placeholder="Field"
+                        size="sm"
+                        variant="subtle"
+                        @update:modelValue="rule.value = ''"
+                      />
+                    </div>
 
-          <!-- Clear Filters -->
-          <Button 
-            v-if="hasActiveFilters"
-            variant="ghost" 
-            class="!text-red-500 hover:!bg-red-50 !px-2 !h-8"
-            @click="clearFilters"
+                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+
+                    <div class="flex-1 min-w-0">
+                      <Select
+                        v-model="rule.value"
+                        :options="getFieldOptionsForSelect(rule.field)"
+                        placeholder="Select value"
+                        size="sm"
+                        variant="subtle"
+                        class="w-full"
+                      />
+                    </div>
+
+                    <button 
+                      @click="removeFilterRule(rule.id)"
+                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      title="Remove Filter"
+                    >
+                      <IconX class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    @click="addFilterRule"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+                  >
+                    <IconPlus class="w-3.5 h-3.5" /> Add Filter
+                  </button>
+
+                  <Button 
+                    variant="solid" 
+                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+                    @click="applyFilterRules(); close()"
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            </template>
+          </Popover>
+
+          <!-- Refresh Button -->
+          <Button
+            variant="outline"
+            class="!text-slate-600 dark:!text-slate-300 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all rounded-md"
+            @click="fetchPullRequests"
+            :disabled="loading"
+            title="Refresh contributions"
           >
-            <template #prefix><IconX class="w-3.5 h-3.5" /></template>
-            Clear
+            <template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" :class="{ 'animate-spin': loading }" /></template>
           </Button>
         </div>
+      </div>
 
+      <!-- Bottom Row: Quick Filter Bar -->
+      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
+        <!-- Repository Autocomplete Filter -->
+        <div class="w-48 shrink-0">
+          <Autocomplete
+            ref="repoAutocomplete"
+            :options="repoOptions"
+            :modelValue="filters.repo"
+            @update:modelValue="val => filters.repo = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+            :max-options="100"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => repoAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  filters.repo !== ''
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('repo', filters.repo, 'Repository') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
+
+        <!-- Status Autocomplete Filter -->
+        <div class="w-40 shrink-0">
+          <Autocomplete
+            ref="statusAutocomplete"
+            :options="statusOptions"
+            :modelValue="filters.status"
+            @update:modelValue="val => filters.status = (val && typeof val === 'object') ? (val.value ?? 'all') : (val ?? 'all')"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => statusAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  filters.status !== 'all'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('status', filters.status, 'Status') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
+
+        <!-- Author Autocomplete Filter -->
+        <div class="w-40 shrink-0">
+          <Autocomplete
+            ref="authorAutocomplete"
+            :options="authorOptions"
+            :modelValue="filters.author"
+            @update:modelValue="val => filters.author = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+            :max-options="100"
+          >
+            <template #target>
+              <button
+                type="button"
+                @click="() => authorAutocomplete?.togglePopover()"
+                :class="[
+                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+                  filters.author !== ''
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                ]"
+              >
+                <span class="truncate">{{ getFilterLabel('author', filters.author, 'Author') }}</span>
+                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              </button>
+            </template>
+          </Autocomplete>
+        </div>
+
+        <!-- Clear Button -->
+        <Button 
+          v-if="hasActiveFilters"
+          variant="ghost" 
+          class="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950/40 !px-2 !h-7 text-xs font-medium shrink-0"
+          @click="clearFilters"
+        >
+          <template #prefix><IconX class="w-3.5 h-3.5" /></template>
+          Clear
+        </Button>
       </div>
     </div>
 
@@ -662,10 +830,12 @@
 
 <script setup>
 import {
+	Autocomplete,
 	Avatar,
 	Badge,
 	Button,
 	Card,
+	FeatherIcon,
 	ListHeader,
 	ListHeaderItem,
 	ListRow,
@@ -687,14 +857,171 @@ import IconChevronsLeft from "~icons/lucide/chevrons-left"
 import IconChevronsRight from "~icons/lucide/chevrons-right"
 import IconClock from "~icons/lucide/clock"
 import IconExternalLink from "~icons/lucide/external-link"
+import IconFilter from "~icons/lucide/filter"
 import IconFolder from "~icons/lucide/folder"
 // Lucide Icons
 import IconGitPullRequest from "~icons/lucide/git-pull-request"
 import IconMessageSquare from "~icons/lucide/message-square"
+import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
 import IconSearch from "~icons/lucide/search"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
+
+// Autocomplete filter options
+const repoOptions = computed(() => {
+	const opts = [{ label: "All Repositories", value: "" }]
+	uniqueRepos.value.forEach((repo) => {
+		opts.push({ label: formatRepoName(repo), value: repo })
+	})
+	return opts
+})
+
+const statusOptions = [
+	{ label: "All PR Statuses", value: "all" },
+	{ label: "Open", value: "open" },
+	{ label: "Draft", value: "draft" },
+	{ label: "Merged", value: "merged" },
+	{ label: "Closed / Unmerged", value: "closed" },
+]
+
+const uniqueAuthors = computed(() => {
+	const authors = pullRequests.value.map((pr) => pr.user?.login).filter(Boolean)
+	return [...new Set(authors)]
+})
+
+const authorOptions = computed(() => {
+	const opts = [{ label: "All Authors", value: "" }]
+	uniqueAuthors.value.forEach((author) => {
+		opts.push({ label: author, value: author })
+	})
+	return opts
+})
+
+// Popover refs for Autocomplete programmatic toggling
+const repoAutocomplete = ref(null)
+const statusAutocomplete = ref(null)
+const authorAutocomplete = ref(null)
+
+const FILTERABLE_FIELDS = [
+	{ label: "Repository", value: "repo", key: "repo" },
+	{ label: "Status", value: "status", key: "status" },
+	{ label: "Author", value: "author", key: "author" },
+]
+
+const activeFilterRules = ref([])
+
+function syncActiveFilterRules() {
+	const newRules = []
+	if (filters.repo) {
+		newRules.push({ id: "rule_repo", field: "repo", value: filters.repo })
+	}
+	if (filters.status !== "all") {
+		newRules.push({ id: "rule_status", field: "status", value: filters.status })
+	}
+	if (filters.author) {
+		newRules.push({ id: "rule_author", field: "author", value: filters.author })
+	}
+	if (newRules.length === 0) {
+		newRules.push({ id: "rule_" + Date.now(), field: "repo", value: "" })
+	}
+	activeFilterRules.value = newRules
+}
+
+function addFilterRule() {
+	const unusedField = FILTERABLE_FIELDS.find(
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+	)
+	const field = unusedField ? unusedField.value : "repo"
+	activeFilterRules.value.push({
+		id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+		field,
+		value: "",
+	})
+}
+
+function removeFilterRule(id) {
+	const idx = activeFilterRules.value.findIndex((r) => r.id === id)
+	if (idx > -1) {
+		const removed = activeFilterRules.value[idx]
+		activeFilterRules.value.splice(idx, 1)
+		if (removed.field === "repo") filters.repo = ""
+		if (removed.field === "status") filters.status = "all"
+		if (removed.field === "author") filters.author = ""
+	}
+	if (activeFilterRules.value.length === 0) {
+		activeFilterRules.value.push({
+			id: "rule_" + Date.now(),
+			field: "repo",
+			value: "",
+		})
+	}
+}
+
+function applyFilterRules() {
+	FILTERABLE_FIELDS.forEach((f) => {
+		const hasRule = activeFilterRules.value.some((r) => r.field === f.key)
+		if (!hasRule) {
+			if (f.key === "repo") filters.repo = ""
+			if (f.key === "status") filters.status = "all"
+			if (f.key === "author") filters.author = ""
+		}
+	})
+	activeFilterRules.value.forEach((r) => {
+		if (r.field === "repo") filters.repo = r.value
+		if (r.field === "status") filters.status = r.value
+		if (r.field === "author") filters.author = r.value
+	})
+}
+
+function getFieldOptionsForSelect(fieldKey) {
+	if (fieldKey === "repo") return repoOptions.value.filter((o) => o.value !== "")
+	if (fieldKey === "status") return statusOptions.filter((o) => o.value !== "all")
+	if (fieldKey === "author") return authorOptions.value.filter((o) => o.value !== "")
+	return []
+}
+
+function getFilterLabel(fieldKey, val, defaultText) {
+	if (!val || val === "all") return defaultText
+	if (fieldKey === "repo") {
+		const found = repoOptions.value.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "status") {
+		const found = statusOptions.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	if (fieldKey === "author") {
+		const found = authorOptions.value.find((o) => o.value === val)
+		return found ? found.label : val
+	}
+	return val
+}
+
+const hasActiveFilterChips = computed(() => activeFilterChips.value.length > 0)
+
+const activeFilterChips = computed(() => {
+	const chips = []
+	if (filters.repo) {
+		chips.push({ key: "repo", label: "Repository", displayValue: getFilterLabel("repo", filters.repo) })
+	}
+	if (filters.status !== "all") {
+		chips.push({ key: "status", label: "Status", displayValue: getFilterLabel("status", filters.status) })
+	}
+	return chips
+})
+
+function removeFilterByKey(key) {
+	if (key === "repo") filters.repo = ""
+	if (key === "status") filters.status = "all"
+}
+
+const activeFilterCount = computed(() => {
+	let count = 0
+	if (filters.repo !== "") count++
+	if (filters.status !== "all") count++
+	return count
+})
 
 // High Fidelity Mock Data Fallback
 const mockPRs = [
@@ -758,6 +1085,7 @@ const filters = reactive({
 	search: "",
 	repo: "",
 	status: "all",
+	author: "",
 })
 
 // ListView Column Configuration matching tasks list
@@ -919,7 +1247,10 @@ const uniqueRepos = computed(() => {
 // Active filtering verification
 const hasActiveFilters = computed(() => {
 	return (
-		filters.search !== "" || filters.repo !== "" || filters.status !== "all"
+		filters.search !== "" ||
+		filters.repo !== "" ||
+		filters.status !== "all" ||
+		filters.author !== ""
 	)
 })
 
@@ -928,6 +1259,7 @@ function clearFilters() {
 	filters.search = ""
 	filters.repo = ""
 	filters.status = "all"
+	filters.author = ""
 }
 
 function filterByStat(label) {
@@ -1096,6 +1428,10 @@ const allFilteredPRs = computed(() => {
 			if (repoPath !== filters.repo) return false
 		}
 
+		if (filters.author) {
+			if (pr.user?.login !== filters.author) return false
+		}
+
 		if (filters.status !== "all") {
 			const statusLabel = getPRStatusLabel(pr).toLowerCase()
 			if (filters.status === "open" && statusLabel !== "open") return false
@@ -1262,7 +1598,9 @@ div {
 	background: #cbd5e1 !important;
 	border-radius: 10px !important;
 }
-:deep(*::-webkit-scrollbar-track) {
+.custom-scrollbar::-webkit-scrollbar-track {
 	background: transparent !important;
 }
+
+:global([data-radix-popper-content-wrapper]), :global([data-reka-popper-content-wrapper]), :global(.PopoverContent) { z-index: 100005 !important; }
 </style>

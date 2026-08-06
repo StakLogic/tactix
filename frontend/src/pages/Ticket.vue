@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
-	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 p-2 flex-shrink-0">
+  <div class="space-y-3 p-1 flex flex-col h-full overflow-hidden font-sans min-h-0">
+	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 flex-shrink-0">
 		<Card 
 			v-for="stat in kpiStats" 
 			:key="stat.label" 
@@ -26,23 +26,227 @@
 		</Card>
 	</div>
 
-	<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 mx-2 my-4 relative z-10 overflow-visible flex-shrink-0">
+	<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
 	  <!-- Top Row: Search & Actions -->
-	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pb-2 border-b border-slate-100">
+	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100">
 		<div class="relative w-full sm:w-80">
-		  <IconSearch class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-		  <input v-model="searchQuery" placeholder="Search subject or ID..." 
-				 class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none transition-all" />
+		  <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+		  <input 
+			v-model="searchQuery"
+			type="text" 
+			placeholder="Search subject or ID..." 
+			class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+		  />
 		</div>
 
 		<div class="flex items-center gap-2 ml-auto sm:ml-0">
+		  <!-- Dynamic Multi-Field Filter Popover -->
+		  <Popover placement="bottom-end">
+			<template #target="{ open, togglePopover }">
+			  <Button
+				variant="outline"
+				:class="[
+				  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
+				  activeFilterCount > 0
+					? 'border-blue-500 text-blue-600 bg-blue-50/50'
+					: '!text-slate-600 border-slate-200 hover:bg-slate-50'
+				]"
+				@click="syncActiveFilterRules(); togglePopover()"
+				title="Filter Tickets"
+			  >
+				<template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+				<span>Filter</span>
+				<span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+				  {{ activeFilterCount }}
+				</span>
+			  </Button>
+			</template>
+			<template #body-main="{ close }">
+			  <div class="w-80 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-3">
+				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
+				  <div class="flex items-center gap-1.5 font-semibold text-slate-800 text-xs">
+					<IconFilter class="w-3.5 h-3.5 text-blue-600" />
+					<span>Filter Tickets</span>
+				  </div>
+				  <button 
+					v-if="hasActiveFilters"
+					@click="resetFilters" 
+					class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+				  >
+					<IconX class="w-3 h-3" /> Clear All
+				  </button>
+				</div>
+
+				<!-- Dynamic Filter Rules -->
+				<div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+				  <div 
+					v-for="rule in activeFilterRules" 
+					:key="rule.id"
+					class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-md border border-slate-200/80"
+				  >
+					<div class="w-1/3 shrink-0">
+					  <Select 
+						v-model="rule.field"
+						:options="FILTERABLE_FIELDS"
+						placeholder="Field"
+						size="sm"
+						variant="subtle"
+						@update:modelValue="rule.value = ''"
+					  />
+					</div>
+
+					<span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+
+					<div class="flex-1 min-w-0">
+					  <Select
+						v-model="rule.value"
+						:options="getFieldOptionsForSelect(rule.field)"
+						placeholder="Select value"
+						size="sm"
+						variant="subtle"
+						class="w-full"
+					  />
+					</div>
+
+					<button 
+					  @click="removeFilterRule(rule.id)"
+					  class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+					  title="Remove Filter"
+					>
+					  <IconX class="w-3.5 h-3.5" />
+					</button>
+				  </div>
+				</div>
+
+				<div class="flex items-center justify-between pt-2 border-t border-slate-100">
+				  <button
+					@click="addFilterRule"
+					class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+				  >
+					<IconPlus class="w-3.5 h-3.5" /> Add Filter
+				  </button>
+
+				  <Button 
+					variant="solid" 
+					class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+					@click="applyFilterRules(); close()"
+				  >
+					Apply
+				  </Button>
+				</div>
+			  </div>
+			</template>
+		  </Popover>
+
+		  <!-- Column Picker Popover (Frappe UI Style) -->
+		  <Popover placement="bottom-end">
+			<template #target="{ open, togglePopover }">
+			  <Button
+				variant="outline"
+				class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1.5 rounded-md text-xs font-medium"
+				@click="togglePopover"
+				title="Customize Columns"
+			  >
+				<template #prefix><IconSlidersHorizontal class="w-3.5 h-3.5 text-slate-500" /></template>
+				<span class="hidden md:inline">Columns</span>
+			  </Button>
+			</template>
+			<template #body-main="{ close }">
+			  <div class="w-60 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-2.5">
+				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
+				  <span class="font-semibold text-slate-800 text-xs">Columns</span>
+				  <button 
+					@click="resetColumns" 
+					class="text-[11px] font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+					title="Reset to default columns"
+				  >
+					<IconRotateCcw class="w-3 h-3" /> Reset
+				  </button>
+				</div>
+
+				<div class="relative">
+				  <input
+					v-model="columnSearchQuery"
+					type="text"
+					placeholder="Search columns..."
+					class="w-full pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+				  />
+				  <IconSearch class="w-3 h-3 absolute left-2 top-2 text-slate-400" />
+				</div>
+
+				<div class="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
+				  <div 
+					v-for="(colKey, index) in activeColumnKeys" 
+					:key="colKey"
+					v-show="!columnSearchQuery || getColumnLabel(colKey).toLowerCase().includes(columnSearchQuery.toLowerCase())"
+					class="flex items-center justify-between p-1 rounded hover:bg-slate-50 group transition-all"
+				  >
+					<label class="flex items-center gap-2 cursor-pointer select-none truncate flex-1 mr-1">
+					  <input
+						type="checkbox"
+						:checked="true"
+						:disabled="colKey === 'subject'"
+						@change="toggleColumn(colKey)"
+						class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer disabled:opacity-40"
+					  />
+					  <span :class="colKey === 'subject' ? 'font-semibold text-slate-900' : 'text-slate-700'" class="truncate">
+						{{ getColumnLabel(colKey) }}
+					  </span>
+					  <span v-if="colKey === 'subject'" class="text-[9px] bg-slate-100 text-slate-400 px-1 rounded font-medium ml-auto">Fixed</span>
+					</label>
+
+					<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+					  <button
+						@click.stop="moveColumnUp(index)"
+						:disabled="index === 0"
+						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						title="Move Up"
+					  >
+						<IconArrowUp class="w-3 h-3" />
+					  </button>
+					  <button
+						@click.stop="moveColumnDown(index)"
+						:disabled="index === activeColumnKeys.length - 1"
+						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						title="Move Down"
+					  >
+						<IconArrowDown class="w-3 h-3" />
+					  </button>
+					</div>
+				  </div>
+
+				  <!-- Inactive columns available to add -->
+				  <div v-if="inactiveColumns.length > 0 && !columnSearchQuery" class="pt-2 border-t border-slate-100 mt-1">
+					<span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">More Columns</span>
+					<div
+					  v-for="col in inactiveColumns"
+					  :key="col.key"
+					  class="flex items-center justify-between p-1 rounded hover:bg-slate-50 cursor-pointer"
+					  @click="toggleColumn(col.key)"
+					>
+					  <label class="flex items-center gap-2 cursor-pointer select-none truncate">
+						<input
+						  type="checkbox"
+						  :checked="false"
+						  @change="toggleColumn(col.key)"
+						  class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
+						/>
+						<span class="text-slate-500 truncate">{{ col.label }}</span>
+					  </label>
+					</div>
+				  </div>
+				</div>
+			  </div>
+			</template>
+		  </Popover>
+
 		  <!-- Refresh Button -->
 		  <Button
 			variant="outline"
-			class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all"
+			class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all rounded-md"
 			@click="tickets.reload()"
 		  >
-			<template #prefix><IconRefresh class="w-4 h-4 text-slate-500" /></template>
+			<template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500" /></template>
 		  </Button>
 
 		  <!-- Actions Dropdown / New Ticket Button -->
@@ -53,44 +257,27 @@
 		  >
 			<Button
 			  variant="solid"
-			  class="!bg-slate-800 !text-white !text-xs !px-5 !h-9 !shadow-md hover:!bg-slate-900 transition-all"
+			  class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
 			>
 			  Actions
-			  <template #suffix><FeatherIcon name="chevron-down" class="w-4 h-4 shrink-0" /></template>
+			  <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
 			</Button>
 		  </Dropdown>
 
 		  <Button
 			v-else
 			variant="solid"
-			class="!text-xs !px-5 !h-9 !shadow-md transition-all"
-			style="background-color: var(--primary-color); box-shadow: 0 4px 6px -1px var(--primary-color-shadow);"
+			class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
+			style="background-color: var(--primary-color);"
 			@click="isEditMode=false; resetForm(); customerResource.reload(); departmentResource.reload(); showCreateDialog=true"
 		>
-			<template #prefix><IconPlus class="w-4 h-4" /></template> New Ticket
+			<template #prefix><IconPlus class="w-3.5 h-3.5" /></template> New Ticket
 		</Button>
 		</div>
 	  </div>
 
-	  <!-- Bottom Row: Filters (Same layout & Autocomplete dropdowns as Tasks.vue) -->
-	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1.5 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
-		<!-- Status Filter -->
-		<select 
-		  v-model="selectedFilters.status"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.status !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Status</option>
-		  <option value="Open" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Open</option>
-		  <option value="Replied" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Replied</option>
-		  <option value="Resolved" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Resolved</option>
-		  <option value="Closed" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Closed</option>
-		</select>
-
+	  <!-- Bottom Row: Quick Filter Bar -->
+	  <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
 		<!-- Client Autocomplete Filter -->
 		<div class="w-36 shrink-0">
 			<Autocomplete
@@ -105,14 +292,14 @@
 				  type="button"
 				  @click="() => customerAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.customer !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getClientLabel(selectedFilters.customer) }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -132,35 +319,70 @@
 				  type="button"
 				  @click="() => departmentAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.department !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getDepartmentLabel(selectedFilters.department) }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-		<!-- Priority Filter -->
-		<select 
-		  v-model="selectedFilters.priority"
-		  :class="[
-			'px-3 h-9 rounded-lg border text-xs font-semibold focus:outline-none cursor-pointer min-w-[120px] shrink-0 transition-all duration-200',
-			selectedFilters.priority !== ''
-			  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300'
-			  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20'
-		  ]"
-		>
-		  <option value="" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Priority</option>
-		  <option value="Low" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Low</option>
-		  <option value="Medium" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Medium</option>
-		  <option value="High" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">High</option>
-		  <option value="Urgent" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">Urgent</option>
-		</select>
+		<!-- Status Autocomplete Filter -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="statusAutocomplete"
+			  :options="filterStatusOptions"
+			  :modelValue="selectedFilters.status"
+			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => statusAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+					selectedFilters.status !== ''
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
+				  ]"
+				>
+				  <span class="truncate">{{ getStatusLabel(selectedFilters.status) }}</span>
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
+		</div>
+
+		<!-- Priority Autocomplete Filter -->
+		<div class="w-36 shrink-0">
+			<Autocomplete
+			  ref="priorityAutocomplete"
+			  :options="priorityOptions"
+			  :modelValue="selectedFilters.priority"
+			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			>
+			  <template #target>
+				<button
+				  type="button"
+				  @click="() => priorityAutocomplete?.togglePopover()"
+				  :class="[
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
+					selectedFilters.priority !== ''
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
+				  ]"
+				>
+				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority) }}</span>
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				</button>
+			  </template>
+			</Autocomplete>
+		</div>
 
 		<!-- Raised By Autocomplete Filter -->
 		<div class="w-36 shrink-0">
@@ -176,14 +398,14 @@
 				  type="button"
 				  @click="() => raisedByAutocomplete?.togglePopover()"
 				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs font-semibold transition-colors w-full cursor-pointer h-9 px-3 rounded-lg border',
+					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
 					selectedFilters.raised_by !== ''
-					  ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50/10 font-black shadow-sm ring-1 ring-[var(--primary-color)]/10 focus:ring-2 focus:ring-[var(--primary-color)]/20 dark:border-indigo-400 dark:text-indigo-300 dark:bg-[var(--primary-color)]/20'
-					  : 'border-slate-200 bg-slate-50 text-slate-600 dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700 hover:bg-slate-100 hover:border-slate-300'
+					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
+					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
 				  <span class="truncate">{{ getUserLabel(selectedFilters.raised_by, 'Raised By') }}</span>
-				  <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -192,7 +414,7 @@
 		<Button 
 		  v-if="hasActiveFilters"
 		  variant="ghost" 
-		  class="!text-red-500 hover:!bg-red-50 !px-2.5 !h-9 shrink-0"
+		  class="!text-red-500 hover:!bg-red-50 !px-2 !h-7 text-xs font-medium shrink-0"
 		  @click="resetFilters"
 		>
 		  <template #prefix><IconX class="w-3.5 h-3.5" /></template>
@@ -201,7 +423,7 @@
 	  </div>
 	</div>
 
-	<div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-2 flex flex-col min-h-0">
+	<div class="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0">
 	  <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
 		  <ListView
 		  class="h-full flex flex-col min-h-0"
@@ -274,10 +496,22 @@
 				<Badge :theme="getPriorityTheme(item)" variant="subtle" :label="item" />
 				</template>
 
-				<template v-if="column.key === 'description_for_list'">
-				<div class="max-w-[500px] truncate text-slate-500 text-sm" v-tooltip="item">
-					{{ item || '—' }}
-				</div>
+				<template v-if="column.key === 'raised_by'">
+				<span class="text-xs text-slate-600 font-medium truncate">
+					{{ getUserLabel(row.raised_by) }}
+				</span>
+				</template>
+
+				<template v-if="column.key === 'customer'">
+				<span class="text-xs text-slate-600 font-medium truncate">
+					{{ getClientLabel(row.customer) }}
+				</span>
+				</template>
+
+				<template v-if="column.key === 'department'">
+				<span class="text-xs text-slate-600 font-medium truncate">
+					{{ getDepartmentLabel(row.department) }}
+				</span>
 				</template>
 
 				<template v-if="column.key === 'creation'">
@@ -313,15 +547,6 @@
 					</Badge>
 				</div>
 				<span v-else class="text-xs text-slate-400 font-medium pl-2">—</span>
-				</template>
-
-				<template v-if="column.key === 'exp_end_date'">
-				<div class="flex items-center gap-2 text-slate-500 whitespace-nowrap">
-					<IconClock class="w-3.5 h-3.5" v-if="row.exp_end_date"/>
-					<span class="text-xs font-medium">
-					{{ row.exp_end_date ? formatDate(row.exp_end_date) : '' }}
-					</span>
-				</div>
 				</template>
 
 			</ListRowItem>
@@ -879,6 +1104,8 @@ import { useSocket } from "../socket"
 const customerAutocomplete = ref(null)
 const departmentAutocomplete = ref(null)
 const raisedByAutocomplete = ref(null)
+const statusAutocomplete = ref(null)
+const priorityAutocomplete = ref(null)
 
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {
@@ -899,7 +1126,21 @@ function getUserLabel(val, defaultLabel = "User") {
 	return match ? match.label : val
 }
 
+function getStatusLabel(val) {
+	if (!val) return "Status"
+	const match = filterStatusOptions.find((s) => s.value === val)
+	return match ? match.label : val
+}
+
+function getPriorityLabel(val) {
+	if (!val) return "Priority"
+	const match = priorityOptions.find((p) => p.value === val)
+	return match ? match.label : val
+}
+
 import IconAlertCircle from "~icons/lucide/alert-circle"
+import IconArrowDown from "~icons/lucide/arrow-down"
+import IconArrowUp from "~icons/lucide/arrow-up"
 import IconBriefcase from "~icons/lucide/briefcase"
 import IconCheck from "~icons/lucide/check"
 import IconCheckCircle from "~icons/lucide/check-circle"
@@ -910,13 +1151,16 @@ import IconChevronsLeft from "~icons/lucide/chevrons-left"
 import IconChevronsRight from "~icons/lucide/chevrons-right"
 import IconClock from "~icons/lucide/clock"
 import IconEdit3 from "~icons/lucide/edit-3"
+import IconFilter from "~icons/lucide/filter"
 import IconHash from "~icons/lucide/hash"
 import IconList from "~icons/lucide/list"
 import IconMessageSquare from "~icons/lucide/message-square"
 // Icons
 import IconPlus from "~icons/lucide/plus"
 import IconRefresh from "~icons/lucide/refresh-cw"
+import IconRotateCcw from "~icons/lucide/rotate-ccw"
 import IconSearch from "~icons/lucide/search"
+import IconSlidersHorizontal from "~icons/lucide/sliders-horizontal"
 import IconTrash2 from "~icons/lucide/trash-2"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
@@ -1652,29 +1896,273 @@ const handleSaveTask = async () => {
 	}
 }
 
-/* LISTVIEW CONFIG */
-const columns = [
-	{ label: "Ticket ID", key: "name", width: "140px", icon: IconHash },
-	{ label: "Subject", key: "subject", width: "3.5fr", icon: IconList },
-	{ label: "Client", key: "customer", width: "160px", icon: IconBriefcase },
-	{
-		label: "Department",
-		key: "department",
-		width: "400px",
-		icon: IconBriefcase,
-	},
-	{ label: "Status", key: "status", width: "130px", icon: IconAlertCircle },
-	{ label: "Priority", key: "priority", width: "130px", icon: IconBriefcase },
-	{ label: "Raised By", key: "raised_by", width: "300px", icon: IconUser },
-	{ label: "Raised On", key: "creation", width: "200px", icon: IconClock },
-	{
-		label: "First Response Time",
-		key: "first_response_time",
-		width: "180px",
-		icon: IconClock,
-	},
-	{ label: "Closed Time", key: "closed_time", width: "180px", icon: IconClock },
+/* DYNAMIC FILTER RULES & ACTIVE CHIPS */
+const FILTERABLE_FIELDS = [
+	{ label: "Client", value: "customer", key: "customer" },
+	{ label: "Department", value: "department", key: "department" },
+	{ label: "Status", value: "status", key: "status" },
+	{ label: "Priority", value: "priority", key: "priority" },
+	{ label: "Raised By", value: "raised_by", key: "raised_by" },
 ]
+
+const activeFilterRules = ref([])
+
+function syncActiveFilterRules() {
+	const newRules = []
+	FILTERABLE_FIELDS.forEach((f) => {
+		const val = selectedFilters[f.value]
+		if (val) {
+			newRules.push({
+				id: "rule_" + f.value,
+				field: f.value,
+				value: val,
+			})
+		}
+	})
+	if (newRules.length === 0) {
+		newRules.push({
+			id: "rule_" + Date.now(),
+			field: "status",
+			value: "",
+		})
+	}
+	activeFilterRules.value = newRules
+}
+
+function toggleRaisedByMe() {
+	if (selectedFilters.raised_by === session.user) {
+		selectedFilters.raised_by = ""
+	} else {
+		selectedFilters.raised_by = session.user
+	}
+}
+
+function addFilterRule() {
+	const unusedField = FILTERABLE_FIELDS.find(
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value),
+	)
+	const field = unusedField ? unusedField.value : "status"
+	activeFilterRules.value.push({
+		id: "rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+		field,
+		value: "",
+	})
+}
+
+function removeFilterRule(id) {
+	const idx = activeFilterRules.value.findIndex((r) => r.id === id)
+	if (idx > -1) {
+		const removed = activeFilterRules.value[idx]
+		activeFilterRules.value.splice(idx, 1)
+		if (removed.field in selectedFilters) {
+			selectedFilters[removed.field] = ""
+		}
+	}
+	if (activeFilterRules.value.length === 0) {
+		activeFilterRules.value.push({
+			id: "rule_" + Date.now(),
+			field: "status",
+			value: "",
+		})
+	}
+}
+
+function applyFilterRules() {
+	FILTERABLE_FIELDS.forEach((f) => {
+		const hasRule = activeFilterRules.value.some((r) => r.field === f.key)
+		if (!hasRule) {
+			selectedFilters[f.key] = ""
+		}
+	})
+	activeFilterRules.value.forEach((r) => {
+		if (r.field in selectedFilters) {
+			selectedFilters[r.field] = r.value
+		}
+	})
+}
+
+function getFieldOptionsForSelect(fieldKey) {
+	if (fieldKey === "status") return filterStatusOptions
+	if (fieldKey === "priority") return priorityOptions
+	if (fieldKey === "customer") return customerFilterSelectOptions.value.filter(c => c.value !== "")
+	if (fieldKey === "department") return departmentFilterSelectOptions.value.filter(d => d.value !== "")
+	if (fieldKey === "raised_by") return raisedByFilterSelectOptions.value.filter(u => u.value !== "")
+	return []
+}
+
+watch(
+	selectedFilters,
+	(newFilters) => {
+		Object.entries(newFilters).forEach(([key, val]) => {
+			if (val) {
+				const rule = activeFilterRules.value.find((r) => r.field === key)
+				if (rule) {
+					rule.value = val
+				} else {
+					activeFilterRules.value.push({
+						id:
+							"rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+						field: key,
+						value: val,
+					})
+				}
+			} else {
+				const idx = activeFilterRules.value.findIndex((r) => r.field === key)
+				if (idx > -1) {
+					activeFilterRules.value.splice(idx, 1)
+				}
+			}
+		})
+	},
+	{ deep: true },
+)
+
+const activeFilterCount = computed(() => {
+	return Object.values(selectedFilters).filter((v) => v !== "").length
+})
+
+const activeFilterChips = computed(() => {
+	const chips = []
+	Object.entries(selectedFilters).forEach(([key, val]) => {
+		if (val) {
+			const fieldObj = FILTERABLE_FIELDS.find((f) => f.key === key)
+			const fieldLabel = fieldObj ? fieldObj.label : key
+			let displayVal = val
+			if (key === "customer") displayVal = getClientLabel(val)
+			else if (key === "department") displayVal = getDepartmentLabel(val)
+			else if (key === "raised_by") displayVal = getUserLabel(val)
+			else if (key === "status" || key === "priority") displayVal = val
+			chips.push({ key, label: fieldLabel, displayValue: displayVal })
+		}
+	})
+	return chips
+})
+
+const hasActiveFilterChips = computed(() => activeFilterChips.value.length > 0)
+
+function removeFilterByKey(key) {
+	if (key in selectedFilters) {
+		selectedFilters[key] = ""
+	}
+}
+
+const filterStatusOptions = [
+	{ label: "Open", value: "Open" },
+	{ label: "Replied", value: "Replied" },
+	{ label: "Resolved", value: "Resolved" },
+	{ label: "Closed", value: "Closed" },
+]
+
+/* COLUMN PICKER & LISTVIEW CONFIG */
+const ALL_COLUMNS = [
+	{ label: "Subject", key: "subject", icon: IconList, width: "3.5fr", mandatory: true },
+	{ label: "Ticket ID", key: "name", icon: IconHash, width: "140px" },
+	{ label: "Client", key: "customer", icon: IconBriefcase, width: "160px" },
+	{ label: "Department", key: "department", icon: IconBriefcase, width: "200px" },
+	{ label: "Status", key: "status", icon: IconAlertCircle, width: "130px" },
+	{ label: "Priority", key: "priority", icon: IconBriefcase, width: "130px" },
+	{ label: "Raised By", key: "raised_by", icon: IconUser, width: "200px" },
+	{ label: "Raised On", key: "creation", icon: IconClock, width: "180px" },
+	{ label: "First Response Time", key: "first_response_time", icon: IconClock, width: "180px" },
+	{ label: "Closed Time", key: "closed_time", icon: IconClock, width: "180px" },
+	{ label: "Ticket Type", key: "ticket_type", icon: IconBriefcase, width: "140px" },
+	{ label: "Agent Group", key: "agent_group", icon: IconUser, width: "160px" },
+]
+
+const DEFAULT_COLUMN_KEYS = [
+	"name",
+	"subject",
+	"customer",
+	"department",
+	"status",
+	"priority",
+	"raised_by",
+	"creation",
+	"first_response_time",
+	"closed_time",
+]
+
+const STORAGE_KEY = "tactix_tickets_columns_config"
+
+function loadSavedColumns() {
+	try {
+		const saved = localStorage.getItem(STORAGE_KEY)
+		if (saved) {
+			const parsed = JSON.parse(saved)
+			if (Array.isArray(parsed) && parsed.length > 0) {
+				const validKeys = parsed.filter((k) =>
+					ALL_COLUMNS.some((c) => c.key === k),
+				)
+				if (!validKeys.includes("subject")) {
+					validKeys.unshift("subject")
+				}
+				if (validKeys.length > 0) return validKeys
+			}
+		}
+	} catch (e) {
+		console.error("Failed to load column settings", e)
+	}
+	return [...DEFAULT_COLUMN_KEYS]
+}
+
+const activeColumnKeys = ref(loadSavedColumns())
+const columnSearchQuery = ref("")
+
+watch(
+	activeColumnKeys,
+	(newVal) => {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
+		} catch (e) {
+			console.error("Failed to save column settings", e)
+		}
+	},
+	{ deep: true },
+)
+
+function getColumnLabel(key) {
+	const col = ALL_COLUMNS.find((c) => c.key === key)
+	return col ? col.label : key
+}
+
+const inactiveColumns = computed(() => {
+	return ALL_COLUMNS.filter((c) => !activeColumnKeys.value.includes(c.key))
+})
+
+function resetColumns() {
+	activeColumnKeys.value = [...DEFAULT_COLUMN_KEYS]
+}
+
+function toggleColumn(key) {
+	if (key === "subject") return
+	const idx = activeColumnKeys.value.indexOf(key)
+	if (idx > -1) {
+		activeColumnKeys.value.splice(idx, 1)
+	} else {
+		activeColumnKeys.value.push(key)
+	}
+}
+
+function moveColumnUp(index) {
+	if (index <= 0) return
+	const temp = activeColumnKeys.value[index]
+	activeColumnKeys.value[index] = activeColumnKeys.value[index - 1]
+	activeColumnKeys.value[index - 1] = temp
+}
+
+function moveColumnDown(index) {
+	if (index >= activeColumnKeys.value.length - 1) return
+	const temp = activeColumnKeys.value[index]
+	activeColumnKeys.value[index] = activeColumnKeys.value[index + 1]
+	activeColumnKeys.value[index + 1] = temp
+}
+
+const columns = computed(() => {
+	const map = new Map(ALL_COLUMNS.map((c) => [c.key, c]))
+	return activeColumnKeys.value
+		.map((key) => map.get(key))
+		.filter(Boolean)
+})
 
 const hasActiveFilters = computed(() => {
 	if (debouncedSearchQuery.value) return true
@@ -1689,6 +2177,7 @@ const resetFilters = () => {
 	selectedFilters.raised_by = ""
 	selectedFilters.customer = ""
 	selectedFilters.department = ""
+	activeFilterRules.value = []
 }
 
 function filterByStat(label) {
