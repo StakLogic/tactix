@@ -231,7 +231,7 @@
             ref="statusAutocomplete"
             :options="statusOptions"
             :modelValue="selectedStatus"
-            @update:modelValue="val => selectedStatus = val?.value || val || ''"
+            @update:modelValue="val => selectedStatus = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
           >
             <template #target>
               <button
@@ -257,7 +257,7 @@
             ref="timespanAutocomplete"
             :options="timespanOptions"
             :modelValue="selectedTimespan"
-            @update:modelValue="val => selectedTimespan = val?.value || val || ''"
+            @update:modelValue="val => selectedTimespan = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
           >
             <template #target>
               <button
@@ -283,7 +283,7 @@
             ref="employeeAutocomplete"
             :options="employeeOptions"
             :modelValue="selectedEmployee"
-            @update:modelValue="val => selectedEmployee = val?.value || val || ''"
+            @update:modelValue="val => selectedEmployee = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
             :max-options="100"
           >
             <template #target>

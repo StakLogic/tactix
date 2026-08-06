@@ -232,7 +232,7 @@
             ref="fileTypeAutocomplete"
             :options="fileTypeOptions"
             :modelValue="fileTypeFilter"
-            @update:modelValue="val => fileTypeFilter = val?.value || val || 'All'"
+            @update:modelValue="val => fileTypeFilter = (val && typeof val === 'object') ? (val.value ?? 'All') : (val ?? 'All')"
           >
             <template #target>
               <button
@@ -258,7 +258,7 @@
             ref="sourceAutocomplete"
             :options="sourceOptions"
             :modelValue="sourceFilter"
-            @update:modelValue="val => sourceFilter = val?.value || val || 'All'"
+            @update:modelValue="val => sourceFilter = (val && typeof val === 'object') ? (val.value ?? 'All') : (val ?? 'All')"
           >
             <template #target>
               <button
@@ -284,7 +284,7 @@
             ref="accessAutocomplete"
             :options="accessOptions"
             :modelValue="accessFilter"
-            @update:modelValue="val => accessFilter = val?.value || val || 'All'"
+            @update:modelValue="val => accessFilter = (val && typeof val === 'object') ? (val.value ?? 'All') : (val ?? 'All')"
           >
             <template #target>
               <button
