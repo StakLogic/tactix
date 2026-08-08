@@ -251,19 +251,82 @@
           <!-- Fields for Project -->
           <template v-if="activeTab === 'project'">
             <FormControl type="text" label="Project Name *" v-model="modal.form.project_name" placeholder="Enter project name" />
-            <FormControl type="select" label="Company *" v-model="modal.form.company" :options="linkOptions.companies" />
+            <div class="space-y-1.5">
+              <label class="block text-xs text-ink-gray-5">Company *</label>
+              <Autocomplete
+                ref="projectCompanyAutocomplete"
+                :options="linkOptions.companies || []"
+                :modelValue="modal.form.company"
+                @update:modelValue="val => modal.form.company = val?.value || val || ''"
+                :compare-fn="compareOption"
+                :max-options="100"
+              >
+                <template #target>
+                  <button
+                    type="button"
+                    @click="() => projectCompanyAutocomplete?.togglePopover()"
+                    class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                  >
+                    <span class="truncate">{{ getCompanyLabel(modal.form.company) }}</span>
+                    <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                  </button>
+                </template>
+              </Autocomplete>
+            </div>
           </template>
 
           <!-- Fields for Department -->
           <template v-if="activeTab === 'department'">
             <FormControl type="text" label="Department Name *" v-model="modal.form.department_name" placeholder="Enter department name" />
-            <FormControl type="select" label="Company *" v-model="modal.form.company" :options="linkOptions.companies" />
+            <div class="space-y-1.5">
+              <label class="block text-xs text-ink-gray-5">Company *</label>
+              <Autocomplete
+                ref="departmentCompanyAutocomplete"
+                :options="linkOptions.companies || []"
+                :modelValue="modal.form.company"
+                @update:modelValue="val => modal.form.company = val?.value || val || ''"
+                :compare-fn="compareOption"
+                :max-options="100"
+              >
+                <template #target>
+                  <button
+                    type="button"
+                    @click="() => departmentCompanyAutocomplete?.togglePopover()"
+                    class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                  >
+                    <span class="truncate">{{ getCompanyLabel(modal.form.company) }}</span>
+                    <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                  </button>
+                </template>
+              </Autocomplete>
+            </div>
           </template>
 
           <!-- Fields for Tactix Department -->
           <template v-if="activeTab === 'tactix_dept'">
             <FormControl type="text" label="Department Name *" v-model="modal.form.department_name" placeholder="Enter department name" />
-            <FormControl type="select" label="Department Head" v-model="modal.form.department_head" :options="userOptions" />
+            <div class="space-y-1.5">
+              <label class="block text-xs text-ink-gray-5">Department Head</label>
+              <Autocomplete
+                ref="departmentHeadAutocomplete"
+                :options="userOptions || []"
+                :modelValue="modal.form.department_head"
+                @update:modelValue="val => modal.form.department_head = val?.value || val || ''"
+                :compare-fn="compareOption"
+                :max-options="100"
+              >
+                <template #target>
+                  <button
+                    type="button"
+                    @click="() => departmentHeadAutocomplete?.togglePopover()"
+                    class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                  >
+                    <span class="truncate">{{ getUserLabel(modal.form.department_head) }}</span>
+                    <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                  </button>
+                </template>
+              </Autocomplete>
+            </div>
           </template>
 
           <!-- Fields for Tactix Customer -->
@@ -274,7 +337,28 @@
           <!-- Fields for Tactix Team -->
           <template v-if="activeTab === 'tactix_team'">
             <FormControl type="text" label="Team Name *" v-model="modal.form.team_name" placeholder="Enter team name" />
-            <FormControl type="select" label="Team Lead" v-model="modal.form.team_lead" :options="userOptions" />
+            <div class="space-y-1.5">
+              <label class="block text-xs text-ink-gray-5">Team Lead</label>
+              <Autocomplete
+                ref="teamLeadAutocomplete"
+                :options="userOptions || []"
+                :modelValue="modal.form.team_lead"
+                @update:modelValue="val => modal.form.team_lead = val?.value || val || ''"
+                :compare-fn="compareOption"
+                :max-options="100"
+              >
+                <template #target>
+                  <button
+                    type="button"
+                    @click="() => teamLeadAutocomplete?.togglePopover()"
+                    class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                  >
+                    <span class="truncate">{{ getUserLabel(modal.form.team_lead) }}</span>
+                    <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                  </button>
+                </template>
+              </Autocomplete>
+            </div>
             <div class="space-y-1">
               <label class="block text-xs font-medium text-slate-600">Team Members (Employees Only)</label>
               <MultiSelect
@@ -317,6 +401,7 @@
 
 <script setup>
 import {
+	Autocomplete,
 	Badge,
 	Button,
 	Card,
@@ -337,6 +422,23 @@ import {
 	createResource,
 } from "frappe-ui"
 import { computed, reactive, ref, watch } from "vue"
+
+const projectCompanyAutocomplete = ref(null)
+const departmentCompanyAutocomplete = ref(null)
+const departmentHeadAutocomplete = ref(null)
+const teamLeadAutocomplete = ref(null)
+
+function compareOption(a, b) {
+	const aVal = a && typeof a === "object" ? a.value : a
+	const bVal = b && typeof b === "object" ? b.value : b
+	return aVal === bVal
+}
+
+function getCompanyLabel(val) {
+	if (!val) return "Select Company"
+	const match = linkOptions.companies?.find((c) => (typeof c === "object" ? c.value === val : c === val))
+	return match ? (typeof match === "object" ? match.label : match) : val
+}
 
 // Icons
 import IconArrowLeft from "~icons/lucide/arrow-left"

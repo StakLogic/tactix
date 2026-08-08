@@ -285,6 +285,7 @@
 			  :options="customerFilterSelectOptions"
 			  :modelValue="selectedFilters.customer"
 			  @update:modelValue="val => selectedFilters.customer = val?.value || val || ''"
+			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
 			  <template #target>
@@ -312,6 +313,7 @@
 			  :options="departmentFilterSelectOptions"
 			  :modelValue="selectedFilters.department"
 			  @update:modelValue="val => selectedFilters.department = val?.value || val || ''"
+			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
 			  <template #target>
@@ -339,6 +341,7 @@
 			  :options="filterStatusOptions"
 			  :modelValue="selectedFilters.status"
 			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			  :compare-fn="compareOption"
 			>
 			  <template #target>
 				<button
@@ -365,6 +368,7 @@
 			  :options="priorityOptions"
 			  :modelValue="selectedFilters.priority"
 			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			  :compare-fn="compareOption"
 			>
 			  <template #target>
 				<button
@@ -391,6 +395,7 @@
 			  :options="raisedByFilterSelectOptions"
 			  :modelValue="selectedFilters.raised_by"
 			  @update:modelValue="val => selectedFilters.raised_by = val?.value || val || ''"
+			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
 			  <template #target>
@@ -689,28 +694,119 @@
 			  <div :class="['rounded-lg transition-all', { 'field-invalid-blink': ticketInvalidFields.subject }]">
 				<FormControl label="Subject *" v-model="ticketForm.subject" />
 			  </div>
-			  <FormControl
-				type="select"
-				label="Customer"
-				:options="customerFilterSelectOptions"
-				v-model="ticketForm.customer"
-				placeholder="Client"
-			  />
-			 <FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions" :disabled="isFieldDisabled"/>
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Customer</label>
+				<Autocomplete
+				  ref="createCustomerAutocomplete"
+				  :options="customerFilterSelectOptions"
+				  :modelValue="ticketForm.customer"
+				  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => createCustomerAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Raised By</label>
+				<Autocomplete
+				  ref="createRaisedByAutocomplete"
+				  :options="raisedByFilterOptions"
+				  :modelValue="ticketForm.raised_by"
+				  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  :disabled="isFieldDisabled"
+					  @click="() => createRaisedByAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+					  <span class="truncate">{{ getUserLabel(ticketForm.raised_by, 'Select User') }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
 			</div>
 			<div class="space-y-4">
 			  <div class="grid grid-cols-2 gap-4">
-				<FormControl label="Type" type="select" :options="['Bug', 'Support', 'Technical']" v-model="ticketForm.ticket_type"/>
-				<FormControl label="Priority" type="select" :options="['Low', 'Medium', 'High', 'Urgent']" v-model="ticketForm.priority" />
+				<div class="space-y-1.5">
+				  <label class="block text-xs text-ink-gray-5">Type</label>
+				  <Autocomplete
+					ref="createTicketTypeAutocomplete"
+					:options="['Bug', 'Support', 'Technical']"
+					:modelValue="ticketForm.ticket_type"
+					@update:modelValue="val => ticketForm.ticket_type = val?.value || val || ''"
+					:compare-fn="compareOption"
+				  >
+					<template #target>
+					  <button
+						type="button"
+						@click="() => createTicketTypeAutocomplete?.togglePopover()"
+						class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					  >
+						<span class="truncate">{{ ticketForm.ticket_type || 'Type' }}</span>
+						<FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					  </button>
+					</template>
+				  </Autocomplete>
+				</div>
+				<div class="space-y-1.5">
+				  <label class="block text-xs text-ink-gray-5">Priority</label>
+				  <Autocomplete
+					ref="createPriorityAutocomplete"
+					:options="['Low', 'Medium', 'High', 'Urgent']"
+					:modelValue="ticketForm.priority"
+					@update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+					:compare-fn="compareOption"
+				  >
+					<template #target>
+					  <button
+						type="button"
+						@click="() => createPriorityAutocomplete?.togglePopover()"
+						class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					  >
+						<span class="truncate">{{ getPriorityLabel(ticketForm.priority) }}</span>
+						<FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					  </button>
+					</template>
+				  </Autocomplete>
+				</div>
 			  </div>
-			  <FormControl
-				type="select"
-				label="Department"
-				:options="departmentFilterSelectOptions"
-				v-model="ticketForm.department"
-				placeholder="Department"
-			  />
-			  <!-- <FormControl label="Agent Group" type="text" v-model="ticketForm.agent_group" /> -->
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Department</label>
+				<Autocomplete
+				  ref="createDepartmentAutocomplete"
+				  :options="departmentFilterSelectOptions"
+				  :modelValue="ticketForm.department"
+				  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => createDepartmentAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
 			</div>
 		  </div>
 		  <div class="space-y-2 border-t pt-4">
@@ -853,14 +949,121 @@
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
-									<FormControl label="Status" type="select" :options="ticketStatusOptions" v-model="ticketForm.status" class="!mb-0 shadow-sm" />
-									<FormControl label="Priority" type="select" :options="['Low','Medium','High','Urgent']" v-model="ticketForm.priority" class="!mb-0 shadow-sm" />
+									<div class="space-y-1.5 shadow-sm">
+										<label class="block text-xs text-ink-gray-5">Status</label>
+										<Autocomplete
+										  ref="editStatusAutocomplete"
+										  :options="ticketStatusOptions"
+										  :modelValue="ticketForm.status"
+										  @update:modelValue="val => ticketForm.status = val?.value || val || ''"
+										  :compare-fn="compareOption"
+										>
+										  <template #target>
+											<button
+											  type="button"
+											  @click="() => editStatusAutocomplete?.togglePopover()"
+											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+											>
+											  <span class="truncate">{{ getStatusLabel(ticketForm.status) }}</span>
+											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+											</button>
+										  </template>
+										</Autocomplete>
+									</div>
+
+									<div class="space-y-1.5 shadow-sm">
+										<label class="block text-xs text-ink-gray-5">Priority</label>
+										<Autocomplete
+										  ref="editPriorityAutocomplete"
+										  :options="['Low','Medium','High','Urgent']"
+										  :modelValue="ticketForm.priority"
+										  @update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+										  :compare-fn="compareOption"
+										>
+										  <template #target>
+											<button
+											  type="button"
+											  @click="() => editPriorityAutocomplete?.togglePopover()"
+											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+											>
+											  <span class="truncate">{{ getPriorityLabel(ticketForm.priority) }}</span>
+											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+											</button>
+										  </template>
+										</Autocomplete>
+									</div>
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
-									<FormControl label="Customer" type="select" :options="customerFilterOptions" v-model="ticketForm.customer" class="!mb-0 shadow-sm" />
-									<FormControl label="Raised By" type="select" v-model="ticketForm.raised_by" :options="raisedByFilterOptions" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
-									<FormControl label="Department" type="select" v-model="ticketForm.department" :options="departmentFilterOptions" class="!mb-0 shadow-sm" />
+									<div class="space-y-1.5 shadow-sm">
+										<label class="block text-xs text-ink-gray-5">Customer</label>
+										<Autocomplete
+										  ref="editCustomerAutocomplete"
+										  :options="customerFilterOptions"
+										  :modelValue="ticketForm.customer"
+										  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+										  :compare-fn="compareOption"
+										  :max-options="100"
+										>
+										  <template #target>
+											<button
+											  type="button"
+											  @click="() => editCustomerAutocomplete?.togglePopover()"
+											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+											>
+											  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+											</button>
+										  </template>
+										</Autocomplete>
+									</div>
+
+									<div class="space-y-1.5 shadow-sm">
+										<label class="block text-xs text-ink-gray-5">Raised By</label>
+										<Autocomplete
+										  ref="editRaisedByAutocomplete"
+										  :options="raisedByFilterOptions"
+										  :modelValue="ticketForm.raised_by"
+										  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+										  :compare-fn="compareOption"
+										  :max-options="100"
+										>
+										  <template #target>
+											<button
+											  type="button"
+											  :disabled="isFieldDisabled"
+											  @click="() => editRaisedByAutocomplete?.togglePopover()"
+											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+											  <span class="truncate">{{ getUserLabel(ticketForm.raised_by, 'Select User') }}</span>
+											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+											</button>
+										  </template>
+										</Autocomplete>
+									</div>
+
+									<div class="space-y-1.5 shadow-sm">
+										<label class="block text-xs text-ink-gray-5">Department</label>
+										<Autocomplete
+										  ref="editDepartmentAutocomplete"
+										  :options="departmentFilterOptions"
+										  :modelValue="ticketForm.department"
+										  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+										  :compare-fn="compareOption"
+										  :max-options="100"
+										>
+										  <template #target>
+											<button
+											  type="button"
+											  @click="() => editDepartmentAutocomplete?.togglePopover()"
+											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+											>
+											  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
+											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+											</button>
+										  </template>
+										</Autocomplete>
+									</div>
 								</div>
 							</div>
 
@@ -969,20 +1172,122 @@
 			  <div :class="['rounded-lg transition-all', { 'field-invalid-blink': taskInvalidFields.subject }]">
 				<FormControl type="text" label="Subject *" v-model="newTask.subject" />
 			  </div>
-			  <FormControl type="select" label="Project" v-model="newTask.project" :options="projectResource.data" />
-			  <FormControl type="select" label="Department" v-model="newTask.department" :options="departmentResourceTask.data" />
-			  <FormControl type="select" label="Status" v-model="newTask.status" :options="statusOptions.map(s => s.value)" />
-			  
-
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Project</label>
+				<Autocomplete
+				  ref="taskProjectAutocomplete"
+				  :options="projectResource.data || []"
+				  :modelValue="newTask.project"
+				  @update:modelValue="val => newTask.project = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => taskProjectAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getProjectLabel(newTask.project) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Department</label>
+				<Autocomplete
+				  ref="taskDepartmentAutocomplete"
+				  :options="departmentResourceTask.data || []"
+				  :modelValue="newTask.department"
+				  @update:modelValue="val => newTask.department = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => taskDepartmentAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getDepartmentLabel(newTask.department) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Status</label>
+				<Autocomplete
+				  ref="taskStatusAutocomplete"
+				  :options="statusOptions"
+				  :modelValue="newTask.status"
+				  @update:modelValue="val => newTask.status = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => taskStatusAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getStatusLabel(newTask.status) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
 			</div>
 			<div class="space-y-4">
-			  <FormControl type="select" label="Priority" v-model="newTask.priority" :options="priorityOptions" />
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Priority</label>
+				<Autocomplete
+				  ref="taskPriorityAutocomplete"
+				  :options="priorityOptions"
+				  :modelValue="newTask.priority"
+				  @update:modelValue="val => newTask.priority = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  @click="() => taskPriorityAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+					>
+					  <span class="truncate">{{ getPriorityLabel(newTask.priority) }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
 			  <FormControl type="date" label="Start Date" v-model="newTask.assigned_date" />
 			  <FormControl type="date" label="Deadline" v-model="newTask.exp_end_date" />
 			  <FormControl type="number" label="Expected Time (In Hrs)" v-model="newTask.expected_time" />
 			</div>
 			<div class="space-y-4">
-			  <FormControl type="select" label="Assigned By" v-model="newTask.assigned_by" :options="userResourceTask.data" :disabled="isTaskFieldDisabled" />
+			  <div class="space-y-1.5">
+				<label class="block text-xs text-ink-gray-5">Assigned By</label>
+				<Autocomplete
+				  ref="taskAssignedByAutocomplete"
+				  :options="userResourceTask.data || []"
+				  :modelValue="newTask.assigned_by"
+				  @update:modelValue="val => newTask.assigned_by = val?.value || val || ''"
+				  :compare-fn="compareOption"
+				  :max-options="100"
+				>
+				  <template #target>
+					<button
+					  type="button"
+					  :disabled="isTaskFieldDisabled"
+					  @click="() => taskAssignedByAutocomplete?.togglePopover()"
+					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+					  <span class="truncate">{{ getUserLabel(newTask.assigned_by, 'Select User') }}</span>
+					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+					</button>
+				  </template>
+				</Autocomplete>
+			  </div>
 			   	<label class="block text-xs text-ink-gray-5">Assigned To</label>
 				<MultiSelect
 					:options="assignedToOptionsTask"
@@ -1106,6 +1411,36 @@ const departmentAutocomplete = ref(null)
 const raisedByAutocomplete = ref(null)
 const statusAutocomplete = ref(null)
 const priorityAutocomplete = ref(null)
+
+const createCustomerAutocomplete = ref(null)
+const createRaisedByAutocomplete = ref(null)
+const createTicketTypeAutocomplete = ref(null)
+const createPriorityAutocomplete = ref(null)
+const createDepartmentAutocomplete = ref(null)
+
+const editStatusAutocomplete = ref(null)
+const editPriorityAutocomplete = ref(null)
+const editCustomerAutocomplete = ref(null)
+const editRaisedByAutocomplete = ref(null)
+const editDepartmentAutocomplete = ref(null)
+
+const taskProjectAutocomplete = ref(null)
+const taskDepartmentAutocomplete = ref(null)
+const taskStatusAutocomplete = ref(null)
+const taskPriorityAutocomplete = ref(null)
+const taskAssignedByAutocomplete = ref(null)
+
+function compareOption(a, b) {
+	const aVal = a && typeof a === "object" ? a.value : a
+	const bVal = b && typeof b === "object" ? b.value : b
+	return aVal === bVal
+}
+
+function getProjectLabel(val) {
+	if (!val) return "Project"
+	const match = projectResource.data?.find((p) => p.value === val)
+	return match ? match.label : val
+}
 
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {

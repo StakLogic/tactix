@@ -250,21 +250,57 @@
           </div>
 
           <!-- Team / Department Selection -->
-          <FormControl type="select" label="Team / Department" v-model="modal.form.department" :options="departmentOptions" />
+          <div class="space-y-1.5">
+            <label class="block text-xs text-ink-gray-5">Team / Department</label>
+            <Autocomplete
+              ref="departmentAutocomplete"
+              :options="departmentOptions || []"
+              :modelValue="modal.form.department"
+              @update:modelValue="val => modal.form.department = val?.value || val || ''"
+              :compare-fn="compareOption"
+              :max-options="100"
+            >
+              <template #target>
+                <button
+                  type="button"
+                  @click="() => departmentAutocomplete?.togglePopover()"
+                  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                >
+                  <span class="truncate">{{ getDepartmentLabel(modal.form.department) }}</span>
+                  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                </button>
+              </template>
+            </Autocomplete>
+          </div>
 
           <!-- Employee Details (Hidden if Ticket Raiser) -->
           <div v-if="!modal.form.roles.includes('Ticker Raiser')" class="space-y-4 pt-2 border-t border-slate-100 text-left">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormControl 
-                type="select" 
-                label="Gender *" 
-                v-model="modal.form.gender" 
-                :options="[
-                  { label: 'Male', value: 'Male' },
-                  { label: 'Female', value: 'Female' },
-                  { label: 'Other', value: 'Other' }
-                ]" 
-              />
+              <div class="space-y-1.5">
+                <label class="block text-xs text-ink-gray-5">Gender *</label>
+                <Autocomplete
+                  ref="genderAutocomplete"
+                  :options="[
+                    { label: 'Male', value: 'Male' },
+                    { label: 'Female', value: 'Female' },
+                    { label: 'Other', value: 'Other' }
+                  ]"
+                  :modelValue="modal.form.gender"
+                  @update:modelValue="val => modal.form.gender = val?.value || val || ''"
+                  :compare-fn="compareOption"
+                >
+                  <template #target>
+                    <button
+                      type="button"
+                      @click="() => genderAutocomplete?.togglePopover()"
+                      class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                    >
+                      <span class="truncate">{{ getGenderLabel(modal.form.gender) }}</span>
+                      <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                    </button>
+                  </template>
+                </Autocomplete>
+              </div>
               <FormControl type="text" label="GitHub Username" v-model="modal.form.github_username" placeholder="GitHub username" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -347,6 +383,7 @@
 
 <script setup>
 import {
+	Autocomplete,
 	Avatar,
 	Badge,
 	Button,
@@ -367,6 +404,26 @@ import {
 	Switch,
 	createResource,
 } from "frappe-ui"
+
+const departmentAutocomplete = ref(null)
+const genderAutocomplete = ref(null)
+
+function compareOption(a, b) {
+	const aVal = a && typeof a === "object" ? a.value : a
+	const bVal = b && typeof b === "object" ? b.value : b
+	return aVal === bVal
+}
+
+function getDepartmentLabel(val) {
+	if (!val) return "Select Team / Department"
+	const match = departmentOptions.value?.find((d) => d.value === val)
+	return match ? match.label : val
+}
+
+function getGenderLabel(val) {
+	if (!val) return "Select Gender"
+	return val
+}
 
 const columns = [
 	{ label: "User", key: "user", width: "280px" },
