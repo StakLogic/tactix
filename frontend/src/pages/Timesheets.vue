@@ -509,7 +509,7 @@
                   ref="createEmployeeAutocomplete"
                   :options="[{label: 'Select Employee', value: ''}, ...(employeeOptionsResource.data || [])]"
                   :modelValue="timesheetForm.employee"
-                  @update:modelValue="val => timesheetForm.employee = val?.value || val || ''"
+                  @update:modelValue="val => timesheetForm.employee = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
                   :compare-fn="compareOption"
                   :max-options="100"
                 >
@@ -567,27 +567,45 @@
                 <tbody class="divide-y divide-slate-100 bg-white">
                   <tr v-for="(row, idx) in timesheetForm.time_logs" :key="idx" class="hover:bg-slate-50/20 transition-colors">
                     <td class="px-2 py-2">
-                      <select 
-                        v-model="row.task" 
-                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                      <Autocomplete
+                        :ref="el => setTaskRef(el, idx)"
+                        :options="taskOptionsWithDefault"
+                        :modelValue="row.task"
+                        @update:modelValue="val => row.task = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+                        :compare-fn="compareOption"
+                        :max-options="100"
                       >
-                        <option value="">Select Task (Optional)</option>
-                        <option v-for="t in taskOptionsResource.data" :key="t.value" :value="t.value">
-                          {{ t.label }}
-                        </option>
-                      </select>
+                        <template #target>
+                          <button
+                            type="button"
+                            @click="() => taskRowRefs[idx]?.togglePopover()"
+                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                          >
+                            <span class="truncate">{{ getTaskLabel(row.task) }}</span>
+                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+                          </button>
+                        </template>
+                      </Autocomplete>
                     </td>
                     <td class="px-2 py-2">
-                      <select 
-                        v-model="row.activity_type" 
-                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                      <Autocomplete
+                        :ref="el => setActivityRef(el, idx)"
+                        :options="activityOptions"
+                        :modelValue="row.activity_type"
+                        @update:modelValue="val => row.activity_type = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+                        :compare-fn="compareOption"
                       >
-                        <option value="Execution">Execution</option>
-                        <option value="Planning">Planning</option>
-                        <option value="Research">Research</option>
-                        <option value="Communication">Communication</option>
-                        <option value="Proposal Writing">Proposal Writing</option>
-                      </select>
+                        <template #target>
+                          <button
+                            type="button"
+                            @click="() => activityRowRefs[idx]?.togglePopover()"
+                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                          >
+                            <span class="truncate">{{ row.activity_type || 'Select Activity' }}</span>
+                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+                          </button>
+                        </template>
+                      </Autocomplete>
                     </td>
                     <td class="px-2 py-2">
                       <input 
@@ -822,6 +840,29 @@ const timespanAutocomplete = ref(null)
 const employeeAutocomplete = ref(null)
 const createEmployeeAutocomplete = ref(null)
 
+const taskRowRefs = ref([])
+const activityRowRefs = ref([])
+
+function setTaskRef(el, idx) {
+	if (el) taskRowRefs.value[idx] = el
+}
+function setActivityRef(el, idx) {
+	if (el) activityRowRefs.value[idx] = el
+}
+
+const taskOptionsWithDefault = computed(() => [
+	{ label: "Select Task (Optional)", value: "" },
+	...(taskOptionsResource.data || []),
+])
+
+const activityOptions = [
+	{ label: "Execution", value: "Execution" },
+	{ label: "Planning", value: "Planning" },
+	{ label: "Research", value: "Research" },
+	{ label: "Communication", value: "Communication" },
+	{ label: "Proposal Writing", value: "Proposal Writing" },
+]
+
 function compareOption(a, b) {
 	const aVal = a && typeof a === "object" ? a.value : a
 	const bVal = b && typeof b === "object" ? b.value : b
@@ -829,9 +870,17 @@ function compareOption(a, b) {
 }
 
 function getEmployeeLabel(val) {
-	if (!val) return "Select Employee"
-	const match = employeeOptionsResource.data?.find((e) => e.value === val)
-	return match ? match.label : val
+	const empVal = val && typeof val === "object" ? val.value : val
+	if (!empVal) return "Select Employee"
+	const match = employeeOptionsResource.data?.find((e) => e.value === empVal)
+	return match ? match.label : empVal
+}
+
+function getTaskLabel(val) {
+	const taskVal = val && typeof val === "object" ? val.value : val
+	if (!taskVal) return "Select Task (Optional)"
+	const match = taskOptionsResource.data?.find((t) => t.value === taskVal)
+	return match ? match.label : taskVal
 }
 
 const FILTERABLE_FIELDS = computed(() => {
