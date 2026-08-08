@@ -232,6 +232,7 @@
             :options="statusOptions"
             :modelValue="selectedStatus"
             @update:modelValue="val => selectedStatus = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+            :compare-fn="compareOption"
           >
             <template #target>
               <button
@@ -258,6 +259,7 @@
             :options="timespanOptions"
             :modelValue="selectedTimespan"
             @update:modelValue="val => selectedTimespan = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+            :compare-fn="compareOption"
           >
             <template #target>
               <button
@@ -284,6 +286,7 @@
             :options="employeeOptions"
             :modelValue="selectedEmployee"
             @update:modelValue="val => selectedEmployee = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
+            :compare-fn="compareOption"
             :max-options="100"
           >
             <template #target>
@@ -500,12 +503,28 @@
             />
             <!-- Employee Info -->
             <template v-if="employeeInfoResource.data?.is_system_manager">
-              <FormControl 
-                type="select" 
-                label="Employee *" 
-                v-model="timesheetForm.employee" 
-                :options="[{label: 'Select Employee', value: ''}, ...employeeOptionsResource.data]" 
-              />
+              <div class="space-y-1.5">
+                <label class="block text-xs text-ink-gray-5">Employee *</label>
+                <Autocomplete
+                  ref="createEmployeeAutocomplete"
+                  :options="[{label: 'Select Employee', value: ''}, ...(employeeOptionsResource.data || [])]"
+                  :modelValue="timesheetForm.employee"
+                  @update:modelValue="val => timesheetForm.employee = val?.value || val || ''"
+                  :compare-fn="compareOption"
+                  :max-options="100"
+                >
+                  <template #target>
+                    <button
+                      type="button"
+                      @click="() => createEmployeeAutocomplete?.togglePopover()"
+                      class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                    >
+                      <span class="truncate">{{ getEmployeeLabel(timesheetForm.employee) }}</span>
+                      <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                    </button>
+                  </template>
+                </Autocomplete>
+              </div>
             </template>
             <template v-else>
               <div class="space-y-1.5">
@@ -801,6 +820,19 @@ const employeeOptions = computed(() => {
 const statusAutocomplete = ref(null)
 const timespanAutocomplete = ref(null)
 const employeeAutocomplete = ref(null)
+const createEmployeeAutocomplete = ref(null)
+
+function compareOption(a, b) {
+	const aVal = a && typeof a === "object" ? a.value : a
+	const bVal = b && typeof b === "object" ? b.value : b
+	return aVal === bVal
+}
+
+function getEmployeeLabel(val) {
+	if (!val) return "Select Employee"
+	const match = employeeOptionsResource.data?.find((e) => e.value === val)
+	return match ? match.label : val
+}
 
 const FILTERABLE_FIELDS = computed(() => {
 	const fields = [
