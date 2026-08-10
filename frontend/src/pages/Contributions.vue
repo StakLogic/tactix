@@ -41,21 +41,21 @@
     </div>
 
     <!-- Stats Breakdown Overview Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
       <Card 
         v-for="stat in statsBreakdown" 
         :key="stat.label" 
         :class="[
-          '!shadow-sm bg-white dark:bg-slate-800 cursor-pointer transition-all duration-200 border active:scale-[0.98]',
-          'border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+          '!shadow-xs bg-white dark:bg-slate-800 cursor-pointer transition-all duration-150 border active:scale-[0.98]',
+          'border-slate-200/80 hover:border-slate-300 dark:hover:border-slate-700'
         ]"
         @click="filterByStat(stat.label)"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</span>
+          <span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
           <component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
         </div>
-        <div class="text-2xl font-black mt-2 text-slate-900 dark:text-white flex items-center h-8">
+        <div class="text-xl font-bold mt-1 text-slate-900 dark:text-white flex items-center h-7">
           <template v-if="loading">
             <div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
           </template>

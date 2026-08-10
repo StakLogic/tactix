@@ -17,21 +17,17 @@
 		<!-- Section: Task Overview -->
 		<div class="space-y-2">
 			<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Task Overview</label>
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-				<Card v-for="stat in taskStatsConfig" :key="stat.label" class="!shadow-sm border border-slate-100 bg-white hover:border-slate-200 transition-colors">
-					<div class="flex flex-col gap-1">
-						<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ stat.label }}</span>
-						<div class="flex items-center justify-between mt-1">
-							<div class="text-xl font-black text-slate-900 truncate">
-								<template v-if="stat.loading">
-									<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-								</template>
-								<span v-else>{{ stat.value }}</span>
-							</div>
-							<div :class="`p-2 rounded-lg ${stat.bg} ${stat.color} flex-shrink-0`">
-								<component :is="stat.icon" class="w-5 h-5" />
-							</div>
-						</div>
+			<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+				<Card v-for="stat in taskStatsConfig" :key="stat.label" class="!shadow-xs border border-slate-200/80 bg-white hover:border-slate-300 transition-all duration-150">
+					<div class="flex items-center justify-between">
+						<span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
+						<component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
+					</div>
+					<div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
+						<template v-if="stat.loading">
+							<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+						</template>
+						<span v-else>{{ stat.value }}</span>
 					</div>
 				</Card>
 			</div>
