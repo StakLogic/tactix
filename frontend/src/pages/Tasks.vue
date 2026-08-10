@@ -3719,7 +3719,7 @@ onUnmounted(() => {
 :deep(.ProseMirror audio::-webkit-media-controls-time-remaining-display),
 .editor-container :deep(audio::-webkit-media-controls-time-remaining-display) {
 	color: #64748b;
-	font-family: ui-sans-serif, system-ui, sans-serif;
+	font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 	font-size: 9px;
 	font-weight: 700;
 }

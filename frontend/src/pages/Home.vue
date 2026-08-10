@@ -48,85 +48,148 @@
 
 						<div
 							v-if="showNotifications"
-							class="absolute right-0 top-full mt-2 w-[22rem] overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all z-50 flex flex-col"
+							class="absolute right-0 top-full mt-2 w-[24rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all z-50 flex flex-col"
 						>
-							<div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5 bg-slate-50/50">
-								<div>
-									<div class="text-xs font-bold text-slate-800 uppercase tracking-wider">Notifications</div>
-									<div class="text-[10px] text-slate-400 font-medium">Task and ticket assignments</div>
+							<!-- Header -->
+							<div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 bg-slate-50/70">
+								<div class="flex items-center gap-2">
+									<h3 class="text-sm font-bold text-slate-800">Notifications</h3>
+									<span 
+										v-if="unreadNotifications" 
+										class="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold"
+									>
+										{{ unreadNotifications }} new
+									</span>
 								</div>
+
 								<button
 									type="button"
-									class="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wide border-none bg-transparent cursor-pointer outline-none"
+									class="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1 border-none bg-transparent cursor-pointer outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+									:disabled="unreadNotifications === 0"
 									@click="markAllNotificationsRead"
 								>
-									Mark all read
+									<IconCheckCheck class="w-3.5 h-3.5" />
+									<span>Mark all as read</span>
 								</button>
 							</div>
 
-							<div class="max-h-96 overflow-y-auto divide-y divide-slate-100/60 custom-scrollbar">
-								<div v-if="notifications.length === 0" class="px-4 py-10 text-center text-xs text-slate-400 font-medium italic">
-									No notifications yet
-								</div>
+							<!-- Tabs Filter -->
+							<div class="flex items-center gap-1 px-3 py-1.5 border-b border-slate-100 bg-white text-xs">
 								<button
-									v-for="notification in notifications"
-									:key="notification.id"
 									type="button"
-									class="w-full px-4 py-3.5 text-left transition-all outline-none focus:outline-none flex gap-3 items-start cursor-pointer border-y border-y-slate-50/30 first:border-t-0"
+									@click="activeNotificationTab = 'all'"
+									:class="[
+										'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer border-none bg-transparent',
+										activeNotificationTab === 'all'
+											? 'bg-slate-100 text-slate-900 font-semibold'
+											: 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+									]"
+								>
+									All ({{ notifications.length }})
+								</button>
+
+								<button
+									type="button"
+									@click="activeNotificationTab = 'unread'"
+									:class="[
+										'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer border-none bg-transparent flex items-center gap-1.5',
+										activeNotificationTab === 'unread'
+											? 'bg-slate-100 text-slate-900 font-semibold'
+											: 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+									]"
+								>
+									<span>Unread</span>
+									<span 
+										v-if="unreadNotifications"
+										class="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center"
+									>
+										{{ unreadNotifications }}
+									</span>
+								</button>
+							</div>
+
+							<!-- Notification Items List -->
+							<div class="max-h-96 overflow-y-auto divide-y divide-slate-100 custom-scrollbar">
+								<div 
+									v-if="filteredNotifications.length === 0" 
+									class="px-4 py-12 text-center text-slate-400 space-y-2"
+								>
+									<div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+										<IconBellOff class="w-5 h-5" />
+									</div>
+									<div class="text-xs font-semibold text-slate-600">
+										{{ activeNotificationTab === 'unread' ? 'No unread notifications' : 'No notifications yet' }}
+									</div>
+									<div class="text-[11px] text-slate-400">
+										{{ activeNotificationTab === 'unread' ? 'You are all caught up!' : 'When you get assigned tasks or tickets, they will show up here.' }}
+									</div>
+								</div>
+
+								<div
+									v-for="notification in filteredNotifications"
+									:key="notification.id"
+									class="group relative w-full px-4 py-3 text-left transition-all outline-none focus:outline-none flex gap-3 items-start cursor-pointer border-l-4"
 									:class="[
 										notification.read 
-											? 'bg-white hover:bg-slate-50/60 border-l-[3.5px] border-l-transparent opacity-75' 
-											: (notification.document_type === 'Pull Request' ? 'bg-purple-50/35 hover:bg-purple-50/55 border-l-[3.5px] border-l-[#8250df]' : 'bg-blue-50/35 hover:bg-blue-50/55 border-l-[3.5px] border-l-blue-500')
+											? 'bg-white hover:bg-slate-50/80 border-l-transparent' 
+											: 'bg-blue-50/30 hover:bg-blue-50/60 border-l-blue-500'
 									]"
 									@click="handleNotificationClick(notification)"
 								>
-									<!-- Status Indicator Dot -->
-									<div class="flex flex-col items-center pt-1 shrink-0">
-										<span 
-											class="h-2 w-2 rounded-full transition-all" 
-											:class="[
-												notification.read 
-													? 'bg-transparent border border-slate-300' 
-													: (notification.document_type === 'Pull Request' ? 'bg-[#8250df] shadow-sm shadow-[#8250df]/50 border border-transparent' : 'bg-blue-500 shadow-sm shadow-blue-500/50 border border-transparent'),
-											]"
-										/>
+									<!-- Icon Container -->
+									<div 
+										class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+										:class="[
+											notification.read
+												? 'bg-slate-100 text-slate-400'
+												: (notification.document_type === 'Pull Request' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600')
+										]"
+									>
+										<component :is="getNotificationIcon(notification.document_type)" class="w-4 h-4" />
 									</div>
 
-									<div class="min-w-0 flex-1 space-y-2">
-										<!-- Main Content -->
+									<div class="min-w-0 flex-1 space-y-1">
+										<!-- Title Content -->
 										<div 
-											class="text-xs leading-relaxed break-words" 
+											class="text-xs leading-snug break-words pr-5" 
 											:class="[
-												notification.read ? 'text-slate-500 font-normal' : 'text-slate-800 font-semibold'
+												notification.read ? 'text-slate-600 font-normal' : 'text-slate-900 font-semibold'
 											]"
 											v-html="notification.title"
 										>
 										</div>
 
-										<!-- Metadata -->
-										<div class="flex items-center gap-2 flex-wrap">
+										<!-- Meta Subline -->
+										<div class="flex items-center gap-2 flex-wrap pt-0.5">
 											<span 
 												v-if="notification.docname" 
-												class="text-[9px] font-mono px-1.5 py-0.5 rounded leading-none font-bold"
-												:class="[
-													notification.read 
-														? 'bg-slate-100 text-slate-500' 
-														: (notification.document_type === 'Pull Request' ? 'bg-purple-50 text-purple-600 ring-1 ring-purple-600/10' : 'bg-blue-50 text-blue-600')
-												]"
+												class="text-[9px] font-mono px-1.5 py-0.5 rounded font-bold"
+												:class="getNotificationTypeBadgeClass(notification.document_type, notification.read)"
 											>
 												{{ notification.docname }}
 											</span>
 											
-											<span class="text-[10px] text-slate-400 font-medium leading-none">
-												{{ notification.assigned_by ? `From ${notification.assigned_by}` : 'From Tactix' }}
+											<span class="text-[10px] text-slate-400 font-medium">
+												{{ notification.assigned_by ? `From ${notification.assigned_by}` : 'From System' }}
 											</span>
 
-											<span v-if="notification.creation" class="text-[9px] text-slate-400 leading-none ml-auto font-medium">
+											<span v-if="notification.creation" class="text-[10px] text-slate-400 ml-auto font-medium">
 												{{ formatCreationTime(notification.creation) }}
 											</span>
 										</div>
 									</div>
-								</button>
+
+									<!-- Quick Mark Read Button on Hover -->
+									<button
+										v-if="!notification.read"
+										type="button"
+										@click="markNotificationRead(notification, $event)"
+										class="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-100 rounded text-blue-600 transition-all border-none bg-transparent cursor-pointer shrink-0"
+										title="Mark as read"
+									>
+										<IconCheck class="w-3.5 h-3.5" />
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -299,6 +362,9 @@ dayjs.extend(relativeTime)
 dayjs.extend(utc)
 
 import IconBell from "~icons/lucide/bell"
+import IconBellOff from "~icons/lucide/bell-off"
+import IconCheck from "~icons/lucide/check"
+import IconCheckCheck from "~icons/lucide/check-check"
 import IconHelpCircle from "~icons/lucide/help-circle"
 // Icons
 import IconSearch from "~icons/lucide/search"
@@ -428,6 +494,38 @@ const showNotifications = ref(false)
 const showProfileMenu = ref(false)
 const showCropModal = ref(false)
 const notifications = ref([])
+const activeNotificationTab = ref("all")
+
+const filteredNotifications = computed(() => {
+	if (activeNotificationTab.value === "unread") {
+		return notifications.value.filter((n) => !n.read)
+	}
+	return notifications.value
+})
+
+function getNotificationIcon(docType) {
+	if (docType === "Pull Request") return IconGitPullRequest
+	if (docType === "Ticket" || docType === "Tactix Ticket") return IconTicket
+	if (docType === "Task") return IconCheckSquare
+	return IconBell
+}
+
+function getNotificationTypeBadgeClass(docType, read) {
+	if (docType === "Pull Request") {
+		return read
+			? "bg-slate-100 text-slate-500"
+			: "bg-purple-50 text-purple-700 ring-1 ring-purple-600/20"
+	}
+	if (docType === "Ticket" || docType === "Tactix Ticket") {
+		return read
+			? "bg-slate-100 text-slate-500"
+			: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20"
+	}
+	return read
+		? "bg-slate-100 text-slate-500"
+		: "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20"
+}
+
 const notificationContainer = ref(null)
 const profileContainer = ref(null)
 const profileFileInput = ref(null)
@@ -891,7 +989,8 @@ watch(
 	{ deep: true },
 )
 
-async function markNotificationRead(notification) {
+async function markNotificationRead(notification, event) {
+	if (event) event.stopPropagation()
 	if (notification.read) return
 	notification.read = true
 	if (
