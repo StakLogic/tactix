@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from tactix.api.generic import get_default_company
 
 @frappe.whitelist()
 def get_master_records(doctype):
@@ -54,14 +55,14 @@ def create_master_record(doctype, doc_data):
 		doc = frappe.get_doc({
 			"doctype": "Project",
 			"project_name": data.get("project_name"),
-			"company": data.get("company") or "SUPER AI",
+			"company": data.get("company") or get_default_company(),
 			"naming_series": "PROJ-.####"
 		})
 	elif doctype == "Department":
 		doc = frappe.get_doc({
 			"doctype": "Department",
 			"department_name": data.get("department_name"),
-			"company": data.get("company") or "SUPER AI"
+			"company": data.get("company") or get_default_company()
 		})
 	elif doctype == "Tactix Department":
 		doc = frappe.get_doc({

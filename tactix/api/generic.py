@@ -156,3 +156,12 @@ def save_tactix_settings(enable_real_time_notification_sound=None, allow_ticket_
 	doc.save()
 	frappe.db.commit()
 	return {"status": "success"}
+
+
+def get_default_company():
+	return (
+		frappe.defaults.get_user_default("company")
+		or frappe.defaults.get_user_default("Company")
+		or frappe.db.get_single_value("Global Defaults", "default_company")
+		or frappe.db.get_value("Company", {}, "name")
+	)
