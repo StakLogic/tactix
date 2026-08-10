@@ -1050,6 +1050,7 @@
 				<MultiSelect
 					:options="assignedToOptions"
 					v-model="newTask.assigned_to"
+					style="margin-top: 5px;"
 				>
 					<template #footer="{ clearAll, selectAll }">
 					<div class="flex justify-between my-2">
