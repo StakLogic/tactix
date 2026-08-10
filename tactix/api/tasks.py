@@ -246,19 +246,13 @@ def edit_task(name, doc):
 		after_commit=True
 	)
 
-	# Update fields
-	task.update({
-		"subject": doc.get("subject"),
-		"project": doc.get("project"),
-		"status": doc.get("status"),
-		"priority": doc.get("priority"),
-		"exp_end_date": doc.get("exp_end_date"),
-		"description": doc.get("description"),
-		"assigned_by": doc.get("assigned_by"),
-		"expected_time": doc.get("expected_time"),
-		"department": doc.get("department"),
-		"tactix_team": doc.get("tactix_team") or doc.get("team"),
-	})
+	# Update fields only if present in doc (to allow partial updates without wiping required fields)
+	fields_to_update = ["subject", "project", "status", "priority", "exp_end_date", "description", "assigned_by", "expected_time", "department", "tactix_team"]
+	for field in fields_to_update:
+		if field in doc:
+			task.set(field, doc.get(field))
+	if "team" in doc and "tactix_team" not in doc:
+		task.set("tactix_team", doc.get("team"))
 
 	# Current users in Task
 	existing_users = [row.user for row in task.get("assigned_to_users")]

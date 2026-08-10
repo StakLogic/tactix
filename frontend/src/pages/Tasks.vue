@@ -47,6 +47,39 @@
 			</button>
 		  </div>
 
+		  <!-- Group By Popover (Board view only) -->
+		  <Popover v-if="viewMode === 'board'" placement="bottom-end">
+			<template #target="{ open, togglePopover }">
+			  <Button
+				variant="outline"
+				class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1.5 rounded-md text-xs font-medium"
+				@click="togglePopover"
+				title="Group By"
+			  >
+				<template #prefix><IconLayers class="w-3.5 h-3.5 text-slate-500" /></template>
+				<span>Group By: {{ getGroupByLabel(groupBy) }}</span>
+			  </Button>
+			</template>
+			<template #body-main="{ close }">
+			  <div class="w-36 p-1 bg-white rounded-lg shadow-md border border-slate-200 text-xs space-y-0.5">
+				<button 
+				  v-for="opt in GROUP_BY_OPTIONS" 
+				  :key="opt.value"
+				  @click="groupBy = opt.value; close()"
+				  :class="[
+					'w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer flex items-center justify-between',
+					groupBy === opt.value
+					  ? 'bg-blue-50 text-blue-600 font-medium'
+					  : 'text-slate-700 hover:bg-slate-50'
+				  ]"
+				>
+				  <span>{{ opt.label }}</span>
+				  <IconCheck v-if="groupBy === opt.value" class="w-3.5 h-3.5 text-blue-600" />
+				</button>
+			  </div>
+			</template>
+		  </Popover>
+
 		  <!-- Dynamic Multi-Field Filter Popover -->
 		  <Popover placement="bottom-end">
 			<template #target="{ open, togglePopover }">
@@ -755,22 +788,22 @@
 
 	  <div v-if="viewMode === 'board'" class="flex-1 flex gap-6 overflow-x-auto pb-4 custom-scrollbar px-1 min-h-0">
 		<div 
-			v-for="status in statusOptions" 
-			:key="status.value" 
-			class="min-w-[300px] flex-shrink-0 flex flex-col h-full min-h-0 rounded-2xl p-2 transition-all"
-			:class="[hoveredColumn === status.value ? 'bg-blue-50/40 ring-2 ring-dashed ring-blue-200 shadow-inner' : '']"
+			v-for="col in activeGroupColumns" 
+			:key="col.value" 
+			class="min-w-[300px] flex-shrink-0 flex flex-col h-full min-h-0 rounded-2xl p-2 transition-all bg-slate-50/40 border border-slate-100"
+			:class="[hoveredColumn === col.value ? 'bg-blue-50/40 ring-2 ring-dashed ring-blue-200 shadow-inner' : '']"
 			@dragover.prevent
-			@dragenter.prevent="onDragEnter(status.value)"
+			@dragenter.prevent="onDragEnter(col.value)"
 			@dragleave="onDragLeave"
-			@drop="onDrop($event, status.value)"
+			@drop="onDrop($event, col.value)"
 		>
 		  <div class="flex items-center justify-between mb-4 px-1 flex-shrink-0">
-			<h3 class="text-sm font-bold text-slate-700">{{ status.label }}</h3>
-			<Badge variant="subtle" theme="gray" size="sm">{{ filteredTasks(status.value).length }}</Badge>
+			<h3 class="text-sm font-bold text-slate-700 truncate mr-2" :title="col.label">{{ col.label }}</h3>
+			<Badge variant="subtle" theme="gray" size="sm">{{ filteredTasks(col.value).length }}</Badge>
 		  </div>
-		  <div class="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar min-h-0" @scroll="handleColumnScroll($event, status.value)">
+		  <div class="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar min-h-0" @scroll="handleColumnScroll($event, col.value)">
 			<Card
-			  v-for="task in filteredTasks(status.value)"
+			  v-for="task in filteredTasks(col.value)"
 			  :key="task.name"
 			  @click="openEditDialog(task)"
 			  draggable="true"
@@ -781,8 +814,9 @@
 			>
 			  <div class="space-y-3">
 				<div class="font-bold text-sm text-slate-800 leading-snug">{{ task.subject }}</div>
-				<div class="flex items-center">
-				  <Avatar 
+				<div class="flex items-center justify-between">
+				  <div class="flex items-center">
+					<Avatar 
 						v-for="(assignment, index) in (task.assigned_to || []).slice(0, 3)" 
 						:key="index"
 						:image="getUserAvatarImage(assignment)"
@@ -798,6 +832,8 @@
 					>
 						+{{ task.assigned_to.length - 3 }}
 					</div>
+				  </div>
+				  <Badge v-if="groupBy !== 'status'" variant="subtle" theme="blue" class="text-[10px] font-medium">{{ task.status }}</Badge>
 				</div>
 				<div class="flex justify-between items-center pt-1">
 				  <Badge :theme="getPriorityTheme(task.priority)" variant="subtle">{{ task.priority }}</Badge>
@@ -808,11 +844,11 @@
 			  </div>
 			</Card>
 			
-			<div v-if="columnLoading[status.value]" class="py-3 flex justify-center">
+			<div v-if="columnLoading[col.value]" class="py-3 flex justify-center">
 			  <div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
 			</div>
 
-			<div v-if="filteredTasks(status.value).length === 0 && !columnLoading[status.value]" class="h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
+			<div v-if="filteredTasks(col.value).length === 0 && !columnLoading[col.value]" class="h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
 			  No tasks
 			</div>
 		  </div>
@@ -1713,6 +1749,7 @@ import IconEdit3 from "~icons/lucide/edit-3"
 import IconFilter from "~icons/lucide/filter"
 import IconFlag from "~icons/lucide/flag"
 import IconLayoutGrid from "~icons/lucide/layout-grid"
+import IconLayers from "~icons/lucide/layers"
 import IconList from "~icons/lucide/list"
 import IconMessageSquare from "~icons/lucide/message-square"
 import IconPaperclip from "~icons/lucide/paperclip"
@@ -2599,6 +2636,82 @@ const priorityOptions = [
 	{ label: "Urgent", value: "Urgent" },
 ]
 
+const STORAGE_KEY_GROUPBY = "tactix_tasks_groupby_config"
+
+function loadSavedGroupBy() {
+	try {
+		const saved = localStorage.getItem(STORAGE_KEY_GROUPBY)
+		if (
+			saved &&
+			["status", "project", "priority", "department", "tactix_team"].includes(
+				saved,
+			)
+		) {
+			return saved
+		}
+	} catch (e) {
+		console.error("Failed to load groupby settings", e)
+	}
+	return "status"
+}
+
+const groupBy = ref(loadSavedGroupBy())
+
+watch(groupBy, (newVal) => {
+	try {
+		localStorage.setItem(STORAGE_KEY_GROUPBY, newVal)
+	} catch (e) {
+		console.error("Failed to save groupby settings", e)
+	}
+})
+
+const GROUP_BY_OPTIONS = [
+	{ label: "Status", value: "status", icon: IconAlertCircle },
+	{ label: "Project", value: "project", icon: IconBriefcase },
+	{ label: "Priority", value: "priority", icon: IconFlag },
+	{ label: "Department", value: "department", icon: IconBriefcase },
+	{ label: "Team", value: "tactix_team", icon: IconBriefcase },
+]
+
+function getGroupByLabel(key) {
+	const opt = GROUP_BY_OPTIONS.find((o) => o.value === key)
+	return opt ? opt.label : key
+}
+
+const activeGroupColumns = computed(() => {
+	if (groupBy.value === "project") {
+		const list = (projectResource.data || []).map((p) => ({
+			label: p.label || p.value,
+			value: p.value,
+		}))
+		return [...list, { label: "No Project", value: "__none__" }]
+	}
+	if (groupBy.value === "priority") {
+		return [
+			{ label: "High", value: "High" },
+			{ label: "Medium", value: "Medium" },
+			{ label: "Low", value: "Low" },
+			{ label: "Urgent", value: "Urgent" },
+			{ label: "No Priority", value: "__none__" },
+		]
+	}
+	if (groupBy.value === "department") {
+		const list = (departmentResource.data || []).map((d) => ({
+			label: d.label || d.value,
+			value: d.value,
+		}))
+		return [...list, { label: "No Department", value: "__none__" }]
+	}
+	if (groupBy.value === "tactix_team") {
+		const list = (tactixTeamResource.data || []).map((t) => ({
+			label: t.label || t.value,
+			value: t.value,
+		}))
+		return [...list, { label: "No Team", value: "__none__" }]
+	}
+	return statusOptions
+})
+
 const deadlineOptions = [
 	{ label: "Deadline", value: "" },
 	{ label: "Today", value: "today" },
@@ -3064,68 +3177,84 @@ function onDragEnd() {
 	draggedTask.value = null
 	hoveredColumn.value = null
 }
-function onDragEnter(statusValue) {
-	hoveredColumn.value = statusValue
+function onDragEnter(colValue) {
+	hoveredColumn.value = colValue
 }
 function onDragLeave() {
 	/* intentionally empty */
 }
 
-async function onDrop(event, targetStatus) {
+async function onDrop(event, targetValue) {
 	const task = draggedTask.value
 	hoveredColumn.value = null
-	if (!task || task.status === targetStatus) return
+	if (!task) return
 
-	const oldStatus = task.status
-	task.status = targetStatus
+	const groupKey = groupBy.value
+	const currentTaskVal =
+		(groupKey === "status" ? task.status : task[groupKey]) || "__none__"
+	if (currentTaskVal === targetValue) return
 
-	const taskIndex = columnTasks[oldStatus]?.findIndex(
+	const oldVal = task[groupKey]
+	const newVal = targetValue === "__none__" ? "" : targetValue
+
+	const oldKey = currentTaskVal
+	const taskIndex = columnTasks[oldKey]?.findIndex(
 		(t) => t.name === task.name,
 	)
 	if (taskIndex !== undefined && taskIndex > -1) {
-		const [movedTask] = columnTasks[oldStatus].splice(taskIndex, 1)
-		if (!columnTasks[targetStatus]) columnTasks[targetStatus] = []
-		columnTasks[targetStatus].unshift(movedTask)
+		const [movedTask] = columnTasks[oldKey].splice(taskIndex, 1)
+		if (!columnTasks[targetValue]) columnTasks[targetValue] = []
+		columnTasks[targetValue].unshift(movedTask)
 	}
 
-	if (tasksSummaryResource.data) {
-		if (oldStatus === "Open" && tasksSummaryResource.data.open > 0)
+	task[groupKey] = newVal
+
+	if (groupKey === "status" && tasksSummaryResource.data) {
+		if (oldVal === "Open" && tasksSummaryResource.data.open > 0)
 			tasksSummaryResource.data.open--
-		else if (oldStatus === "Working" && tasksSummaryResource.data.working > 0)
+		else if (oldVal === "Working" && tasksSummaryResource.data.working > 0)
 			tasksSummaryResource.data.working--
 		else if (
-			oldStatus === "Pending Review" &&
+			oldVal === "Pending Review" &&
 			tasksSummaryResource.data.pending_review > 0
 		)
 			tasksSummaryResource.data.pending_review--
 		else if (
-			oldStatus === "Completed" &&
+			oldVal === "Completed" &&
 			tasksSummaryResource.data.completed > 0
 		)
 			tasksSummaryResource.data.completed--
 
-		if (targetStatus === "Open") tasksSummaryResource.data.open++
-		else if (targetStatus === "Working") tasksSummaryResource.data.working++
-		else if (targetStatus === "Pending Review")
+		if (newVal === "Open") tasksSummaryResource.data.open++
+		else if (newVal === "Working") tasksSummaryResource.data.working++
+		else if (newVal === "Pending Review")
 			tasksSummaryResource.data.pending_review++
-		else if (targetStatus === "Completed") tasksSummaryResource.data.completed++
+		else if (newVal === "Completed") tasksSummaryResource.data.completed++
 	}
 
 	try {
-		await updateTaskStatusAPI.submit({ name: task.name, status: targetStatus })
+		if (groupKey === "status") {
+			await updateTaskStatusAPI.submit({ name: task.name, status: newVal })
+		} else {
+			await editTaskAPI.submit({
+				name: task.name,
+				doc: { subject: task.subject, [groupKey]: newVal },
+			})
+		}
 		tasksResource.reload()
 		fetchTaskSummary()
 	} catch (e) {
-		console.error("Failed to save task status drop", e)
+		console.error("Failed to save task drop", e)
 		errorDialogTitle.value = "Permission Denied"
-		let msg = "You do not have permission to update this task status."
+		let msg = "You do not have permission to update this task."
 		if (e.message) msg = e.message
 		else if (typeof e === "string") msg = e
 		if (msg.includes("PermissionError")) msg = msg.split("PermissionError")[1]
 		else if (msg.includes("Error:")) msg = msg.split("Error:")[1]
 		errorMessage.value = msg.replace(/<[^>]*>/g, "").trim()
 		showErrorDialog.value = true
-		task.status = oldStatus
+		task[groupKey] = oldVal
+		if (viewMode.value === "board") fetchAllColumns()
 		tasksResource.reload()
 		fetchTaskSummary()
 	}
@@ -3202,50 +3331,32 @@ const kpiStats = computed(() => {
 	]
 })
 
-const columnTasks = reactive({
-	Open: [],
-	Working: [],
-	"Pending Review": [],
-	Completed: [],
-	Cancelled: [],
-})
-const columnPages = reactive({
-	Open: 1,
-	Working: 1,
-	"Pending Review": 1,
-	Completed: 1,
-	Cancelled: 1,
-})
-const columnHasMore = reactive({
-	Open: true,
-	Working: true,
-	"Pending Review": true,
-	Completed: true,
-	Cancelled: true,
-})
-const columnLoading = reactive({
-	Open: false,
-	Working: false,
-	"Pending Review": false,
-	Completed: false,
-	Cancelled: false,
-})
+const columnTasks = reactive({})
+const columnPages = reactive({})
+const columnHasMore = reactive({})
+const columnLoading = reactive({})
 
-async function fetchColumnTasks(status, reset = false) {
-	if (columnLoading[status]) return
-	if (!reset && !columnHasMore[status]) return
+async function fetchColumnTasks(colVal, reset = false) {
+	if (columnLoading[colVal]) return
+	if (!reset && columnHasMore[colVal] === false) return
 
-	columnLoading[status] = true
+	columnLoading[colVal] = true
 	if (reset) {
-		columnPages[status] = 1
-		columnTasks[status] = []
-		columnHasMore[status] = true
+		columnPages[colVal] = 1
+		columnTasks[colVal] = []
+		columnHasMore[colVal] = true
 	}
 
 	try {
-		const filters = { ...taskFilters.value, status }
+		const filters = { ...taskFilters.value }
+		if (groupBy.value === "status") {
+			filters.status = colVal
+		} else {
+			filters[groupBy.value] =
+				colVal === "__none__" ? ["is", "not set"] : colVal
+		}
 		const limit = 20
-		const start = (columnPages[status] - 1) * limit
+		const start = ((columnPages[colVal] || 1) - 1) * limit
 
 		const res = await createResource({
 			url: "tactix.api.tasks.get_tasks",
@@ -3253,37 +3364,44 @@ async function fetchColumnTasks(status, reset = false) {
 		}).submit()
 
 		const tasksList = res?.tasks || []
-		columnTasks[status].push(...tasksList)
+		if (!columnTasks[colVal]) columnTasks[colVal] = []
+		columnTasks[colVal].push(...tasksList)
 
-		if (tasksList.length < limit) columnHasMore[status] = false
-		else columnPages[status]++
+		if (tasksList.length < limit) columnHasMore[colVal] = false
+		else columnPages[colVal] = (columnPages[colVal] || 1) + 1
 	} catch (error) {
-		console.error(`Failed to fetch tasks for column ${status}:`, error)
+		console.error(`Failed to fetch tasks for column ${colVal}:`, error)
 	} finally {
-		columnLoading[status] = false
+		columnLoading[colVal] = false
 	}
 }
 
 function fetchAllColumns() {
-	for (const opt of statusOptions) fetchColumnTasks(opt.value, true)
+	for (const opt of activeGroupColumns.value) fetchColumnTasks(opt.value, true)
 }
 
-function handleColumnScroll(e, status) {
+function handleColumnScroll(e, colVal) {
 	const { scrollTop, scrollHeight, clientHeight } = e.target
-	if (scrollHeight - scrollTop - clientHeight < 20) fetchColumnTasks(status)
+	if (scrollHeight - scrollTop - clientHeight < 20) fetchColumnTasks(colVal)
 }
 
-function filteredTasks(status) {
-	if (viewMode.value === "board") return columnTasks[status] || []
-	return (filteredTasksData.value || []).filter((t) => t.status === status)
+function filteredTasks(colVal) {
+	if (viewMode.value === "board") return columnTasks[colVal] || []
+	if (groupBy.value === "status")
+		return (filteredTasksData.value || []).filter((t) => t.status === colVal)
+	if (colVal === "__none__")
+		return (filteredTasksData.value || []).filter((t) => !t[groupBy.value])
+	return (filteredTasksData.value || []).filter(
+		(t) => t[groupBy.value] === colVal,
+	)
 }
 
 watch(
-	viewMode,
-	(newMode) => {
-		if (newMode === "board") fetchAllColumns()
+	[viewMode, groupBy, activeGroupColumns, taskFilters],
+	() => {
+		if (viewMode.value === "board") fetchAllColumns()
 	},
-	{ immediate: true },
+	{ immediate: true, deep: true },
 )
 
 watch(
