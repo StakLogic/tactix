@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from tactix.api.generic import get_default_company
 
 @frappe.whitelist()
 def get_users_data():
@@ -108,7 +109,7 @@ def save_user(email, doc_data):
 				"first_name": first_name,
 				"last_name": last_name,
 				"employee_name": f"{first_name} {last_name}".strip(),
-				"company": "SUPER AI",
+				"company": data.get("company") or get_default_company(),
 				"department": department,
 				"status": "Active",
 				"gender": gender,
@@ -143,6 +144,8 @@ def save_user(email, doc_data):
 				emp_doc.first_name = first_name
 				emp_doc.last_name = last_name
 				emp_doc.employee_name = f"{first_name} {last_name}".strip()
+				if data.get("company"):
+					emp_doc.company = data.get("company")
 				emp_doc.department = department
 				emp_doc.gender = gender
 				emp_doc.date_of_birth = date_of_birth
@@ -156,7 +159,7 @@ def save_user(email, doc_data):
 					"first_name": first_name,
 					"last_name": last_name,
 					"employee_name": f"{first_name} {last_name}".strip(),
-					"company": "SUPER AI",
+					"company": data.get("company") or get_default_company(),
 					"department": department,
 					"status": "Active",
 					"gender": gender,

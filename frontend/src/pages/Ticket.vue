@@ -5,19 +5,17 @@
 			v-for="stat in kpiStats" 
 			:key="stat.label" 
 			:class="[
-				'!shadow-sm bg-white cursor-pointer transition-all duration-200 border active:scale-[0.98]',
-				'border-slate-100 hover:border-slate-200'
+				'!shadow-xs bg-white cursor-pointer transition-all duration-150 border active:scale-[0.98]',
+				'border-slate-200/80 hover:border-slate-300'
 			]"
 			@click="filterByStat(stat.label)"
 		>
 			<div class="flex items-center justify-between">
-				<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">{{ stat.label }}</span>
-				<div :class="['p-1.5 rounded-lg', stat.bg]">
-					<component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
-				</div>
+				<span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
+				<component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
 			</div>
 
-			<div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+			<div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
 				<template v-if="tickets.loading">
 					<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
 				</template>

@@ -1,15 +1,13 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
     <!-- Top Stats / KPIs Header -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 p-2 flex-shrink-0">
-      <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 p-1 flex-shrink-0">
+      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Hours logged</span>
-          <div class="p-1.5 rounded-lg bg-blue-50">
-            <IconClock class="w-4 h-4 text-blue-500" />
-          </div>
+          <span class="text-xs font-medium text-slate-500">Total Hours logged</span>
+          <IconClock class="w-4 h-4 text-blue-500" />
         </div>
-        <div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
           <template v-if="timesheetsSummary.loading">
             <div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
           </template>
@@ -17,14 +15,12 @@
         </div>
       </Card>
 
-      <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
+      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Days Logged</span>
-          <div class="p-1.5 rounded-lg bg-indigo-50">
-            <IconCalendar class="w-4 h-4 text-indigo-500" />
-          </div>
+          <span class="text-xs font-medium text-slate-500">Active Days Logged</span>
+          <IconCalendar class="w-4 h-4 text-indigo-500" />
         </div>
-        <div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
           <template v-if="timesheetsSummary.loading">
             <div class="w-4 h-4 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin"></div>
           </template>
@@ -32,14 +28,12 @@
         </div>
       </Card>
 
-      <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
+      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Submitted Timesheets</span>
-          <div class="p-1.5 rounded-lg bg-green-50">
-            <IconCheckCircle class="w-4 h-4 text-green-500" />
-          </div>
+          <span class="text-xs font-medium text-slate-500">Submitted Timesheets</span>
+          <IconCheckCircle class="w-4 h-4 text-green-500" />
         </div>
-        <div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
           <template v-if="timesheetsSummary.loading">
             <div class="w-4 h-4 border-2 border-slate-200 border-t-green-500 rounded-full animate-spin"></div>
           </template>
@@ -47,14 +41,12 @@
         </div>
       </Card>
 
-      <Card class="!shadow-sm bg-white border border-slate-100 hover:border-slate-200 transition-all duration-200">
+      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Draft Timesheets</span>
-          <div class="p-1.5 rounded-lg bg-orange-50">
-            <IconAlertCircle class="w-4 h-4 text-orange-500" />
-          </div>
+          <span class="text-xs font-medium text-slate-500">Draft Timesheets</span>
+          <IconAlertCircle class="w-4 h-4 text-orange-500" />
         </div>
-        <div class="text-2xl font-black mt-2 text-slate-900 flex items-center h-8">
+        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
           <template v-if="timesheetsSummary.loading">
             <div class="w-4 h-4 border-2 border-slate-200 border-t-orange-500 rounded-full animate-spin"></div>
           </template>
