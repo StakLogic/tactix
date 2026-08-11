@@ -891,7 +891,7 @@
 											/>
 											<div class="flex justify-end gap-2">
 												<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-												<Button size="sm" variant="solid" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
+												<Button size="sm" variant="solid" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
 											</div>
 										</div>
 										<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="c.content"></div>
@@ -913,7 +913,7 @@
 								:user="session.user"
 								:userName="session.userFullName"
 								placeholder="Type a message..."
-								:loading="comments.loading"
+								:loading="comments.loading || commentSubmitting"
 								@submit="addComment"
 							/>
 						</div>
@@ -935,7 +935,7 @@
 								<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-2 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex items-center gap-1.5 shrink-0">
-								<Button v-if="!isTicketRaiser" variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
+								<Button v-if="!isTicketRaiser" variant="solid" size="sm" theme="blue" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
 								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm !px-2 sm:!px-3 text-xs">Save</Button>
 								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600 !p-1">
 									<IconX class="w-4 h-4"/>
@@ -1152,14 +1152,7 @@
 
 	<Dialog v-model="showCreateTaskDialog" 
 		:disable-outside-click-to-close="true"
-		:options="{ 
-		title: 'Create Task', 
-		size: '4xl',
-		actions: [
-			{ label: 'Create Task', variant: 'solid', loading: taskSaving, onClick: handleSaveTask },
-			{ label: 'Cancel', variant: 'ghost', onClick: () => (showCreateTaskDialog = false) }
-		] 
-		}">
+		:options="createTaskDialogOptions">
 	  <template #body-content>
 		<div class="space-y-6 py-2">
 		  <p v-if="taskFormError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -2179,11 +2172,19 @@ async function handleSaveTicket() {
 		const params = isEditMode.value
 			? { name: ticketForm.name, doc: ticketForm }
 			: { doc: ticketForm }
-		await createResource({ url, params }).submit()
+		const res = await createResource({ url, params }).submit()
+		if (res?.error) {
+			ticketFormError.value = res.error
+			return
+		}
 		tickets.reload()
+		ticketsSummaryResource.reload()
 		showCreateDialog.value = false
 		showEditTicket.value = false
 		resetForm()
+	} catch (err) {
+		console.error("Failed to save ticket", err)
+		ticketFormError.value = err?.message || "An error occurred while saving the ticket."
 	} finally {
 		saving.value = false
 	}
@@ -2209,6 +2210,26 @@ function openTaskCreateDialog(ticket) {
 }
 
 const createTaskAPI = createResource({ url: "tactix.api.tasks.create_task" })
+
+const createTaskDialogOptions = computed(() => ({
+	title: "Create Task",
+	size: "4xl",
+	actions: [
+		{
+			label: "Create Task",
+			variant: "solid",
+			loading: taskSaving.value,
+			onClick: handleSaveTask,
+		},
+		{
+			label: "Cancel",
+			variant: "ghost",
+			onClick: () => {
+				showCreateTaskDialog.value = false
+			},
+		},
+	],
+}))
 
 const handleSaveTask = async () => {
 	taskFormError.value = ""
@@ -2640,14 +2661,24 @@ function getPriorityTheme(p) {
 	)
 }
 
+const commentSubmitting = ref(false)
+const commentUpdating = ref(false)
+
 async function addComment() {
 	if (!newComment.value) return
-	await createResource({
-		url: "tactix.api.ticket.add_comment",
-		params: { ticket: ticketForm.name, content: newComment.value },
-	}).submit()
-	newComment.value = ""
-	comments.submit({ ticket: ticketForm.name })
+	commentSubmitting.value = true
+	try {
+		await createResource({
+			url: "tactix.api.ticket.add_comment",
+			params: { ticket: ticketForm.name, content: newComment.value },
+		}).submit()
+		newComment.value = ""
+		comments.submit({ ticket: ticketForm.name })
+	} catch (e) {
+		console.error("Add comment failed", e)
+	} finally {
+		commentSubmitting.value = false
+	}
 }
 
 function startEditing(comment) {
@@ -2662,6 +2693,7 @@ function cancelEdit() {
 
 async function handleUpdateComment(name) {
 	if (!editContent.value.trim()) return
+	commentUpdating.value = true
 	try {
 		await createResource({
 			url: "tactix.api.ticket.edit_comment",
@@ -2674,6 +2706,8 @@ async function handleUpdateComment(name) {
 		comments.submit({ ticket: ticketForm.name })
 	} catch (e) {
 		console.error("Update failed", e)
+	} finally {
+		commentUpdating.value = false
 	}
 }
 

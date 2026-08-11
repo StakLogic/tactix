@@ -858,14 +858,7 @@
 
 	<Dialog v-model="showBulkDeleteDialog" 
 		:disable-outside-click-to-close="true"
-		:options="{ 
-		title: 'Delete Selected Tasks', 
-		size: 'sm',
-		actions: [
-			{ label: 'Delete', variant: 'solid', theme: 'red', loading: saving, onClick: executeBulkDelete },
-			{ label: 'Cancel', variant: 'ghost', onClick: () => (showBulkDeleteDialog = false) }
-		] 
-		}">
+		:options="bulkDeleteDialogOptions">
 	  <template #body-content>
 		<p class="text-sm text-slate-600 leading-relaxed py-2">
 		  Are you sure you want to permanently delete the <span class="font-bold text-slate-900">{{ selectedTasks.size }}</span> selected task(s)? This action cannot be undone.
@@ -891,14 +884,7 @@
 
 	<Dialog v-model="showCreateDialog" 
 		:disable-outside-click-to-close="true"
-		:options="{ 
-		title: isEditMode ? 'Edit Task' : 'Create Task', 
-		size: '4xl',
-		actions: [
-			{ label: isEditMode ? 'Save Changes' : 'Create Task', variant: 'solid', loading: saving, onClick: handleSaveTask },
-			{ label: 'Cancel', variant: 'ghost', onClick: () => (showCreateDialog = false) }
-		] 
-		}">
+		:options="createTaskDialogOptions">
 	  <template #body-content>
 		<div v-if="showCreateDialog" class="space-y-6 py-2">
 		  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -3457,19 +3443,72 @@ function removeAttachment(index) {
 	newTask.attachments.splice(index, 1)
 }
 
+const bulkDeleteDialogOptions = computed(() => ({
+	title: "Delete Selected Tasks",
+	size: "sm",
+	actions: [
+		{
+			label: "Delete",
+			variant: "solid",
+			theme: "red",
+			loading: saving.value,
+			onClick: executeBulkDelete,
+		},
+		{
+			label: "Cancel",
+			variant: "ghost",
+			onClick: () => {
+				showBulkDeleteDialog.value = false
+			},
+		},
+	],
+}))
+
+const createTaskDialogOptions = computed(() => ({
+	title: isEditMode.value ? "Edit Task" : "Create Task",
+	size: "4xl",
+	actions: [
+		{
+			label: isEditMode.value ? "Save Changes" : "Create Task",
+			variant: "solid",
+			loading: saving.value,
+			onClick: handleSaveTask,
+		},
+		{
+			label: "Cancel",
+			variant: "ghost",
+			onClick: () => {
+				showCreateDialog.value = false
+			},
+		},
+	],
+}))
+
 const handleSaveTask = async () => {
-	if (!newTask.subject) return
+	if (!newTask.subject || !newTask.subject.trim()) {
+		alert("Task Subject is required.")
+		return
+	}
 	saving.value = true
 	try {
 		const payload = { ...newTask }
-		if (isEditMode.value)
-			await editTaskAPI.submit({ name: newTask.name, doc: payload })
-		else await createTaskAPI.submit({ doc: payload })
-		tasksResource.reload()
+		let res
+		if (isEditMode.value) {
+			res = await editTaskAPI.submit({ name: newTask.name, doc: payload })
+		} else {
+			res = await createTaskAPI.submit({ doc: payload })
+		}
+		if (res?.error) {
+			alert(res.error)
+			return
+		}
+		fetchTasks()
+		tasksSummaryResource.reload()
 		showCreateDialog.value = false
 		showEditTask.value = false
 	} catch (e) {
-		console.error(e)
+		console.error("Failed to save task:", e)
+		alert(e?.message || "An error occurred while saving the task.")
 	} finally {
 		saving.value = false
 	}
