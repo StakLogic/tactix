@@ -1794,7 +1794,7 @@ const paginationPages = computed(() => {
 const userResource = createListResource({
 	doctype: "User",
 	fields: ["name", "full_name", "user_image"],
-	filters: { enabled: 1, name: ["not in", ["Administrator", "Guest"]] },
+	filters: { enabled: 1, name: ["not in", ["Administrator", "Guest"]], tactix_customer: ["is", "set"] },
 	auto: true,
 	transform: (users) =>
 		users.map((u) => ({
@@ -2071,7 +2071,7 @@ const dialogOptions = computed(() => ({
 const emptyTicket = () => ({
 	name: "",
 	subject: "",
-	raised_by: session.user,
+	raised_by: isTicketRaiser ? session.user : "",
 	raised_by_user: "",
 	status: "Open",
 	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
