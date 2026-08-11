@@ -10,7 +10,7 @@ def get_users_data():
 		
 	# 1. Fetch users
 	users = frappe.get_all("User", 
-		fields=["name", "email", "first_name", "last_name", "enabled", "user_image"],
+		fields=["name", "email", "first_name", "last_name", "enabled", "user_image", "tactix_customer"],
 		filters={"name": ["not in", ["Administrator", "Guest"]]}
 	)
 	
@@ -35,6 +35,7 @@ def get_users_data():
 			"last_name": u.last_name,
 			"enabled": u.enabled,
 			"user_image": u.user_image,
+			"tactix_customer": u.tactix_customer or "",
 			"roles": roles_by_user.get(uid, []),
 			"department": emp_info.get("department") or "",
 			"employee_id": emp_info.get("name") or "",
@@ -50,10 +51,14 @@ def get_users_data():
 	# 5. Fetch departments list
 	depts = [d.name for d in frappe.get_all("Department", fields=["name"])]
 	
+	# 6. Fetch customers list
+	customers = [c.name for c in frappe.get_all("Tactix Customer", fields=["name"])]
+	
 	return {
 		"users": user_list,
 		"roles": all_roles,
-		"departments": depts
+		"departments": depts,
+		"customers": customers
 	}
 
 @frappe.whitelist()
@@ -71,6 +76,7 @@ def save_user(email, doc_data):
 	roles_list = data.get("roles", [])
 	department = data.get("department")
 	password = data.get("password")
+	tactix_customer = data.get("tactix_customer")
 	
 	gender = data.get("gender")
 	date_of_birth = data.get("date_of_birth")
@@ -93,6 +99,7 @@ def save_user(email, doc_data):
 			"last_name": last_name,
 			"enabled": enabled,
 			"send_welcome_email": 0,
+			"tactix_customer": tactix_customer if is_ticket_raiser else "",
 			"roles": [{"role": r} for r in roles_list]
 		})
 		if password:
@@ -125,6 +132,7 @@ def save_user(email, doc_data):
 		user_doc.first_name = first_name
 		user_doc.last_name = last_name
 		user_doc.enabled = enabled
+		user_doc.tactix_customer = tactix_customer if is_ticket_raiser else ""
 		if password:
 			user_doc.new_password = password
 			

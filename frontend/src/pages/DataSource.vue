@@ -719,6 +719,7 @@ const paginationPages = computed(() => {
 const modal = reactive({
 	show: false,
 	isEdit: false,
+	saving: false,
 	recordId: null,
 	form: {},
 })
@@ -730,6 +731,7 @@ const dialogOptions = computed(() => ({
 		{
 			label: modal.isEdit ? "Update" : "Save",
 			variant: "solid",
+			loading: modal.saving,
 			onClick: submitModalForm,
 		},
 	],
@@ -759,6 +761,7 @@ function openEditModal(row) {
 }
 
 async function submitModalForm() {
+	modal.saving = true
 	try {
 		const action = modal.isEdit ? "update" : "create"
 		const payload = {
@@ -788,6 +791,8 @@ async function submitModalForm() {
 	} catch (err) {
 		console.error("Error submitting form:", err)
 		alert("Failed to submit form")
+	} finally {
+		modal.saving = false
 	}
 }
 
