@@ -935,7 +935,7 @@
 								<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-2 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex items-center gap-1.5 shrink-0">
-								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
+								<Button v-if="!isTicketRaiser" variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
 								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm !px-2 sm:!px-3 text-xs">Save</Button>
 								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600 !p-1">
 									<IconX class="w-4 h-4"/>
@@ -1080,7 +1080,7 @@
 							</div>
 
 							<!-- Resolution Field -->
-							<div class="space-y-2 border-t pt-4 pb-2" >
+							<div v-if="!isTicketRaiser" class="space-y-2 border-t pt-4 pb-2" >
 								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Resolution</label>
 								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
