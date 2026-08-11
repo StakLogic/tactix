@@ -369,7 +369,7 @@
 			  ref="projectAutocomplete"
 			  :options="projectResource?.data || []"
 			  :modelValue="selectedFilters.project"
-			  @update:modelValue="val => selectedFilters.project = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.project = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -397,7 +397,7 @@
 			  ref="departmentAutocomplete"
 			  :options="departmentResource?.data || []"
 			  :modelValue="selectedFilters.department"
-			  @update:modelValue="val => selectedFilters.department = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.department = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -425,7 +425,7 @@
 			  ref="statusAutocomplete"
 			  :options="filterStatusOptions"
 			  :modelValue="selectedFilters.status"
-			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.status = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -452,7 +452,7 @@
 			  ref="priorityAutocomplete"
 			  :options="priorityOptions"
 			  :modelValue="selectedFilters.priority"
-			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.priority = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -479,7 +479,7 @@
 			  ref="assignedByAutocomplete"
 			  :options="userResource?.data || []"
 			  :modelValue="selectedFilters.assigned_by"
-			  @update:modelValue="val => selectedFilters.assigned_by = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.assigned_by = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -507,7 +507,7 @@
 			  ref="assignedToAutocomplete"
 			  :options="userResource?.data || []"
 			  :modelValue="selectedFilters.assigned_to"
-			  @update:modelValue="val => selectedFilters.assigned_to = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.assigned_to = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -535,7 +535,7 @@
 			  ref="deadlineAutocomplete"
 			  :options="deadlineOptions.filter(d => d.value !== '')"
 			  :modelValue="selectedFilters.deadline"
-			  @update:modelValue="val => selectedFilters.deadline = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.deadline = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -911,7 +911,7 @@
 				  ref="createProjectAutocomplete"
 				  :options="projectResource.data || []"
 				  :modelValue="newTask.project"
-				  @update:modelValue="val => newTask.project = val?.value || val || ''"
+				  @update:modelValue="val => newTask.project = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -934,7 +934,7 @@
 				  ref="createDepartmentAutocomplete"
 				  :options="departmentResource.data || []"
 				  :modelValue="newTask.department"
-				  @update:modelValue="val => newTask.department = val?.value || val || ''"
+				  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -957,7 +957,7 @@
 				  ref="createStatusAutocomplete"
 				  :options="statusOptions"
 				  :modelValue="newTask.status"
-				  @update:modelValue="val => newTask.status = val?.value || val || ''"
+				  @update:modelValue="val => newTask.status = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -980,7 +980,7 @@
 				  ref="createPriorityAutocomplete"
 				  :options="priorityOptions"
 				  :modelValue="newTask.priority"
-				  @update:modelValue="val => newTask.priority = val?.value || val || ''"
+				  @update:modelValue="val => newTask.priority = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -1002,7 +1002,7 @@
 				  ref="createTeamAutocomplete"
 				  :options="tactixTeamResource.data || []"
 				  :modelValue="newTask.tactix_team"
-				  @update:modelValue="val => newTask.tactix_team = val?.value || val || ''"
+				  @update:modelValue="val => newTask.tactix_team = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1029,7 +1029,7 @@
 				  ref="createAssignedByAutocomplete"
 				  :options="userResource.data || []"
 				  :modelValue="newTask.assigned_by"
-				  @update:modelValue="val => newTask.assigned_by = val?.value || val || ''"
+				  @update:modelValue="val => newTask.assigned_by = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1439,7 +1439,7 @@
 										  ref="editStatusAutocomplete"
 										  :options="statusOptions"
 										  :modelValue="newTask.status"
-										  @update:modelValue="val => newTask.status = val?.value || val || ''"
+										  @update:modelValue="val => newTask.status = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -1461,7 +1461,7 @@
 										  ref="editPriorityAutocomplete"
 										  :options="priorityOptions"
 										  :modelValue="newTask.priority"
-										  @update:modelValue="val => newTask.priority = val?.value || val || ''"
+										  @update:modelValue="val => newTask.priority = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -1486,7 +1486,7 @@
 										  ref="editProjectAutocomplete"
 										  :options="projectResource.data || []"
 										  :modelValue="newTask.project"
-										  @update:modelValue="val => newTask.project = val?.value || val || ''"
+										  @update:modelValue="val => newTask.project = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1510,7 +1510,7 @@
 										  ref="editDepartmentAutocomplete"
 										  :options="departmentResource.data || []"
 										  :modelValue="newTask.department"
-										  @update:modelValue="val => newTask.department = val?.value || val || ''"
+										  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1541,7 +1541,7 @@
 										  ref="editAssignedByAutocomplete"
 										  :options="userResource.data || []"
 										  :modelValue="newTask.assigned_by"
-										  @update:modelValue="val => newTask.assigned_by = val?.value || val || ''"
+										  @update:modelValue="val => newTask.assigned_by = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1565,7 +1565,7 @@
 										  ref="editTeamAutocomplete"
 										  :options="tactixTeamResource.data || []"
 										  :modelValue="newTask.tactix_team"
-										  @update:modelValue="val => newTask.tactix_team = val?.value || val || ''"
+										  @update:modelValue="val => newTask.tactix_team = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1625,7 +1625,7 @@
 										  ref="editCompletedByAutocomplete"
 										  :options="userResource.data || []"
 										  :modelValue="newTask.completed_by"
-										  @update:modelValue="val => newTask.completed_by = val?.value || val || ''"
+										  @update:modelValue="val => newTask.completed_by = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -2194,39 +2194,45 @@ function compareOption(a, b) {
 }
 
 function getProjectLabel(val) {
-	if (!val) return "Project"
-	const match = projectResource.data?.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Project"
+	const match = projectResource.data?.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getDepartmentLabel(val) {
-	if (!val) return "Department"
-	const match = departmentResource.data?.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Department"
+	const match = departmentResource.data?.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getUserLabel(val, defaultLabel = "User") {
-	if (!val) return defaultLabel
-	const match = userResource.data?.find((u) => u.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return defaultLabel
+	const match = userResource.data?.find((u) => u.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getStatusLabel(val) {
-	if (!val) return "Status"
-	const match = filterStatusOptions.find((s) => s.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Status"
+	const match = filterStatusOptions.find((s) => s.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getPriorityLabel(val) {
-	if (!val) return "Priority"
-	const match = priorityOptions.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Priority"
+	const match = priorityOptions.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getDeadlineLabel(val) {
-	if (!val) return "Deadline"
-	const match = deadlineOptions.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Deadline"
+	const match = deadlineOptions.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 // State

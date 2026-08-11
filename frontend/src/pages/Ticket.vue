@@ -282,7 +282,7 @@
 			  ref="customerAutocomplete"
 			  :options="customerFilterSelectOptions"
 			  :modelValue="selectedFilters.customer"
-			  @update:modelValue="val => selectedFilters.customer = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.customer = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -310,7 +310,7 @@
 			  ref="departmentAutocomplete"
 			  :options="departmentFilterSelectOptions"
 			  :modelValue="selectedFilters.department"
-			  @update:modelValue="val => selectedFilters.department = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.department = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -338,7 +338,7 @@
 			  ref="statusAutocomplete"
 			  :options="filterStatusOptions"
 			  :modelValue="selectedFilters.status"
-			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.status = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -365,7 +365,7 @@
 			  ref="priorityAutocomplete"
 			  :options="priorityOptions"
 			  :modelValue="selectedFilters.priority"
-			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.priority = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -392,7 +392,7 @@
 			  ref="raisedByAutocomplete"
 			  :options="raisedByFilterSelectOptions"
 			  :modelValue="selectedFilters.raised_by"
-			  @update:modelValue="val => selectedFilters.raised_by = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.raised_by = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -698,7 +698,7 @@
 				  ref="createCustomerAutocomplete"
 				  :options="customerFilterSelectOptions"
 				  :modelValue="ticketForm.customer"
-				  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.customer = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -720,7 +720,7 @@
 				  ref="createRaisedByAutocomplete"
 				  :options="raisedByFilterOptions"
 				  :modelValue="ticketForm.raised_by"
-				  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.raised_by = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -746,7 +746,7 @@
 					ref="createTicketTypeAutocomplete"
 					:options="['Bug', 'Support', 'Technical']"
 					:modelValue="ticketForm.ticket_type"
-					@update:modelValue="val => ticketForm.ticket_type = val?.value || val || ''"
+					@update:modelValue="val => ticketForm.ticket_type = val?.value ?? val ?? ''"
 					:compare-fn="compareOption"
 				  >
 					<template #target>
@@ -767,7 +767,7 @@
 					ref="createPriorityAutocomplete"
 					:options="['Low', 'Medium', 'High', 'Urgent']"
 					:modelValue="ticketForm.priority"
-					@update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+					@update:modelValue="val => ticketForm.priority = val?.value ?? val ?? ''"
 					:compare-fn="compareOption"
 				  >
 					<template #target>
@@ -789,7 +789,7 @@
 				  ref="createDepartmentAutocomplete"
 				  :options="departmentFilterSelectOptions"
 				  :modelValue="ticketForm.department"
-				  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -953,7 +953,7 @@
 										  ref="editStatusAutocomplete"
 										  :options="ticketStatusOptions"
 										  :modelValue="ticketForm.status"
-										  @update:modelValue="val => ticketForm.status = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.status = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -975,7 +975,7 @@
 										  ref="editPriorityAutocomplete"
 										  :options="['Low','Medium','High','Urgent']"
 										  :modelValue="ticketForm.priority"
-										  @update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.priority = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -999,7 +999,7 @@
 										  ref="editCustomerAutocomplete"
 										  :options="customerFilterOptions"
 										  :modelValue="ticketForm.customer"
-										  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.customer = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1022,7 +1022,7 @@
 										  ref="editRaisedByAutocomplete"
 										  :options="raisedByFilterOptions"
 										  :modelValue="ticketForm.raised_by"
-										  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.raised_by = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1046,7 +1046,7 @@
 										  ref="editDepartmentAutocomplete"
 										  :options="departmentFilterOptions"
 										  :modelValue="ticketForm.department"
-										  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1176,7 +1176,7 @@
 				  ref="taskProjectAutocomplete"
 				  :options="projectResource.data || []"
 				  :modelValue="newTask.project"
-				  @update:modelValue="val => newTask.project = val?.value || val || ''"
+				  @update:modelValue="val => newTask.project = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1198,7 +1198,7 @@
 				  ref="taskDepartmentAutocomplete"
 				  :options="departmentResourceTask.data || []"
 				  :modelValue="newTask.department"
-				  @update:modelValue="val => newTask.department = val?.value || val || ''"
+				  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1220,7 +1220,7 @@
 				  ref="taskStatusAutocomplete"
 				  :options="statusOptions"
 				  :modelValue="newTask.status"
-				  @update:modelValue="val => newTask.status = val?.value || val || ''"
+				  @update:modelValue="val => newTask.status = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -1243,7 +1243,7 @@
 				  ref="taskPriorityAutocomplete"
 				  :options="priorityOptions"
 				  :modelValue="newTask.priority"
-				  @update:modelValue="val => newTask.priority = val?.value || val || ''"
+				  @update:modelValue="val => newTask.priority = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -1269,7 +1269,7 @@
 				  ref="taskAssignedByAutocomplete"
 				  :options="userResourceTask.data || []"
 				  :modelValue="newTask.assigned_by"
-				  @update:modelValue="val => newTask.assigned_by = val?.value || val || ''"
+				  @update:modelValue="val => newTask.assigned_by = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1435,40 +1435,46 @@ function compareOption(a, b) {
 }
 
 function getProjectLabel(val) {
-	if (!val) return "Project"
-	const match = projectResource.data?.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Project"
+	const match = projectResource.data?.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {
-	if (!val) return "Client"
-	const match = customerFilterOptions.value.find((c) => c.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Client"
+	const match = customerFilterOptions.value.find((c) => c.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getDepartmentLabel(val) {
-	if (!val) return "Department"
-	const match = departmentFilterOptions.value.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Department"
+	const match = departmentFilterOptions.value.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getUserLabel(val, defaultLabel = "User") {
-	if (!val) return defaultLabel
-	const match = raisedByFilterOptions.value.find((u) => u.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return defaultLabel
+	const match = raisedByFilterOptions.value.find((u) => u.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getStatusLabel(val) {
-	if (!val) return "Status"
-	const match = filterStatusOptions.find((s) => s.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Status"
+	const match = filterStatusOptions.find((s) => s.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getPriorityLabel(val) {
-	if (!val) return "Priority"
-	const match = priorityOptions.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Priority"
+	const match = priorityOptions.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 import IconAlertCircle from "~icons/lucide/alert-circle"

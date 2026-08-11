@@ -256,7 +256,7 @@
               ref="departmentAutocomplete"
               :options="departmentOptions || []"
               :modelValue="modal.form.department"
-              @update:modelValue="val => modal.form.department = val?.value || val || ''"
+              @update:modelValue="val => modal.form.department = val?.value ?? val ?? ''"
               :compare-fn="compareOption"
               :max-options="100"
             >
@@ -286,7 +286,7 @@
                     { label: 'Other', value: 'Other' }
                   ]"
                   :modelValue="modal.form.gender"
-                  @update:modelValue="val => modal.form.gender = val?.value || val || ''"
+                  @update:modelValue="val => modal.form.gender = val?.value ?? val ?? ''"
                   :compare-fn="compareOption"
                 >
                   <template #target>
@@ -415,14 +415,16 @@ function compareOption(a, b) {
 }
 
 function getDepartmentLabel(val) {
-	if (!val) return "Select Team / Department"
-	const match = departmentOptions.value?.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Team / Department"
+	const match = departmentOptions.value?.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getGenderLabel(val) {
-	if (!val) return "Select Gender"
-	return val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Gender"
+	return rawVal
 }
 
 const columns = [
