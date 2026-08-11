@@ -257,7 +257,7 @@
                 ref="projectCompanyAutocomplete"
                 :options="linkOptions.companies || []"
                 :modelValue="modal.form.company"
-                @update:modelValue="val => modal.form.company = val?.value || val || ''"
+                @update:modelValue="val => modal.form.company = val?.value ?? val ?? ''"
                 :compare-fn="compareOption"
                 :max-options="100"
               >
@@ -284,7 +284,7 @@
                 ref="departmentCompanyAutocomplete"
                 :options="linkOptions.companies || []"
                 :modelValue="modal.form.company"
-                @update:modelValue="val => modal.form.company = val?.value || val || ''"
+                @update:modelValue="val => modal.form.company = val?.value ?? val ?? ''"
                 :compare-fn="compareOption"
                 :max-options="100"
               >
@@ -311,7 +311,7 @@
                 ref="departmentHeadAutocomplete"
                 :options="userOptions || []"
                 :modelValue="modal.form.department_head"
-                @update:modelValue="val => modal.form.department_head = val?.value || val || ''"
+                @update:modelValue="val => modal.form.department_head = val?.value ?? val ?? ''"
                 :compare-fn="compareOption"
                 :max-options="100"
               >
@@ -343,7 +343,7 @@
                 ref="teamLeadAutocomplete"
                 :options="userOptions || []"
                 :modelValue="modal.form.team_lead"
-                @update:modelValue="val => modal.form.team_lead = val?.value || val || ''"
+                @update:modelValue="val => modal.form.team_lead = val?.value ?? val ?? ''"
                 :compare-fn="compareOption"
                 :max-options="100"
               >
@@ -435,9 +435,10 @@ function compareOption(a, b) {
 }
 
 function getCompanyLabel(val) {
-	if (!val) return "Select Company"
-	const match = linkOptions.companies?.find((c) => (typeof c === "object" ? c.value === val : c === val))
-	return match ? (typeof match === "object" ? match.label : match) : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Company"
+	const match = linkOptions.companies?.find((c) => (typeof c === "object" ? c.value === rawVal : c === rawVal))
+	return match ? (typeof match === "object" ? match.label : match) : rawVal
 }
 
 // Icons
@@ -593,9 +594,10 @@ const userOptions = computed(() => {
 })
 
 function getUserLabel(userName) {
-	if (!userName) return "—"
-	const match = usersResource.data?.find((u) => u.name === userName || u.value === userName)
-	return match ? (match.full_name || match.label || userName) : userName
+	const rawVal = userName && typeof userName === "object" ? userName.value : userName
+	if (!rawVal) return "—"
+	const match = usersResource.data?.find((u) => u.name === rawVal || u.value === rawVal)
+	return match ? (match.full_name || match.label || rawVal) : rawVal
 }
 
 // Fetch Link Options
@@ -717,6 +719,7 @@ const paginationPages = computed(() => {
 const modal = reactive({
 	show: false,
 	isEdit: false,
+	saving: false,
 	recordId: null,
 	form: {},
 })
@@ -728,6 +731,7 @@ const dialogOptions = computed(() => ({
 		{
 			label: modal.isEdit ? "Update" : "Save",
 			variant: "solid",
+			loading: modal.saving,
 			onClick: submitModalForm,
 		},
 	],
@@ -757,6 +761,7 @@ function openEditModal(row) {
 }
 
 async function submitModalForm() {
+	modal.saving = true
 	try {
 		const action = modal.isEdit ? "update" : "create"
 		const payload = {
@@ -786,6 +791,8 @@ async function submitModalForm() {
 	} catch (err) {
 		console.error("Error submitting form:", err)
 		alert("Failed to submit form")
+	} finally {
+		modal.saving = false
 	}
 }
 

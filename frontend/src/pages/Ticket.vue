@@ -282,7 +282,7 @@
 			  ref="customerAutocomplete"
 			  :options="customerFilterSelectOptions"
 			  :modelValue="selectedFilters.customer"
-			  @update:modelValue="val => selectedFilters.customer = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.customer = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -310,7 +310,7 @@
 			  ref="departmentAutocomplete"
 			  :options="departmentFilterSelectOptions"
 			  :modelValue="selectedFilters.department"
-			  @update:modelValue="val => selectedFilters.department = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.department = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -338,7 +338,7 @@
 			  ref="statusAutocomplete"
 			  :options="filterStatusOptions"
 			  :modelValue="selectedFilters.status"
-			  @update:modelValue="val => selectedFilters.status = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.status = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -365,7 +365,7 @@
 			  ref="priorityAutocomplete"
 			  :options="priorityOptions"
 			  :modelValue="selectedFilters.priority"
-			  @update:modelValue="val => selectedFilters.priority = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.priority = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			>
 			  <template #target>
@@ -392,7 +392,7 @@
 			  ref="raisedByAutocomplete"
 			  :options="raisedByFilterSelectOptions"
 			  :modelValue="selectedFilters.raised_by"
-			  @update:modelValue="val => selectedFilters.raised_by = val?.value || val || ''"
+			  @update:modelValue="val => selectedFilters.raised_by = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
 			  :max-options="100"
 			>
@@ -698,7 +698,7 @@
 				  ref="createCustomerAutocomplete"
 				  :options="customerFilterSelectOptions"
 				  :modelValue="ticketForm.customer"
-				  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.customer = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -720,7 +720,7 @@
 				  ref="createRaisedByAutocomplete"
 				  :options="raisedByFilterOptions"
 				  :modelValue="ticketForm.raised_by"
-				  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.raised_by = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -746,7 +746,7 @@
 					ref="createTicketTypeAutocomplete"
 					:options="['Bug', 'Support', 'Technical']"
 					:modelValue="ticketForm.ticket_type"
-					@update:modelValue="val => ticketForm.ticket_type = val?.value || val || ''"
+					@update:modelValue="val => ticketForm.ticket_type = val?.value ?? val ?? ''"
 					:compare-fn="compareOption"
 				  >
 					<template #target>
@@ -767,7 +767,7 @@
 					ref="createPriorityAutocomplete"
 					:options="['Low', 'Medium', 'High', 'Urgent']"
 					:modelValue="ticketForm.priority"
-					@update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+					@update:modelValue="val => ticketForm.priority = val?.value ?? val ?? ''"
 					:compare-fn="compareOption"
 				  >
 					<template #target>
@@ -789,7 +789,7 @@
 				  ref="createDepartmentAutocomplete"
 				  :options="departmentFilterSelectOptions"
 				  :modelValue="ticketForm.department"
-				  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+				  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -891,7 +891,7 @@
 											/>
 											<div class="flex justify-end gap-2">
 												<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-												<Button size="sm" variant="solid" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
+												<Button size="sm" variant="solid" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
 											</div>
 										</div>
 										<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="c.content"></div>
@@ -913,7 +913,7 @@
 								:user="session.user"
 								:userName="session.userFullName"
 								placeholder="Type a message..."
-								:loading="comments.loading"
+								:loading="comments.loading || commentSubmitting"
 								@submit="addComment"
 							/>
 						</div>
@@ -935,7 +935,7 @@
 								<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-2 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex items-center gap-1.5 shrink-0">
-								<Button variant="solid" size="sm" theme="blue" :loading="saving" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
+								<Button v-if="!isTicketRaiser" variant="solid" size="sm" theme="blue" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
 								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm !px-2 sm:!px-3 text-xs">Save</Button>
 								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600 !p-1">
 									<IconX class="w-4 h-4"/>
@@ -953,7 +953,7 @@
 										  ref="editStatusAutocomplete"
 										  :options="ticketStatusOptions"
 										  :modelValue="ticketForm.status"
-										  @update:modelValue="val => ticketForm.status = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.status = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -975,7 +975,7 @@
 										  ref="editPriorityAutocomplete"
 										  :options="['Low','Medium','High','Urgent']"
 										  :modelValue="ticketForm.priority"
-										  @update:modelValue="val => ticketForm.priority = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.priority = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										>
 										  <template #target>
@@ -999,7 +999,7 @@
 										  ref="editCustomerAutocomplete"
 										  :options="customerFilterOptions"
 										  :modelValue="ticketForm.customer"
-										  @update:modelValue="val => ticketForm.customer = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.customer = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1022,7 +1022,7 @@
 										  ref="editRaisedByAutocomplete"
 										  :options="raisedByFilterOptions"
 										  :modelValue="ticketForm.raised_by"
-										  @update:modelValue="val => ticketForm.raised_by = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.raised_by = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1046,7 +1046,7 @@
 										  ref="editDepartmentAutocomplete"
 										  :options="departmentFilterOptions"
 										  :modelValue="ticketForm.department"
-										  @update:modelValue="val => ticketForm.department = val?.value || val || ''"
+										  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
 										  :compare-fn="compareOption"
 										  :max-options="100"
 										>
@@ -1080,7 +1080,7 @@
 							</div>
 
 							<!-- Resolution Field -->
-							<div class="space-y-2 border-t pt-4 pb-2" >
+							<div v-if="!isTicketRaiser" class="space-y-2 border-t pt-4 pb-2" >
 								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Resolution</label>
 								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
@@ -1152,14 +1152,7 @@
 
 	<Dialog v-model="showCreateTaskDialog" 
 		:disable-outside-click-to-close="true"
-		:options="{ 
-		title: 'Create Task', 
-		size: '4xl',
-		actions: [
-			{ label: 'Create Task', variant: 'solid', loading: taskSaving, onClick: handleSaveTask },
-			{ label: 'Cancel', variant: 'ghost', onClick: () => (showCreateTaskDialog = false) }
-		] 
-		}">
+		:options="createTaskDialogOptions">
 	  <template #body-content>
 		<div class="space-y-6 py-2">
 		  <p v-if="taskFormError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -1176,7 +1169,7 @@
 				  ref="taskProjectAutocomplete"
 				  :options="projectResource.data || []"
 				  :modelValue="newTask.project"
-				  @update:modelValue="val => newTask.project = val?.value || val || ''"
+				  @update:modelValue="val => newTask.project = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1198,7 +1191,7 @@
 				  ref="taskDepartmentAutocomplete"
 				  :options="departmentResourceTask.data || []"
 				  :modelValue="newTask.department"
-				  @update:modelValue="val => newTask.department = val?.value || val || ''"
+				  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1220,7 +1213,7 @@
 				  ref="taskStatusAutocomplete"
 				  :options="statusOptions"
 				  :modelValue="newTask.status"
-				  @update:modelValue="val => newTask.status = val?.value || val || ''"
+				  @update:modelValue="val => newTask.status = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -1243,7 +1236,7 @@
 				  ref="taskPriorityAutocomplete"
 				  :options="priorityOptions"
 				  :modelValue="newTask.priority"
-				  @update:modelValue="val => newTask.priority = val?.value || val || ''"
+				  @update:modelValue="val => newTask.priority = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				>
 				  <template #target>
@@ -1269,7 +1262,7 @@
 				  ref="taskAssignedByAutocomplete"
 				  :options="userResourceTask.data || []"
 				  :modelValue="newTask.assigned_by"
-				  @update:modelValue="val => newTask.assigned_by = val?.value || val || ''"
+				  @update:modelValue="val => newTask.assigned_by = val?.value ?? val ?? ''"
 				  :compare-fn="compareOption"
 				  :max-options="100"
 				>
@@ -1435,40 +1428,46 @@ function compareOption(a, b) {
 }
 
 function getProjectLabel(val) {
-	if (!val) return "Project"
-	const match = projectResource.data?.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Project"
+	const match = projectResource.data?.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {
-	if (!val) return "Client"
-	const match = customerFilterOptions.value.find((c) => c.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Client"
+	const match = customerFilterOptions.value.find((c) => c.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getDepartmentLabel(val) {
-	if (!val) return "Department"
-	const match = departmentFilterOptions.value.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Department"
+	const match = departmentFilterOptions.value.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getUserLabel(val, defaultLabel = "User") {
-	if (!val) return defaultLabel
-	const match = raisedByFilterOptions.value.find((u) => u.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return defaultLabel
+	const match = raisedByFilterOptions.value.find((u) => u.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getStatusLabel(val) {
-	if (!val) return "Status"
-	const match = filterStatusOptions.find((s) => s.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Status"
+	const match = filterStatusOptions.find((s) => s.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getPriorityLabel(val) {
-	if (!val) return "Priority"
-	const match = priorityOptions.find((p) => p.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Priority"
+	const match = priorityOptions.find((p) => p.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 import IconAlertCircle from "~icons/lucide/alert-circle"
@@ -1788,7 +1787,7 @@ const paginationPages = computed(() => {
 const userResource = createListResource({
 	doctype: "User",
 	fields: ["name", "full_name", "user_image"],
-	filters: { enabled: 1, name: ["not in", ["Administrator", "Guest"]] },
+	filters: { enabled: 1, name: ["not in", ["Administrator", "Guest"]], tactix_customer: ["is", "set"] },
 	auto: true,
 	transform: (users) =>
 		users.map((u) => ({
@@ -2065,7 +2064,7 @@ const dialogOptions = computed(() => ({
 const emptyTicket = () => ({
 	name: "",
 	subject: "",
-	raised_by: session.user,
+	raised_by: isTicketRaiser ? session.user : "",
 	raised_by_user: "",
 	status: "Open",
 	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
@@ -2173,11 +2172,19 @@ async function handleSaveTicket() {
 		const params = isEditMode.value
 			? { name: ticketForm.name, doc: ticketForm }
 			: { doc: ticketForm }
-		await createResource({ url, params }).submit()
+		const res = await createResource({ url, params }).submit()
+		if (res?.error) {
+			ticketFormError.value = res.error
+			return
+		}
 		tickets.reload()
+		ticketsSummaryResource.reload()
 		showCreateDialog.value = false
 		showEditTicket.value = false
 		resetForm()
+	} catch (err) {
+		console.error("Failed to save ticket", err)
+		ticketFormError.value = err?.message || "An error occurred while saving the ticket."
 	} finally {
 		saving.value = false
 	}
@@ -2203,6 +2210,26 @@ function openTaskCreateDialog(ticket) {
 }
 
 const createTaskAPI = createResource({ url: "tactix.api.tasks.create_task" })
+
+const createTaskDialogOptions = computed(() => ({
+	title: "Create Task",
+	size: "4xl",
+	actions: [
+		{
+			label: "Create Task",
+			variant: "solid",
+			loading: taskSaving.value,
+			onClick: handleSaveTask,
+		},
+		{
+			label: "Cancel",
+			variant: "ghost",
+			onClick: () => {
+				showCreateTaskDialog.value = false
+			},
+		},
+	],
+}))
 
 const handleSaveTask = async () => {
 	taskFormError.value = ""
@@ -2634,14 +2661,24 @@ function getPriorityTheme(p) {
 	)
 }
 
+const commentSubmitting = ref(false)
+const commentUpdating = ref(false)
+
 async function addComment() {
 	if (!newComment.value) return
-	await createResource({
-		url: "tactix.api.ticket.add_comment",
-		params: { ticket: ticketForm.name, content: newComment.value },
-	}).submit()
-	newComment.value = ""
-	comments.submit({ ticket: ticketForm.name })
+	commentSubmitting.value = true
+	try {
+		await createResource({
+			url: "tactix.api.ticket.add_comment",
+			params: { ticket: ticketForm.name, content: newComment.value },
+		}).submit()
+		newComment.value = ""
+		comments.submit({ ticket: ticketForm.name })
+	} catch (e) {
+		console.error("Add comment failed", e)
+	} finally {
+		commentSubmitting.value = false
+	}
 }
 
 function startEditing(comment) {
@@ -2656,6 +2693,7 @@ function cancelEdit() {
 
 async function handleUpdateComment(name) {
 	if (!editContent.value.trim()) return
+	commentUpdating.value = true
 	try {
 		await createResource({
 			url: "tactix.api.ticket.edit_comment",
@@ -2668,6 +2706,8 @@ async function handleUpdateComment(name) {
 		comments.submit({ ticket: ticketForm.name })
 	} catch (e) {
 		console.error("Update failed", e)
+	} finally {
+		commentUpdating.value = false
 	}
 }
 
