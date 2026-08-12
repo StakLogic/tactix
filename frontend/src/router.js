@@ -98,8 +98,10 @@ router.beforeEach(async (to, from, next) => {
 		try {
 			await userResource.promise
 
-			// Only fetch user info if not already loaded to prevent redundant network requests on every navigation
-			if (!session.userInfo.loading && !session.userInfo.data?.roles?.length) {
+			// Ensure user info fetch completes before evaluating routes
+			if (session.userInfo.loading && session.userInfo.promise) {
+				await session.userInfo.promise
+			} else if (!session.userInfo.data?.roles?.length) {
 				await session.userInfo.fetch()
 			}
 		} catch (error) {
@@ -123,14 +125,23 @@ router.beforeEach(async (to, from, next) => {
 
 	// Roles based Access Control
 	const isSystemManager = Boolean(session.isAdmin)
-	const isEmployee = Boolean(session.isEmployee)
 	const isTicketRaiser = Boolean(session.isTicketRaiser)
+	const isEmployee = Boolean(session.isEmployee)
 
 	const pathParts = to.path.split("/").filter((p) => p && p !== "tactix")
 	const resource = pathParts[0] || "" // e.g. "dashboard", "tasks", "tickets", etc.
 
 	if (isSystemManager) {
 		next()
+		return
+	}
+
+	if (isTicketRaiser) {
+		if (resource === "tickets" || resource === "settings") {
+			next()
+		} else {
+			next("/tickets")
+		}
 		return
 	}
 
@@ -145,19 +156,10 @@ router.beforeEach(async (to, from, next) => {
 			"performance",
 			"settings",
 		]
-		if (allowed.includes(resource) || resource === "") {
+		if (allowed.includes(resource)) {
 			next()
 		} else {
 			next("/dashboard")
-		}
-		return
-	}
-
-	if (isTicketRaiser) {
-		if (resource === "tickets" || resource === "settings" || resource === "") {
-			next()
-		} else {
-			next("/tickets")
 		}
 		return
 	}

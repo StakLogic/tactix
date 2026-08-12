@@ -25,6 +25,7 @@ export const session = reactive({
 		},
 		onSuccess(data) {
 			userResource.reload()
+			session.userInfo.reset()
 			session.user = sessionUser()
 			session.login.reset()
 			// router.replace(data.default_route || "/")
@@ -36,6 +37,7 @@ export const session = reactive({
 		method: "POST",
 		onSuccess() {
 			userResource.reset()
+			session.userInfo.reset()
 			session.user = sessionUser()
 			router.replace({ name: "Login" })
 		},
@@ -53,9 +55,9 @@ export const session = reactive({
 			user_image: "",
 		},
 	}),
-	isAdmin: computed(() => session.userInfo.data.admin),
-	isTicketRaiser: computed(() => session.userInfo.data.is_ticket_raiser),
-	isEmployee: computed(() => session.roles.includes("Employee")),
+	isAdmin: computed(() => session.userInfo.data?.admin),
+	isTicketRaiser: computed(() => session.userInfo.data?.is_ticket_raiser),
+	isEmployee: computed(() => session.roles.includes("Employee") && !session.userInfo.data?.is_ticket_raiser),
 	ticketCustomerId: computed(() => session.userInfo.data.tactix_customer),
 	tactixDepartment: computed(() => session.userInfo.data.tactix_department),
 	isTactixDeptHead: computed(() => session.userInfo.data.is_department_head),

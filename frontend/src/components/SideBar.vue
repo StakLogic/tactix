@@ -44,12 +44,7 @@ const crmSidebar = computed(() => {
 	// 1. Build Header Menu Items (Dropdown menu on user profile)
 	const menuItems = [
 		{ label: "Toggle Theme", icon: Moon, onClick: toggleTheme },
-		{
-			label: "Settings",
-			icon: Settings,
-			to: "/settings",
-			onClick: () => navigateTo("/settings"),
-		},
+		
 	]
 
 	if (isAdmin.value) {
@@ -59,6 +54,11 @@ const crmSidebar = computed(() => {
 			onClick: () => {
 				window.location.href = "/app"
 			},
+		})
+		menuItems.push({
+			label: "Settings",
+			icon: Settings,
+			onClick: () => navigateTo("/settings"),
 		})
 	}
 
@@ -80,13 +80,6 @@ const crmSidebar = computed(() => {
 				to: "/tickets",
 				onClick: () => navigateTo("/tickets"),
 				isActive: route.path === "/tickets",
-			},
-			{
-				label: "Settings",
-				icon: Settings,
-				to: "/settings",
-				onClick: () => navigateTo("/settings"),
-				isActive: route.path === "/settings",
 			},
 		]
 	} else if (isEmployee.value || isAdmin.value) {
@@ -160,6 +153,13 @@ const crmSidebar = computed(() => {
 					onClick: () => navigateTo("/users"),
 					isActive: route.path === "/users",
 				},
+				// {
+				// 	label: "Settings",
+				// 	icon: Settings,
+				// 	to: "/settings",
+				// 	onClick: () => navigateTo("/settings"),
+				// 	isActive: route.path === "/settings",
+				// },
 			)
 		}
 	}

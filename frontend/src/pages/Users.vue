@@ -256,7 +256,7 @@
               ref="departmentAutocomplete"
               :options="departmentOptions || []"
               :modelValue="modal.form.department"
-              @update:modelValue="val => modal.form.department = val?.value || val || ''"
+              @update:modelValue="val => modal.form.department = val?.value ?? val ?? ''"
               :compare-fn="compareOption"
               :max-options="100"
             >
@@ -267,6 +267,30 @@
                   class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
                 >
                   <span class="truncate">{{ getDepartmentLabel(modal.form.department) }}</span>
+                  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
+                </button>
+              </template>
+            </Autocomplete>
+          </div>
+
+          <!-- Tactix Customer Selection (Shown if Ticket Raiser) -->
+          <div v-if="modal.form.roles.includes('Ticker Raiser')" class="space-y-1.5">
+            <label class="block text-xs text-ink-gray-5">Tactix Customer *</label>
+            <Autocomplete
+              ref="customerAutocomplete"
+              :options="customerOptions || []"
+              :modelValue="modal.form.tactix_customer"
+              @update:modelValue="val => modal.form.tactix_customer = val?.value ?? val ?? ''"
+              :compare-fn="compareOption"
+              :max-options="100"
+            >
+              <template #target>
+                <button
+                  type="button"
+                  @click="() => customerAutocomplete?.togglePopover()"
+                  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
+                >
+                  <span class="truncate">{{ getCustomerLabel(modal.form.tactix_customer) }}</span>
                   <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
                 </button>
               </template>
@@ -286,7 +310,7 @@
                     { label: 'Other', value: 'Other' }
                   ]"
                   :modelValue="modal.form.gender"
-                  @update:modelValue="val => modal.form.gender = val?.value || val || ''"
+                  @update:modelValue="val => modal.form.gender = val?.value ?? val ?? ''"
                   :compare-fn="compareOption"
                 >
                   <template #target>
@@ -407,6 +431,7 @@ import {
 
 const departmentAutocomplete = ref(null)
 const genderAutocomplete = ref(null)
+const customerAutocomplete = ref(null)
 
 function compareOption(a, b) {
 	const aVal = a && typeof a === "object" ? a.value : a
@@ -415,14 +440,23 @@ function compareOption(a, b) {
 }
 
 function getDepartmentLabel(val) {
-	if (!val) return "Select Team / Department"
-	const match = departmentOptions.value?.find((d) => d.value === val)
-	return match ? match.label : val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Team / Department"
+	const match = departmentOptions.value?.find((d) => d.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 function getGenderLabel(val) {
-	if (!val) return "Select Gender"
-	return val
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Gender"
+	return rawVal
+}
+
+function getCustomerLabel(val) {
+	const rawVal = val && typeof val === "object" ? val.value : val
+	if (!rawVal) return "Select Tactix Customer"
+	const match = customerOptions.value?.find((c) => c.value === rawVal)
+	return match ? match.label : rawVal
 }
 
 const columns = [
@@ -453,6 +487,7 @@ const loading = ref(false)
 const users = ref([])
 const roles = ref([])
 const departments = ref([])
+const customers = ref([])
 
 const currentPage = ref(1)
 const pageLength = ref(20)
@@ -522,6 +557,11 @@ const departmentOptions = computed(() => [
 	...departments.value.map((d) => ({ label: d, value: d })),
 ])
 
+const customerOptions = computed(() => [
+	{ label: "Select Tactix Customer", value: "" },
+	...customers.value.map((c) => ({ label: typeof c === "object" ? c.name : c, value: typeof c === "object" ? c.name : c })),
+])
+
 // Fetch raw user data
 async function fetchUsersData() {
 	loading.value = true
@@ -532,6 +572,7 @@ async function fetchUsersData() {
 			users.value = data.message.users || []
 			roles.value = data.message.roles || []
 			departments.value = data.message.departments || []
+			customers.value = data.message.customers || []
 		}
 	} catch (err) {
 		console.error("Failed to load user management details", err)
@@ -625,6 +666,7 @@ const modal = reactive({
 		email: "",
 		password: "",
 		department: "",
+		tactix_customer: "",
 		enabled: 1,
 		roles: [],
 		gender: "",
@@ -643,6 +685,7 @@ function openCreateModal() {
 		email: "",
 		password: "",
 		department: "",
+		tactix_customer: "",
 		enabled: 1,
 		roles: ["Employee (Developer)"], // Default role setup
 		gender: "",
@@ -661,6 +704,7 @@ function openEditModal(user) {
 		email: user.email,
 		password: "",
 		department: user.department || "",
+		tactix_customer: user.tactix_customer || "",
 		enabled: user.enabled === 1 || user.enabled === true ? 1 : 0,
 		roles: mapDbToUiRoles(user.roles || []),
 		gender: user.gender || "",
@@ -681,7 +725,12 @@ async function saveUserRecord() {
 	}
 
 	const isTicketRaiser = modal.form.roles.includes("Ticker Raiser")
-	if (!isTicketRaiser) {
+	if (isTicketRaiser) {
+		if (!modal.form.tactix_customer) {
+			alert("Tactix Customer is mandatory for Ticket Raiser users.")
+			return
+		}
+	} else {
 		if (!modal.form.gender || !modal.form.date_of_birth || !modal.form.date_of_joining) {
 			alert("Gender, Date of Birth, and Date of Joining are mandatory fields.")
 			return
