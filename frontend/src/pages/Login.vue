@@ -131,8 +131,15 @@ const showPassword = ref(false)
 // WATCH: This triggers as soon as the session.login resource succeeds
 watch(
 	() => session.isLoggedIn,
-	(isLoggedIn) => {
+	async (isLoggedIn) => {
 		if (isLoggedIn) {
+			if (!session.userInfo.data?.roles?.length) {
+				try {
+					await session.userInfo.fetch()
+				} catch (e) {
+					console.error("Failed to fetch user info on login", e)
+				}
+			}
 			// Logic for conditional redirect
 			if (session.isTicketRaiser) {
 				router.push("/tickets")

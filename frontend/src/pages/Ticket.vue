@@ -1969,20 +1969,40 @@ const normalizeOptions = (payload, primaryKeys = ["name"]) => {
 		.filter((opt) => opt?.value)
 }
 
-const customerFilterOptions = computed(() =>
-	normalizeOptions(customerResource.data, [
+const customerFilterOptions = computed(() => {
+	const allOptions = normalizeOptions(customerResource.data, [
 		"name",
 		"customer_name",
 		"customer",
-	]),
-)
-const departmentFilterOptions = computed(() =>
-	normalizeOptions(departmentResource.data, [
+	])
+	if (session.isTicketRaiser) {
+		const userCust = session.ticketCustomerId || session.userInfo.data?.tactix_customer
+		if (userCust) {
+			const match = allOptions.find((c) => c.value === userCust)
+			return [match || { label: userCust, value: userCust }]
+		}
+		return []
+	}
+	return allOptions
+})
+
+const departmentFilterOptions = computed(() => {
+	const allOptions = normalizeOptions(departmentResource.data, [
 		"name",
 		"department_name",
 		"department",
-	]),
-)
+	])
+	if (session.isTicketRaiser) {
+		const userDept = session.tactixDepartment || session.userInfo.data?.tactix_department
+		if (userDept) {
+			const match = allOptions.find((d) => d.value === userDept)
+			return [match || { label: userDept, value: userDept }]
+		}
+		return []
+	}
+	return allOptions
+})
+
 const raisedByFilterOptions = computed(() => {
 	if (session.isTicketRaiser) {
 		const currentUserName = session.userFullName || session.user
@@ -1996,14 +2016,26 @@ const raisedByFilterOptions = computed(() => {
 	}
 	return normalizeOptions(userResource.data, ["name"])
 })
-const customerFilterSelectOptions = computed(() => [
-	{ label: "Client", value: "" },
-	...customerFilterOptions.value,
-])
-const departmentFilterSelectOptions = computed(() => [
-	{ label: "Department", value: "" },
-	...departmentFilterOptions.value,
-])
+
+const customerFilterSelectOptions = computed(() => {
+	if (session.isTicketRaiser) {
+		return customerFilterOptions.value
+	}
+	return [
+		{ label: "Client", value: "" },
+		...customerFilterOptions.value,
+	]
+})
+
+const departmentFilterSelectOptions = computed(() => {
+	if (session.isTicketRaiser) {
+		return departmentFilterOptions.value
+	}
+	return [
+		{ label: "Department", value: "" },
+		...departmentFilterOptions.value,
+	]
+})
 const raisedByFilterSelectOptions = computed(() => [
 	{ label: "Raised By", value: "" },
 	...raisedByFilterOptions.value,
