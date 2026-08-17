@@ -13,7 +13,6 @@
   "raised_by_user",
   "status",
   "priority",
-  "department",
   "cb00",
   "ticket_type",
   "agent_group",
@@ -451,13 +450,6 @@
    "fieldname": "meta_tab",
    "fieldtype": "Tab Break",
    "label": "Meta"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Tactix Department",
-   "search_index": 1
   },
   {
    "fieldname": "raised_by_user",

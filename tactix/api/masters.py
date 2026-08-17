@@ -8,15 +8,13 @@ def get_master_records(doctype):
 	if "System Manager" not in roles:
 		frappe.throw(_("Not authorized to read master records."))
 		
-	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
+	if doctype not in ["Project", "Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
 	if doctype == "Project":
 		return frappe.get_list(doctype, fields=["name", "project_name", "company", "expected_end_date"])
 	elif doctype == "Department":
 		return frappe.get_list(doctype, fields=["name", "department_name", "company", "parent_department"])
-	elif doctype == "Tactix Department":
-		return frappe.get_list(doctype, fields=["name", "department_name", "department_head"])
 	elif doctype == "Tactix Customer":
 		return frappe.get_list(doctype, fields=["name"])
 	elif doctype == "Tactix Team":
@@ -46,7 +44,7 @@ def create_master_record(doctype, doc_data):
 	if "System Manager" not in roles:
 		frappe.throw(_("Not authorized to write master records."))
 		
-	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
+	if doctype not in ["Project", "Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
 	data = frappe.parse_json(doc_data) if isinstance(doc_data, str) else (doc_data or {})
@@ -63,12 +61,6 @@ def create_master_record(doctype, doc_data):
 			"doctype": "Department",
 			"department_name": data.get("department_name"),
 			"company": data.get("company") or get_default_company()
-		})
-	elif doctype == "Tactix Department":
-		doc = frappe.get_doc({
-			"doctype": "Tactix Department",
-			"department_name": data.get("department_name"),
-			"department_head": data.get("department_head") or None
 		})
 	elif doctype == "Tactix Customer":
 		doc = frappe.get_doc({
@@ -98,7 +90,7 @@ def update_master_record(doctype, name, doc_data):
 	if "System Manager" not in roles:
 		frappe.throw(_("Not authorized to write master records."))
 		
-	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
+	if doctype not in ["Project", "Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
 	data = frappe.parse_json(doc_data) if isinstance(doc_data, str) else (doc_data or {})
@@ -112,9 +104,6 @@ def update_master_record(doctype, name, doc_data):
 		doc.department_name = data.get("department_name")
 		if data.get("company"):
 			doc.company = data.get("company")
-	elif doctype == "Tactix Department":
-		doc.department_name = data.get("department_name")
-		doc.department_head = data.get("department_head") or None
 	elif doctype == "Tactix Customer":
 		pass
 	elif doctype == "Tactix Team":
@@ -138,7 +127,7 @@ def delete_master_record(doctype, name):
 	if "System Manager" not in roles:
 		frappe.throw(_("Not authorized to delete master records."))
 		
-	if doctype not in ["Project", "Department", "Tactix Department", "Tactix Customer", "Tactix Team"]:
+	if doctype not in ["Project", "Department", "Tactix Customer", "Tactix Team"]:
 		frappe.throw(_("Invalid DocType."))
 		
 	frappe.delete_doc(doctype, name)

@@ -22,9 +22,6 @@ def resolve_db_folder(path):
 		if current_parent == "Home/Clients":
 			attached_doctype = "Tactix Customer"
 			attached_name = part
-		elif current_parent == "Home/Departments":
-			attached_doctype = "Tactix Department"
-			attached_name = part
 		elif current_parent == "Home" and part == "Shared":
 			attached_doctype = "User"
 			attached_name = "Administrator"
@@ -67,13 +64,6 @@ def parse_explorer_path(path):
 			doctype = "Tactix Customer"
 			docname = customer_name
 			relative_path = "/" + "/".join(parts[2:]) if len(parts) > 2 else "/"
-	elif path.startswith("/Departments/"):
-		parts = [p for p in path.split("/") if p]
-		if len(parts) >= 2:
-			dept_name = parts[1]
-			doctype = "Tactix Department"
-			docname = dept_name
-			relative_path = "/" + "/".join(parts[2:]) if len(parts) > 2 else "/"
 	return doctype, docname, relative_path
 
 
@@ -103,24 +93,16 @@ def get_folder_contents(path="/"):
 
 	if path == "/":
 		folders.append({"name": "Shared", "is_folder": True, "path": "/Shared"})
-		folders.append({"name": "Departments", "is_folder": True, "path": "/Departments"})
 		folders.append({"name": "Clients", "is_folder": True, "path": "/Clients"})
 
 	elif path == "/Clients":
 		if is_ticket_raiser:
-			folders.append({"name": user_customer, "is_folder": True, "path": f"/Clients/{user_customer}"})
+			if user_customer:
+				folders.append({"name": user_customer, "is_folder": True, "path": f"/Clients/{user_customer}"})
 		else:
 			customers = frappe.db.get_all("Tactix Customer", fields=["name"])
 			for cust in customers:
 				folders.append({"name": cust.name, "is_folder": True, "path": f"/Clients/{cust.name}"})
-
-	elif path == "/Departments":
-		if is_ticket_raiser:
-			frappe.throw("Not permitted to view departments.", frappe.PermissionError)
-		else:
-			departments = frappe.db.get_all("Tactix Department", fields=["name"])
-			for dept in departments:
-				folders.append({"name": dept.name, "is_folder": True, "path": f"/Departments/{dept.name}"})
 
 	else:
 		if path.startswith("/Clients/"):
@@ -129,12 +111,6 @@ def get_folder_contents(path="/"):
 				frappe.throw(f"Customer {customer_name} does not exist.")
 			if is_ticket_raiser and customer_name != user_customer:
 				frappe.throw("Not permitted to view these files.", frappe.PermissionError)
-		elif path.startswith("/Departments/"):
-			dept_name = path[len("/Departments/"):].split("/")[0]
-			if not frappe.db.exists("Tactix Department", dept_name):
-				frappe.throw(f"Department {dept_name} does not exist.")
-			if is_ticket_raiser:
-				frappe.throw("Not permitted to view departments.", frappe.PermissionError)
 
 		db_folder = resolve_db_folder(path)
 
@@ -201,30 +177,6 @@ def get_folder_contents(path="/"):
 							f["source"] = "Task"
 							f["source_name"] = f.get("attached_to_name")
 							f["task_subject"] = task_subject or f.get("attached_to_name")
-			elif parent_cat == "Departments":
-				tickets = frappe.db.get_all("Tactix Ticket", filters={"department": docname}, pluck="name")
-				if tickets:
-					ticket_files = frappe.db.get_all(
-						"File",
-						filters={"attached_to_doctype": "Tactix Ticket", "attached_to_name": ["in", tickets]},
-						fields=["name", "file_name", "file_url", "file_size", "creation", "owner", "attached_to_name"]
-					)
-					for f in ticket_files:
-						f["source"] = "Ticket"
-						f["source_name"] = f.get("attached_to_name")
-
-				tasks = frappe.db.get_all("Task", filters={"department": docname}, pluck="name")
-				if tasks:
-					task_files = frappe.db.get_all(
-						"File",
-						filters={"attached_to_doctype": "Task", "attached_to_name": ["in", tasks]},
-						fields=["name", "file_name", "file_url", "file_size", "creation", "owner", "attached_to_name"]
-					)
-					for f in task_files:
-						task_subject = frappe.db.get_value("Task", f.get("attached_to_name"), "subject")
-						f["source"] = "Task"
-						f["source_name"] = f.get("attached_to_name")
-						f["task_subject"] = task_subject or f.get("attached_to_name")
 
 		files = files_db + ticket_files + task_files
 

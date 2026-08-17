@@ -304,33 +304,7 @@
 			</Autocomplete>
 		</div>
 
-		<!-- Department Autocomplete Filter -->
-		<div class="w-36 shrink-0">
-			<Autocomplete
-			  ref="departmentAutocomplete"
-			  :options="departmentFilterSelectOptions"
-			  :modelValue="selectedFilters.department"
-			  @update:modelValue="val => selectedFilters.department = val?.value ?? val ?? ''"
-			  :compare-fn="compareOption"
-			  :max-options="100"
-			>
-			  <template #target>
-				<button
-				  type="button"
-				  @click="() => departmentAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.department !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
-				>
-				  <span class="truncate">{{ getDepartmentLabel(selectedFilters.department) }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
-				</button>
-			  </template>
-			</Autocomplete>
-		</div>
+
 
 		<!-- Status Autocomplete Filter -->
 		<div class="w-36 shrink-0">
@@ -511,11 +485,7 @@
 				</span>
 				</template>
 
-				<template v-if="column.key === 'department'">
-				<span class="text-xs text-slate-600 font-medium truncate">
-					{{ getDepartmentLabel(row.department) }}
-				</span>
-				</template>
+
 
 				<template v-if="column.key === 'creation'">
 				<div class="flex items-center gap-2 text-slate-500 whitespace-nowrap">
@@ -783,28 +753,6 @@
 				  </Autocomplete>
 				</div>
 			  </div>
-			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Department</label>
-				<Autocomplete
-				  ref="createDepartmentAutocomplete"
-				  :options="departmentFilterSelectOptions"
-				  :modelValue="ticketForm.department"
-				  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
-				  :compare-fn="compareOption"
-				  :max-options="100"
-				>
-				  <template #target>
-					<button
-					  type="button"
-					  @click="() => createDepartmentAutocomplete?.togglePopover()"
-					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-					>
-					  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
-					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-					</button>
-				  </template>
-				</Autocomplete>
-			  </div>
 			</div>
 		  </div>
 		  <div class="space-y-2 border-t pt-4">
@@ -992,7 +940,7 @@
 									</div>
 								</div>
 
-								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
 									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Customer</label>
 										<Autocomplete
@@ -1034,29 +982,6 @@
 											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 											  <span class="truncate">{{ getUserLabel(ticketForm.raised_by, 'Select User') }}</span>
-											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-											</button>
-										  </template>
-										</Autocomplete>
-									</div>
-
-									<div class="space-y-1.5">
-										<label class="block text-xs text-ink-gray-5">Department</label>
-										<Autocomplete
-										  ref="editDepartmentAutocomplete"
-										  :options="departmentFilterOptions"
-										  :modelValue="ticketForm.department"
-										  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
-										  :compare-fn="compareOption"
-										  :max-options="100"
-										>
-										  <template #target>
-											<button
-											  type="button"
-											  @click="() => editDepartmentAutocomplete?.togglePopover()"
-											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-											>
-											  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
 											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 											</button>
 										  </template>
@@ -1180,28 +1105,6 @@
 					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 					>
 					  <span class="truncate">{{ getProjectLabel(newTask.project) }}</span>
-					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-					</button>
-				  </template>
-				</Autocomplete>
-			  </div>
-			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Department</label>
-				<Autocomplete
-				  ref="taskDepartmentAutocomplete"
-				  :options="departmentResourceTask.data || []"
-				  :modelValue="newTask.department"
-				  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
-				  :compare-fn="compareOption"
-				  :max-options="100"
-				>
-				  <template #target>
-					<button
-					  type="button"
-					  @click="() => taskDepartmentAutocomplete?.togglePopover()"
-					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-					>
-					  <span class="truncate">{{ getDepartmentLabel(newTask.department) }}</span>
 					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 					</button>
 				  </template>
@@ -1442,13 +1345,6 @@ function getClientLabel(val) {
 	return match ? match.label : rawVal
 }
 
-function getDepartmentLabel(val) {
-	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Department"
-	const match = departmentFilterOptions.value.find((d) => d.value === rawVal)
-	return match ? match.label : rawVal
-}
-
 function getUserLabel(val, defaultLabel = "User") {
 	const rawVal = val && typeof val === "object" ? val.value : val
 	if (!rawVal) return defaultLabel
@@ -1647,15 +1543,12 @@ const assignedToOptionsTask = computed(() => {
 	return userResourceTask.data || []
 })
 const ticketCustomerId = session.ticketCustomerId
-const tactixDepartment = session.tactixDepartment
-const isTactixDeptHead = session.isTactixDeptHead
 
 const selectedFilters = reactive({
 	status: "",
 	priority: "",
 	customer: "",
 	raised_by: "",
-	department: "",
 })
 
 /* RESOURCES */
@@ -1666,7 +1559,6 @@ const ticketFilters = computed(() => {
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
 	if (selectedFilters.customer) f.customer = selectedFilters.customer
 	if (selectedFilters.raised_by) f.raised_by_user = selectedFilters.raised_by
-	if (selectedFilters.department) f.department = selectedFilters.department
 	return f
 })
 
@@ -1867,52 +1759,7 @@ function getUserAvatarImage(userName) {
 	return match?.image || ""
 }
 
-const departmentResource = createListResource({
-	doctype: "Tactix Department",
-	fields: ["name"],
-	auto: true,
-	transform: (departments) => {
-		const departmentRows = Array.isArray(departments)
-			? departments
-			: Array.isArray(departments?.message)
-				? departments.message
-				: Array.isArray(departments?.message?.message)
-					? departments.message.message
-					: Array.isArray(departments?.data)
-						? departments.data
-						: Array.isArray(departments?.data?.message)
-							? departments.data.message
-							: []
 
-		if (!departmentRows.length) return []
-
-		return departmentRows
-			.map((d) => {
-				if (d == null) return null
-				if (
-					Object.prototype.hasOwnProperty.call(d, "label") &&
-					Object.prototype.hasOwnProperty.call(d, "value")
-				) {
-					return { label: d.label, value: String(d.value) }
-				}
-				const name =
-					d.name ?? d.department_name ?? d.department ?? d.label ?? d.value
-				if (name == null) return null
-				return { label: String(name), value: String(name) }
-			})
-			.filter((opt) => opt && opt.value !== "" && opt.value != null)
-	},
-	pageLength: 10000,
-})
-
-const departmentResourceTask = createListResource({
-	doctype: "Department",
-	fields: ["name"],
-	auto: true,
-	transform: (departments) =>
-		departments.map((d) => ({ label: d.name, value: d.name })),
-	pageLength: 10000,
-})
 
 const unwrapListPayload = (payload) => {
 	if (Array.isArray(payload)) return payload
@@ -1986,23 +1833,6 @@ const customerFilterOptions = computed(() => {
 	return allOptions
 })
 
-const departmentFilterOptions = computed(() => {
-	const allOptions = normalizeOptions(departmentResource.data, [
-		"name",
-		"department_name",
-		"department",
-	])
-	if (session.isTicketRaiser) {
-		const userDept = session.tactixDepartment || session.userInfo.data?.tactix_department
-		if (userDept) {
-			const match = allOptions.find((d) => d.value === userDept)
-			return [match || { label: userDept, value: userDept }]
-		}
-		return []
-	}
-	return allOptions
-})
-
 const raisedByFilterOptions = computed(() => {
 	if (session.isTicketRaiser) {
 		const currentUserName = session.userFullName || session.user
@@ -2017,25 +1847,6 @@ const raisedByFilterOptions = computed(() => {
 	return normalizeOptions(userResource.data, ["name"])
 })
 
-const customerFilterSelectOptions = computed(() => {
-	if (session.isTicketRaiser) {
-		return customerFilterOptions.value
-	}
-	return [
-		{ label: "Client", value: "" },
-		...customerFilterOptions.value,
-	]
-})
-
-const departmentFilterSelectOptions = computed(() => {
-	if (session.isTicketRaiser) {
-		return departmentFilterOptions.value
-	}
-	return [
-		{ label: "Department", value: "" },
-		...departmentFilterOptions.value,
-	]
-})
 const raisedByFilterSelectOptions = computed(() => [
 	{ label: "Raised By", value: "" },
 	...raisedByFilterOptions.value,
@@ -2101,7 +1912,6 @@ const emptyTicket = () => ({
 	status: "Open",
 	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 	ticket_type: "Support",
-	department: isTicketRaiser && tactixDepartment ? tactixDepartment : "",
 	agent_group: "",
 	description: "",
 	customer: isTicketRaiser && ticketCustomerId ? ticketCustomerId : "",
@@ -2291,7 +2101,6 @@ const handleSaveTask = async () => {
 /* DYNAMIC FILTER RULES & ACTIVE CHIPS */
 const FILTERABLE_FIELDS = [
 	{ label: "Client", value: "customer", key: "customer" },
-	{ label: "Department", value: "department", key: "department" },
 	{ label: "Status", value: "status", key: "status" },
 	{ label: "Priority", value: "priority", key: "priority" },
 	{ label: "Raised By", value: "raised_by", key: "raised_by" },
@@ -2450,7 +2259,6 @@ const ALL_COLUMNS = [
 	{ label: "Subject", key: "subject", icon: IconList, width: "3.5fr", mandatory: true },
 	{ label: "Ticket ID", key: "name", icon: IconHash, width: "140px" },
 	{ label: "Client", key: "customer", icon: IconBriefcase, width: "160px" },
-	{ label: "Department", key: "department", icon: IconBriefcase, width: "200px" },
 	{ label: "Status", key: "status", icon: IconAlertCircle, width: "130px" },
 	{ label: "Priority", key: "priority", icon: IconBriefcase, width: "130px" },
 	{ label: "Raised By", key: "raised_by", icon: IconUser, width: "200px" },
@@ -2465,13 +2273,10 @@ const DEFAULT_COLUMN_KEYS = [
 	"name",
 	"subject",
 	"customer",
-	"department",
 	"status",
 	"priority",
 	"raised_by",
 	"creation",
-	"first_response_time",
-	"closed_time",
 ]
 
 const STORAGE_KEY = "tactix_tickets_columns_config"

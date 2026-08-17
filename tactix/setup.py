@@ -11,7 +11,7 @@ def after_migrate():
 def setup_role_permissions():
 	# System Manager Permissions
 	for doctype in [
-		"Task", "Project", "Tactix Ticket", "Tactix Customer", "Tactix Department",
+		"Task", "Project", "Tactix Ticket", "Tactix Customer",
 		"Task Assigned To", "Tactix Ticket Attachment", "Github Settings",
 		"Tactix Pull Request", "Tactix Settings"
 	]:
@@ -46,12 +46,6 @@ def setup_role_permissions():
 		"report": 1, "if_owner": 0
 	})
 
-	grant_custom_permission("Tactix Department", "Employee", {
-		"read": 1, "write": 0, "create": 0, "delete": 0,
-		"share": 1, "export": 0, "print": 1, "email": 1,
-		"report": 1, "if_owner": 0
-	})
-
 	grant_custom_permission("Tactix Settings", "Employee", {
 		"read": 1, "write": 0, "create": 0, "delete": 0,
 		"share": 1, "export": 0, "print": 1, "email": 1,
@@ -64,10 +58,6 @@ def setup_role_permissions():
 	})
 
 	grant_custom_permission("Tactix Customer", "Tactix Ticket Raiser", {
-		"read": 1, "write": 1, "create": 1,
-	})
-
-	grant_custom_permission("Tactix Department", "Tactix Ticket Raiser", {
 		"read": 1, "write": 1, "create": 1,
 	})
 
@@ -188,13 +178,6 @@ def get_custom_fields():
 				"fieldtype":"Link",
 				"options":"Tactix Customer",
 				"insert_after":"mobile_no",
-			},
-			{
-				"fieldname": "tactix_department",
-				"label": "Tactix Department",
-				"fieldtype":"Link",
-				"options":"Tactix Department",
-				"insert_after":"tactix_customer",
 			},
 		],
 		"Employee":[
