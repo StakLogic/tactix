@@ -659,11 +659,9 @@
 		  </p>
 		  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="space-y-4">
-			  <div :class="['rounded-lg transition-all', { 'field-invalid-blink': ticketInvalidFields.subject }]">
-				<FormControl label="Subject *" v-model="ticketForm.subject" />
-			  </div>
+			  <FormControl label="Subject *" v-model="ticketForm.subject" />
 			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Customer</label>
+				<label class="block text-xs text-ink-gray-5">Customer *</label>
 				<Autocomplete
 				  ref="createCustomerAutocomplete"
 				  :options="customerFilterSelectOptions"
@@ -685,7 +683,7 @@
 				</Autocomplete>
 			  </div>
 			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Raised By</label>
+				<label class="block text-xs text-ink-gray-5">Raised By *</label>
 				<Autocomplete
 				  ref="createRaisedByAutocomplete"
 				  :options="raisedByFilterOptions"
@@ -756,14 +754,63 @@
 			</div>
 		  </div>
 		  <div class="space-y-2 border-t pt-4">
-			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Description</label>
-			<div class="border rounded-lg bg-white shadow-sm overflow-hidden min-h-[200px]">
+			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Description *</label>
+			<div class="border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden min-h-[200px]">
 			  <TextEditor
 				editor-class="prose-sm max-w-none p-6 outline-none"
 				:content="ticketForm.description"
 				@change="(val) => (ticketForm.description = val)"
 				:fixed-menu="true"
 			  />
+			</div>
+		  </div>
+
+		  <!-- Attachments Field -->
+		  <div class="space-y-3 border-t pt-4">
+			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider block">Attachments</label>
+			<FileUploader @success="handleFileUploadTicket">
+			  <template #default="{ openFileSelector }">
+				<button 
+				  type="button"
+				  @click="openFileSelector" 
+				  class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-lg p-3 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer"
+				>
+				  <IconPaperclip class="w-4 h-4" />
+				  <span class="text-xs font-semibold">Attach Files</span>
+				</button>
+			  </template>
+			</FileUploader>
+			
+			<div v-if="ticketForm.attachments && ticketForm.attachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+			  <div 
+				v-for="(file, idx) in ticketForm.attachments" 
+				:key="idx" 
+				class="flex items-center justify-between bg-surface-gray-2 border border-slate-200 rounded-lg p-2 transition-all"
+			  >
+				<a 
+				  :href="file.file_url" 
+				  target="_blank" 
+				  class="flex flex-1 items-center gap-2 truncate"
+				>
+				  <div class="h-7 w-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+					<IconBriefcase class="w-3.5 h-3.5" /> 
+				  </div>
+				  <div class="truncate text-left">
+					<span class="block truncate font-medium text-slate-700 text-xs hover:text-blue-600 transition-colors">
+					  {{ file.file_name }}
+					</span>
+				  </div>
+				</a>
+
+				<button 
+				  type="button"
+				  @click.stop="removeAttachmentTicket(idx)" 
+				  class="p-1 ml-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
+				  title="Remove file"
+				>
+				  <IconX class="w-3.5 h-3.5" />
+				</button>
+			  </div>
 			</div>
 		  </div>
 		</div>
@@ -942,7 +989,7 @@
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
 									<div class="space-y-1.5">
-										<label class="block text-xs text-ink-gray-5">Customer</label>
+										<label class="block text-xs text-ink-gray-5">Customer *</label>
 										<Autocomplete
 										  ref="editCustomerAutocomplete"
 										  :options="customerFilterOptions"
@@ -965,7 +1012,7 @@
 									</div>
 
 									<div class="space-y-1.5">
-										<label class="block text-xs text-ink-gray-5">Raised By</label>
+										<label class="block text-xs text-ink-gray-5">Raised By *</label>
 										<Autocomplete
 										  ref="editRaisedByAutocomplete"
 										  :options="raisedByFilterOptions"
@@ -993,7 +1040,7 @@
 							
 							<!-- Description Field -->
 							<div class="space-y-2 border-t pt-4">
-								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description</label>
+								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description *</label>
 								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
@@ -1340,7 +1387,7 @@ function getProjectLabel(val) {
 // Friendly labels for Autocomplete dropdowns
 function getClientLabel(val) {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Client"
+	if (!rawVal) return ""
 	const match = customerFilterOptions.value.find((c) => c.value === rawVal)
 	return match ? match.label : rawVal
 }
@@ -1428,6 +1475,9 @@ const taskFormError = ref("")
 
 const ticketInvalidFields = reactive({
 	subject: false,
+	customer: false,
+	raised_by: false,
+	description: false,
 })
 
 const taskInvalidFields = reactive({
@@ -1838,7 +1888,7 @@ const customerFilterSelectOptions = computed(() => {
 		return customerFilterOptions.value
 	}
 	return [
-		{ label: "Client", value: "" },
+		{ label: "", value: "" },
 		...customerFilterOptions.value,
 	]
 })
@@ -1937,6 +1987,9 @@ const resetForm = () => {
 	Object.assign(ticketForm, emptyTicket())
 	ticketFormError.value = ""
 	ticketInvalidFields.subject = false
+	ticketInvalidFields.customer = false
+	ticketInvalidFields.raised_by = false
+	ticketInvalidFields.description = false
 }
 
 const initialForm = {
@@ -2007,14 +2060,28 @@ function openEditDialog(ticket) {
 
 async function handleSaveTicket() {
 	ticketFormError.value = ""
-	ticketInvalidFields.subject = false
+
+	const missingFields = []
 
 	if (!ticketForm.subject?.trim()) {
-		ticketInvalidFields.subject = true
-		ticketFormError.value = "Please fill all mandatory fields: Subject."
-		setTimeout(() => {
-			ticketInvalidFields.subject = false
-		}, 700)
+		missingFields.push("Subject")
+	}
+
+	if (!ticketForm.customer?.trim()) {
+		missingFields.push("Customer")
+	}
+
+	if (!ticketForm.raised_by?.trim()) {
+		missingFields.push("Raised By")
+	}
+
+	const descText = (ticketForm.description || "").replace(/<[^>]*>/g, "").trim()
+	if (!descText) {
+		missingFields.push("Description")
+	}
+
+	if (missingFields.length > 0) {
+		ticketFormError.value = `Please fill all mandatory fields: ${missingFields.join(", ")}.`
 		return
 	}
 
@@ -2648,7 +2715,6 @@ watch(showEditTicket, (val) => {
 watch(showCreateDialog, (val) => {
 	if (!val) {
 		ticketFormError.value = ""
-		ticketInvalidFields.subject = false
 	}
 })
 
@@ -2707,16 +2773,4 @@ onUnmounted(() => {
 :global([data-radix-popper-content-wrapper]), :global([data-reka-popper-content-wrapper]), :global(.PopoverContent), :global(.ticket-modal-autocomplete) { z-index: 100005 !important; }
 /* Ensure list-view filter dropdowns render above cards/list containers as well. */
 :global(.ticket-filter-autocomplete) { z-index: 100005 !important; }
-
-.field-invalid-blink {
-	border: 1px solid #ef4444;
-	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-	animation: fieldBlink 0.7s ease-out 1;
-}
-
-@keyframes fieldBlink {
-	0% { opacity: 1; transform: translateY(0); }
-	30% { opacity: 0.85; transform: translateY(-1px); }
-	100% { opacity: 1; transform: translateY(0); }
-}
 </style>
