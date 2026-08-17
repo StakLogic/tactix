@@ -267,7 +267,7 @@
 			variant="solid"
 			class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
 			style="background-color: var(--primary-color);"
-			@click="isEditMode=false; resetForm(); customerResource.reload(); departmentResource.reload(); showCreateDialog=true"
+			@click="isEditMode=false; resetForm(); customerResource.reload(); showCreateDialog=true"
 		>
 			<template #prefix><IconPlus class="w-3.5 h-3.5" /></template> New Ticket
 		</Button>
@@ -1833,6 +1833,16 @@ const customerFilterOptions = computed(() => {
 	return allOptions
 })
 
+const customerFilterSelectOptions = computed(() => {
+	if (session.isTicketRaiser) {
+		return customerFilterOptions.value
+	}
+	return [
+		{ label: "Client", value: "" },
+		...customerFilterOptions.value,
+	]
+})
+
 const raisedByFilterOptions = computed(() => {
 	if (session.isTicketRaiser) {
 		const currentUserName = session.userFullName || session.user
@@ -1904,20 +1914,23 @@ const dialogOptions = computed(() => ({
 }))
 
 /* FORM LOGIC */
-const emptyTicket = () => ({
-	name: "",
-	subject: "",
-	raised_by: isTicketRaiser ? session.user : "",
-	raised_by_user: "",
-	status: "Open",
-	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
-	ticket_type: "Support",
-	agent_group: "",
-	description: "",
-	customer: isTicketRaiser && ticketCustomerId ? ticketCustomerId : "",
-	resolution_details: "",
-	attachments: [],
-})
+const emptyTicket = () => {
+	const userCust = session.ticketCustomerId || session.userInfo.data?.tactix_customer || ""
+	return {
+		name: "",
+		subject: "",
+		raised_by: session.isTicketRaiser ? session.user : "",
+		raised_by_user: "",
+		status: "Open",
+		priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
+		ticket_type: "Support",
+		agent_group: "",
+		description: "",
+		customer: session.isTicketRaiser ? userCust : "",
+		resolution_details: "",
+		attachments: [],
+	}
+}
 
 const ticketForm = reactive(emptyTicket())
 const resetForm = () => {
