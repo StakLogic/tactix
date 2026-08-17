@@ -947,7 +947,7 @@
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Status</label>
 										<Autocomplete
 										  ref="editStatusAutocomplete"
@@ -969,7 +969,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Priority</label>
 										<Autocomplete
 										  ref="editPriorityAutocomplete"
@@ -993,7 +993,7 @@
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Customer</label>
 										<Autocomplete
 										  ref="editCustomerAutocomplete"
@@ -1016,7 +1016,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Raised By</label>
 										<Autocomplete
 										  ref="editRaisedByAutocomplete"
@@ -1040,7 +1040,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Department</label>
 										<Autocomplete
 										  ref="editDepartmentAutocomplete"
@@ -1069,7 +1069,7 @@
 							<!-- Description Field -->
 							<div class="space-y-2 border-t pt-4">
 								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description</label>
-								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
 										:content="ticketForm.description"
@@ -1082,7 +1082,7 @@
 							<!-- Resolution Field -->
 							<div v-if="!isTicketRaiser" class="space-y-2 border-t pt-4 pb-2" >
 								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Resolution</label>
-								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
 										:content="ticketForm.resolution_details"

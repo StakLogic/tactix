@@ -1419,7 +1419,7 @@
 								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">General Information</h4>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Status</label>
 										<Autocomplete
 										  ref="editStatusAutocomplete"
@@ -1441,7 +1441,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Priority</label>
 										<Autocomplete
 										  ref="editPriorityAutocomplete"
@@ -1466,7 +1466,7 @@
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3 sm:pt-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Project</label>
 										<Autocomplete
 										  ref="editProjectAutocomplete"
@@ -1490,7 +1490,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Department</label>
 										<Autocomplete
 										  ref="editDepartmentAutocomplete"
@@ -1521,7 +1521,7 @@
 								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Assignment & Schedule</h4>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Assigned By</label>
 										<Autocomplete
 										  ref="editAssignedByAutocomplete"
@@ -1545,7 +1545,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Team</label>
 										<Autocomplete
 										  ref="editTeamAutocomplete"
@@ -1576,7 +1576,7 @@
 										:options="assignedToOptions"
 										v-model="newTask.assigned_to"
 										:disabled="isFieldDisabled"
-										class="shadow-sm"
+										class=""
 									>
 										<template #footer="{ clearAll, selectAll }">
 											<div class="flex justify-between my-2">
@@ -1599,13 +1599,13 @@
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3">
-									<FormControl label="Deadline" type="date" v-model="newTask.exp_end_date" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
-									<FormControl label="Expected Time (Hrs)" type="number" v-model="newTask.expected_time" class="!mb-0 shadow-sm" :disabled="isFieldDisabled" />
+									<FormControl label="Deadline" type="date" v-model="newTask.exp_end_date" class="!mb-0" :disabled="isFieldDisabled" />
+									<FormControl label="Expected Time (Hrs)" type="number" v-model="newTask.expected_time" class="!mb-0" :disabled="isFieldDisabled" />
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3">
-									<FormControl label="Assigned Datetime" type="datetime-local" :model-value="formatForInput(newTask.assigned_datetime)" class="!mb-0 shadow-sm" disabled="true" />
-									<div v-if="newTask.completed_by" class="space-y-1.5 shadow-sm">
+									<FormControl label="Assigned Datetime" type="datetime-local" :model-value="formatForInput(newTask.assigned_datetime)" class="!mb-0" disabled="true" />
+									<div v-if="newTask.completed_by" class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Completed By</label>
 										<Autocomplete
 										  ref="editCompletedByAutocomplete"
@@ -1631,7 +1631,7 @@
 							</div>
 
 							<!-- Section 3: Attachments Card -->
-							<div class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-4 shadow-sm">
+							<div class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-4">
 								<h4 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Attachments</h4>
 								
 								<FileUploader @success="handleFileUpload">
@@ -1650,7 +1650,7 @@
 									<div 
 										v-for="(file, idx) in newTask.attachments" 
 										:key="idx" 
-										class="group flex items-center justify-between bg-slate-50/60 border border-slate-200 rounded-xl shadow-sm hover:border-blue-300 hover:shadow transition-all overflow-hidden p-2"
+										class="group flex items-center justify-between bg-slate-50/60 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow transition-all overflow-hidden p-2"
 									>
 										<a 
 											:href="file.file_url" 
