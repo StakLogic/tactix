@@ -130,7 +130,7 @@
                 <input 
                   type="text"
                   v-model="githubForm.organization_name"
-                  placeholder="e.g. Teciza-Solutions"
+                  placeholder="e.g. your-organization"
                   class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 hover:bg-slate-100/50 dark:hover:bg-slate-750 transition-all"
                 />
               </div>

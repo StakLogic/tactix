@@ -20,9 +20,9 @@ def get_github_settings():
 		pass
 		
 	if not token:
-		token = os.environ.get("GITHUB_TOKEN") or DEFAULT_GITHUB_TOKEN
+		token = os.environ.get("GITHUB_TOKEN", "")
 	if not orgs:
-		orgs = DEFAULT_ORG
+		orgs = os.environ.get("GITHUB_ORGANIZATION") or os.environ.get("GITHUB_ORG") or ""
 		
 	return token, orgs
 
@@ -341,11 +341,13 @@ def simulate_pr_raised():
 	"""
 	Triggers a mock PR raised notification to all reviewers and the current session user.
 	"""
+	doc = frappe.get_doc("Github Settings")
+	org_name = doc.organization_name or "org"
 	return publish_pr_raised_notification(
 		pr_title="feat: support oauth2 authentication mechanisms for integrations",
-		repo_name="Teciza-Solutions/tactix",
+		repo_name=f"{org_name}/tactix",
 		author_name="octocat",
-		html_url="https://github.com/Teciza-Solutions/tactix/pull/415",
+		html_url=f"https://github.com/{org_name}/tactix/pull/415",
 		pr_number=415
 	)
 
@@ -361,7 +363,7 @@ def get_github_config():
 	
 	return {
 		"has_token": bool(token),
-		"organization_name": doc.organization_name or "Teciza-Solutions"
+		"organization_name": doc.organization_name or ""
 	}
 
 @frappe.whitelist()
