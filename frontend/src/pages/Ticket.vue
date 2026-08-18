@@ -297,20 +297,18 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getClientLabel(selectedFilters.customer) }}</span>
+				  <span class="truncate">{{ getClientLabel(selectedFilters.customer, 'Client') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
 		</div>
 
-
-
 		<!-- Status Autocomplete Filter -->
 		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="statusAutocomplete"
-			  :options="filterStatusOptions"
+			  :options="filterStatusSelectOptions"
 			  :modelValue="selectedFilters.status"
 			  @update:modelValue="val => selectedFilters.status = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
@@ -326,7 +324,7 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getStatusLabel(selectedFilters.status) }}</span>
+				  <span class="truncate">{{ getStatusLabel(selectedFilters.status, 'Status') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
@@ -337,7 +335,7 @@
 		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="priorityAutocomplete"
-			  :options="priorityOptions"
+			  :options="priorityFilterSelectOptions"
 			  :modelValue="selectedFilters.priority"
 			  @update:modelValue="val => selectedFilters.priority = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
@@ -353,7 +351,7 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority) }}</span>
+				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority, 'Priority') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
@@ -676,7 +674,7 @@
 					  @click="() => createCustomerAutocomplete?.togglePopover()"
 					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 					>
-					  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+					  <span class="truncate">{{ getClientLabel(ticketForm.customer, 'Select Customer') }}</span>
 					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 					</button>
 				  </template>
@@ -1004,7 +1002,7 @@
 											  @click="() => editCustomerAutocomplete?.togglePopover()"
 											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 											>
-											  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+											  <span class="truncate">{{ getClientLabel(ticketForm.customer, 'Select Customer') }}</span>
 											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 											</button>
 										  </template>
@@ -1385,9 +1383,9 @@ function getProjectLabel(val) {
 }
 
 // Friendly labels for Autocomplete dropdowns
-function getClientLabel(val) {
+function getClientLabel(val, defaultLabel = "Client") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return ""
+	if (!rawVal) return defaultLabel
 	const match = customerFilterOptions.value.find((c) => c.value === rawVal)
 	return match ? match.label : rawVal
 }
@@ -1399,16 +1397,16 @@ function getUserLabel(val, defaultLabel = "User") {
 	return match ? match.label : rawVal
 }
 
-function getStatusLabel(val) {
+function getStatusLabel(val, defaultLabel = "Status") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Status"
+	if (!rawVal) return defaultLabel
 	const match = filterStatusOptions.find((s) => s.value === rawVal)
 	return match ? match.label : rawVal
 }
 
-function getPriorityLabel(val) {
+function getPriorityLabel(val, defaultLabel = "Priority") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Priority"
+	if (!rawVal) return defaultLabel
 	const match = priorityOptions.find((p) => p.value === rawVal)
 	return match ? match.label : rawVal
 }
@@ -1888,7 +1886,7 @@ const customerFilterSelectOptions = computed(() => {
 		return customerFilterOptions.value
 	}
 	return [
-		{ label: "", value: "" },
+		{ label: "Client", value: "" },
 		...customerFilterOptions.value,
 	]
 })
@@ -1935,6 +1933,16 @@ const priorityOptions = [
 	{ label: "High", value: "High" },
 	{ label: "Urgent", value: "Urgent" },
 ]
+
+const filterStatusSelectOptions = computed(() => [
+	{ label: "Status", value: "" },
+	...filterStatusOptions,
+])
+
+const priorityFilterSelectOptions = computed(() => [
+	{ label: "Priority", value: "" },
+	...priorityOptions,
+])
 
 const comments = createResource({
 	url: "tactix.api.ticket.get_comments",
