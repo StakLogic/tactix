@@ -90,14 +90,15 @@ def grant_custom_permission(doctype, role, perm_dict):
 
 
 def create_tactix_roles():
-	role_name = "Tactix Ticket Raiser"
+	roles = ["Tactix Ticket Raiser", "Code Reviewer"]
+	for role_name in roles:
+		if not frappe.db.exists("Role", role_name):
+			role = frappe.get_doc({
+				"doctype": "Role",
+				"role_name": role_name,
+			})
+			role.insert(ignore_permissions=True)
 
-	if not frappe.db.exists("Role", role_name):
-		role = frappe.get_doc({
-			"doctype": "Role",
-			"role_name": role_name,
-		})
-		role.insert(ignore_permissions=True)
 
 
 def get_custom_fields():

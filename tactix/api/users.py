@@ -61,6 +61,23 @@ def get_users_data():
 		"customers": customers
 	}
 
+import re
+
+def get_clean_error_message(e):
+	raw = ""
+	if getattr(frappe, "message_log", None):
+		msg = frappe.message_log[-1]
+		if isinstance(msg, dict):
+			raw = msg.get("message", "")
+		else:
+			raw = str(msg)
+	if not raw:
+		raw = str(e)
+	clean = re.sub(r"<[^>]+>", " ", raw)
+	clean = " ".join(clean.split())
+	return clean or str(e)
+
+
 @frappe.whitelist()
 def save_user(email, doc_data):
 	roles = frappe.get_roles(frappe.session.user)
@@ -85,82 +102,32 @@ def save_user(email, doc_data):
 	
 	is_ticket_raiser = "Tactix Ticket Raiser" in roles_list
 	
-	if is_new:
-		target_email = data.get("email")
-		if not target_email:
-			frappe.throw(_("Email is required for new users."))
-		if frappe.db.exists("User", target_email):
-			frappe.throw(_("User with email {0} already exists.").format(target_email))
-			
-		user_doc = frappe.get_doc({
-			"doctype": "User",
-			"email": target_email,
-			"first_name": first_name,
-			"last_name": last_name,
-			"enabled": enabled,
-			"send_welcome_email": 0,
-			"tactix_customer": tactix_customer if is_ticket_raiser else "",
-			"roles": [{"role": r} for r in roles_list]
-		})
-		if password:
-			user_doc.new_password = password
-		user_doc.insert()
-		
-		# Create corresponding Employee only if not a Ticket Raiser
-		if not is_ticket_raiser:
-			if not gender or not date_of_birth or not date_of_joining:
-				frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
-			emp_doc = frappe.get_doc({
-				"doctype": "Employee",
-				"user_id": target_email,
+	try:
+		if is_new:
+			target_email = data.get("email")
+			if not target_email:
+				frappe.throw(_("Email is required for new users."))
+			if frappe.db.exists("User", target_email):
+				frappe.throw(_("User with email {0} already exists.").format(target_email))
+				
+			user_doc = frappe.get_doc({
+				"doctype": "User",
+				"email": target_email,
 				"first_name": first_name,
 				"last_name": last_name,
-				"employee_name": f"{first_name} {last_name}".strip(),
-				"company": data.get("company") or get_default_company(),
-				"department": department,
-				"status": "Active",
-				"gender": gender,
-				"date_of_birth": date_of_birth,
-				"date_of_joining": date_of_joining,
-				"github_username": github_username
+				"enabled": enabled,
+				"send_welcome_email": 0,
+				"tactix_customer": tactix_customer if is_ticket_raiser else "",
+				"roles": [{"role": r} for r in roles_list]
 			})
-			emp_doc.insert()
-		
-	else:
-		target_email = email
-		user_doc = frappe.get_doc("User", target_email)
-		user_doc.first_name = first_name
-		user_doc.last_name = last_name
-		user_doc.enabled = enabled
-		user_doc.tactix_customer = tactix_customer if is_ticket_raiser else ""
-		if password:
-			user_doc.new_password = password
+			if password:
+				user_doc.new_password = password
+			user_doc.insert()
 			
-		# Update Roles
-		user_doc.set("roles", [])
-		for r in roles_list:
-			user_doc.append("roles", {"role": r})
-		user_doc.save()
-		
-		# Update corresponding Employee
-		emp_names = frappe.db.get_all("Employee", filters={"user_id": target_email}, pluck="name")
-		if not is_ticket_raiser:
-			if not gender or not date_of_birth or not date_of_joining:
-				frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
-			if emp_names:
-				emp_doc = frappe.get_doc("Employee", emp_names[0])
-				emp_doc.first_name = first_name
-				emp_doc.last_name = last_name
-				emp_doc.employee_name = f"{first_name} {last_name}".strip()
-				if data.get("company"):
-					emp_doc.company = data.get("company")
-				emp_doc.department = department
-				emp_doc.gender = gender
-				emp_doc.date_of_birth = date_of_birth
-				emp_doc.date_of_joining = date_of_joining
-				emp_doc.github_username = github_username
-				emp_doc.save()
-			else:
+			# Create corresponding Employee only if not a Ticket Raiser
+			if not is_ticket_raiser:
+				if not gender or not date_of_birth or not date_of_joining:
+					frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
 				emp_doc = frappe.get_doc({
 					"doctype": "Employee",
 					"user_id": target_email,
@@ -176,13 +143,68 @@ def save_user(email, doc_data):
 					"github_username": github_username
 				})
 				emp_doc.insert()
-		else:
-			# If the user has a Ticket Raiser role, delete their Employee document if it exists
-			for emp in emp_names:
-				frappe.delete_doc("Employee", emp)
 			
-	frappe.db.commit()
-	return {"status": "success", "email": target_email}
+		else:
+			target_email = email
+			user_doc = frappe.get_doc("User", target_email)
+			user_doc.first_name = first_name
+			user_doc.last_name = last_name
+			user_doc.enabled = enabled
+			user_doc.tactix_customer = tactix_customer if is_ticket_raiser else ""
+			if password:
+				user_doc.new_password = password
+				
+			# Update Roles
+			user_doc.set("roles", [])
+			for r in roles_list:
+				user_doc.append("roles", {"role": r})
+			user_doc.save()
+			
+			# Update corresponding Employee
+			emp_names = frappe.db.get_all("Employee", filters={"user_id": target_email}, pluck="name")
+			if not is_ticket_raiser:
+				if not gender or not date_of_birth or not date_of_joining:
+					frappe.throw(_("Gender, Date of Birth, and Date of Joining are mandatory for employees."))
+				if emp_names:
+					emp_doc = frappe.get_doc("Employee", emp_names[0])
+					emp_doc.first_name = first_name
+					emp_doc.last_name = last_name
+					emp_doc.employee_name = f"{first_name} {last_name}".strip()
+					if data.get("company"):
+						emp_doc.company = data.get("company")
+					emp_doc.department = department
+					emp_doc.gender = gender
+					emp_doc.date_of_birth = date_of_birth
+					emp_doc.date_of_joining = date_of_joining
+					emp_doc.github_username = github_username
+					emp_doc.save()
+				else:
+					emp_doc = frappe.get_doc({
+						"doctype": "Employee",
+						"user_id": target_email,
+						"first_name": first_name,
+						"last_name": last_name,
+						"employee_name": f"{first_name} {last_name}".strip(),
+						"company": data.get("company") or get_default_company(),
+						"department": department,
+						"status": "Active",
+						"gender": gender,
+						"date_of_birth": date_of_birth,
+						"date_of_joining": date_of_joining,
+						"github_username": github_username
+					})
+					emp_doc.insert()
+			else:
+				# If the user has a Ticket Raiser role, delete their Employee document if it exists
+				for emp in emp_names:
+					frappe.delete_doc("Employee", emp, force=1, ignore_permissions=True)
+				
+		frappe.db.commit()
+		return {"status": "success", "email": target_email}
+
+	except Exception as e:
+		frappe.db.rollback()
+		return {"status": "error", "error": get_clean_error_message(e)}
 
 @frappe.whitelist()
 def delete_user(email):
@@ -192,14 +214,28 @@ def delete_user(email):
 		
 	if not email or email in ["Administrator", "Guest"]:
 		frappe.throw(_("Cannot delete system user."))
-		
-	# Delete user
-	frappe.delete_doc("User", email)
-	
-	# Delete corresponding Employee doc
-	emp_names = frappe.db.get_all("Employee", filters={"user_id": email}, pluck="name")
-	for emp in emp_names:
-		frappe.delete_doc("Employee", emp)
-		
-	frappe.db.commit()
-	return {"status": "success"}
+
+	try:
+		# 1. Delete associated User Permissions for target email
+		user_perms = frappe.get_all("User Permission", filters={"user": email}, pluck="name")
+		for up in user_perms:
+			frappe.delete_doc("User Permission", up, force=1, ignore_permissions=True)
+
+		# 2. Delete corresponding Employee doc(s) & employee permissions
+		emp_names = frappe.db.get_all("Employee", filters={"user_id": email}, pluck="name")
+		for emp in emp_names:
+			emp_perms = frappe.get_all("User Permission", filters={"allow": "Employee", "for_value": emp}, pluck="name")
+			for ep in emp_perms:
+				frappe.delete_doc("User Permission", ep, force=1, ignore_permissions=True)
+			frappe.delete_doc("Employee", emp, force=1, ignore_permissions=True)
+
+		# 3. Delete User doc
+		frappe.delete_doc("User", email, force=1, ignore_permissions=True)
+		frappe.db.commit()
+		return {"status": "success"}
+
+	except Exception as e:
+		frappe.db.rollback()
+		return {"status": "error", "error": get_clean_error_message(e)}
+
+
