@@ -200,11 +200,22 @@
 
             <!-- Error Notification -->
             <Transition name="slide-up">
-              <ErrorMessage 
-                v-if="session.login.error" 
-                :message="session.login.error.message || 'Access denied. Please check credentials.'" 
-                class="p-3.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 font-medium" 
-              />
+              <div 
+                v-if="errorMessage" 
+                class="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300 font-medium leading-relaxed"
+                role="alert"
+              >
+                <IconAlertCircle class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span class="flex-1">{{ errorMessage }}</span>
+                <button 
+                  type="button" 
+                  @click="clearError" 
+                  class="text-red-400 hover:text-red-600 dark:text-red-400 dark:hover:text-red-200 shrink-0 transition-colors p-0.5"
+                  aria-label="Dismiss error"
+                >
+                  <IconX class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </Transition>
 
             <!-- Login Button -->
@@ -242,23 +253,132 @@
 </template>
 
 <script setup>
-import { Button, ErrorMessage } from "frappe-ui"
-import { ref, watch } from "vue"
+import { Button } from "frappe-ui"
+import { computed, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { session } from "../data/session"
 
+import IconAlertCircle from "~icons/lucide/alert-circle"
 import IconChevronRight from "~icons/lucide/chevron-right"
 import IconEye from "~icons/lucide/eye"
 import IconEyeOff from "~icons/lucide/eye-off"
 import IconLock from "~icons/lucide/lock"
 import IconMail from "~icons/lucide/mail"
 import IconSparkles from "~icons/lucide/sparkles"
+import IconX from "~icons/lucide/x"
 
 const router = useRouter()
 const email = ref("")
 const password = ref("")
 const showPassword = ref(false)
 const rememberMe = ref(false)
+
+// Clear error state when user modifies input
+watch([email, password], () => {
+	if (session.login.error) {
+		session.login.error = null
+	}
+})
+
+// User-friendly error message resolution
+const errorMessage = computed(() => {
+	const err = session.login.error
+	if (!err) return ""
+
+	// 1. Check if messages array exists and has meaningful text from backend
+	if (Array.isArray(err.messages) && err.messages.length > 0) {
+		const validMsgs = err.messages
+			.map((m) => (typeof m === "string" ? m.replace(/<[^>]*>/g, "").trim() : ""))
+			.filter((m) => {
+				if (!m) return false
+				const lower = m.toLowerCase()
+				return (
+					!lower.includes("/api/method/login") &&
+					!lower.includes("authenticationerror") &&
+					lower !== "internal server error"
+				)
+			})
+
+		if (validMsgs.length > 0) {
+			const msg = validMsgs.join(" ")
+			const lower = msg.toLowerCase()
+			if (lower.includes("invalid login credentials") || lower.includes("incorrect password")) {
+				return "Invalid email address or password. Please check your credentials and try again."
+			}
+			return msg
+		}
+	}
+
+	// 2. Check exc_type
+	const excType = err.exc_type || ""
+	if (excType === "AuthenticationError" || excType === "PasswordError") {
+		return "Invalid email address or password. Please check your credentials and try again."
+	}
+	if (excType === "ValidationError") {
+		return "Please enter a valid email address and password."
+	}
+	if (excType === "TooManyRequestsError" || excType === "RateLimitExceeded") {
+		return "Too many failed login attempts. Please wait a few minutes before trying again."
+	}
+	if (excType === "SecurityException" || excType === "PermissionError") {
+		return "Access denied. You do not have permission to access this workspace."
+	}
+	if (excType === "UserDisabledError") {
+		return "This user account is currently disabled. Please contact your system administrator."
+	}
+	if (excType === "CSRFTokenError" || excType === "InvalidCSRFToken") {
+		return "Your session has expired. Please refresh the page and try again."
+	}
+
+	// 3. Check HTTP Status Code
+	const status = err.status || err.response?.status
+	if (status === 401) {
+		return "Invalid email address or password. Please check your credentials and try again."
+	}
+	if (status === 403) {
+		return "Access denied. Your account does not have permission to sign in."
+	}
+	if (status === 429) {
+		return "Too many failed login attempts. Please wait a few minutes before trying again."
+	}
+	if (status === 502 || status === 503 || status === 504) {
+		return "Server is temporarily unavailable. Please check your connection and try again."
+	}
+
+	// 4. Check raw error string / message
+	const rawMsg = typeof err === "string" ? err : err.message || ""
+	if (rawMsg) {
+		const lower = rawMsg.toLowerCase()
+		if (
+			lower.includes("authenticationerror") ||
+			lower.includes("invalid login credentials") ||
+			lower.includes("/api/method/login")
+		) {
+			return "Invalid email address or password. Please check your credentials and try again."
+		}
+		if (
+			lower.includes("failed to fetch") ||
+			lower.includes("networkerror") ||
+			lower.includes("network request failed")
+		) {
+			return "Unable to connect to the server. Please check your internet connection."
+		}
+		if (lower.includes("disabled") || lower.includes("inactive")) {
+			return "This user account is disabled. Please contact your system administrator."
+		}
+		if (lower.includes("locked") || lower.includes("too many")) {
+			return "Too many failed attempts. Please wait a few minutes before trying again."
+		}
+	}
+
+	return "Invalid email address or password. Please check your credentials and try again."
+})
+
+function clearError() {
+	if (session.login.error) {
+		session.login.error = null
+	}
+}
 
 // WATCH: This triggers as soon as the session.login resource succeeds
 watch(
@@ -283,8 +403,11 @@ watch(
 )
 
 function handleSubmit() {
+	const trimmedEmail = email.value.trim()
+	if (!trimmedEmail || !password.value) return
+
 	session.login.submit({
-		email: email.value,
+		email: trimmedEmail,
 		password: password.value,
 	})
 }
