@@ -830,44 +830,81 @@
 				<div v-else class="flex w-full h-full flex-col md:flex-row">
 					<!-- Left Column: Activity (Full Width) -->
 					<div class="h-[400px] md:h-full md:w-[60%] flex flex-col bg-white min-h-0 border-b md:border-b-0 md:border-r border-slate-100 shrink-0">
-						<header class="p-4 border-b bg-white flex justify-between items-center shrink-0 shadow-sm z-10">
-							<h3 class="text-sm font-bold text-slate-800">Activity</h3>
+						<header class="px-5 py-3.5 border-b bg-white flex justify-between items-center shrink-0 shadow-xs z-10">
+							<div class="flex items-center gap-2">
+								<h3 class="text-sm font-bold text-slate-800">Activity</h3>
+								<span v-if="comments.data?.length" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+									{{ comments.data.length }}
+								</span>
+							</div>
+							<div class="flex items-center gap-2 text-xs text-slate-500">
+								<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+								<span class="font-medium text-[11px] text-slate-400">Conversation feed</span>
+							</div>
 						</header>
 						
-						<div class="flex-grow md:flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative before:absolute before:inset-y-0 before:left-[40px] before:w-0.5 before:bg-slate-200/50">
-							<!-- Timeline Activity Comments -->
-							<div v-for="c in comments.data || []" :key="c.name" class="relative pl-12 group">
-								<!-- Timeline Avatar absolute aligned on the rail line -->
-								<div class="absolute left-0 top-1 z-10">
-									<Avatar 
-										:image="getUserAvatarImage(c.owner)"
-										:label="getUserLabel(c.owner) || 'User'" 
-										size="md" 
-										class="ring-4 ring-white shadow-sm shrink-0" 
-									/>
-								</div>
+						<div 
+							ref="activityContainerRef" 
+							class="flex-grow md:flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-slate-50/60"
+						>
+							<!-- Loading Spinner -->
+							<div v-if="comments.loading && (!comments.data || comments.data.length === 0)" class="flex justify-center items-center py-12 text-slate-400 gap-2">
+								<div class="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+								<span class="text-xs">Loading activity...</span>
+							</div>
 
-								<!-- Comment Card -->
-								<div class="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-all duration-200">
-									<div class="flex items-center justify-between mb-2">
-										<div class="flex items-center gap-1.5 text-xs">
-											<span class="font-bold text-slate-800">{{ getUserLabel(c.owner) }}</span>
+							<!-- Timeline Activity Comments -->
+							<div 
+								v-for="c in comments.data || []" 
+								:key="c.name" 
+								class="flex items-start gap-2.5 group w-full"
+								:class="isCommentOnRight(c) ? 'flex-row-reverse justify-start' : 'flex-row justify-start'"
+							>
+								<!-- Avatar -->
+								<Avatar 
+									:image="getUserAvatarImage(c.owner)"
+									:label="getUserLabel(c.owner) || 'User'" 
+									size="md" 
+									class="ring-2 ring-white shadow-xs shrink-0 mt-0.5" 
+								/>
+
+								<!-- Bubble Card -->
+								<div 
+									class="w-fit max-w-[85%] sm:max-w-[78%] rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all duration-200"
+									:class="isCommentOnRight(c) ? 'rounded-tr-xs' : 'rounded-tl-xs'"
+								>
+									<!-- Header (Author, Badge, Time, Actions) -->
+									<div class="flex items-center justify-between gap-3 mb-1.5 text-xs">
+										<div class="flex items-center gap-1.5 flex-wrap">
+											<span class="font-bold text-xs text-slate-800">
+												{{ c.owner === session.user ? (isCommentOnRight(c) ? 'You' : getUserLabel(c.owner)) : getUserLabel(c.owner) }}
+											</span>
+											<span 
+												class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+												:class="isCommentFromTicketRaiser(c) 
+													? 'bg-amber-50 text-amber-700 border border-amber-200/60' 
+													: 'bg-blue-50 text-blue-700 border border-blue-200/60'"
+											>
+												{{ isCommentFromTicketRaiser(c) ? 'Ticket Raiser' : 'Support' }}
+											</span>
 											<span class="text-slate-300">·</span>
-											<span class="text-slate-400 font-medium">{{ dayjs(c.creation).fromNow() }}</span>
+											<span class="font-medium text-[11px] text-slate-400">
+												{{ dayjs(c.creation).fromNow() }}
+											</span>
 										</div>
 
 										<!-- Comment Edit/Delete Actions -->
-										<div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" v-if="c.owner === session.user">
+										<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" v-if="c.owner === session.user">
 											<button 
 												@click="startEditing(c)"
-												class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-blue-600 transition-colors"
+												class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
 												title="Edit Comment"
 											>
 												<IconEdit3 class="w-3.5 h-3.5" />
 											</button>
 											<button 
 												@click="handleDeleteComment(c.name)"
-												class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-colors"
+												class="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
 												title="Delete Comment"
 											>
 												<IconTrash2 class="w-3.5 h-3.5" />
@@ -875,27 +912,35 @@
 										</div>
 									</div>
 
-									<div class="text-sm text-slate-600 leading-relaxed">
-										<div v-if="editingCommentName === c.name" class="space-y-3">
+									<!-- Body -->
+									<div class="text-sm leading-relaxed">
+										<div v-if="editingCommentName === c.name" class="space-y-3 min-w-[240px] sm:min-w-[300px]">
 											<FormControl 
 												type="textarea"
 												v-model="editContent" 
-												class="w-full rounded-xl border border-slate-200 p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+												class="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none resize-none"
 											/>
 											<div class="flex justify-end gap-2">
 												<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-												<Button size="sm" variant="solid" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
+												<Button size="sm" variant="solid" class="!bg-blue-600 text-white" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)">Save</Button>
 											</div>
 										</div>
-										<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="c.content"></div>
+										<div 
+											v-else 
+											class="prose prose-sm max-w-none break-words leading-relaxed text-slate-700 [&_a]:text-blue-600 [&_a]:underline" 
+											v-html="c.content"
+										></div>
 									</div>
 								</div>
 							</div>
 
 							<!-- Empty State Placeholder -->
-							<div v-if="!(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-8 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200/60 mx-2 my-2 shadow-sm">
-								<IconMessageSquare class="w-8 h-8 mb-2 opacity-25 text-slate-500" />
-								<p class="text-[11px] font-semibold italic text-slate-400">No comments yet. Start the conversation!</p>
+							<div v-if="!comments.loading && !(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200/80 mx-2 my-2 shadow-xs">
+								<div class="p-3 bg-blue-50 text-blue-500 rounded-full mb-2.5">
+									<IconMessageSquare class="w-6 h-6" />
+								</div>
+								<p class="text-xs font-semibold text-slate-700">No messages yet</p>
+								<p class="text-[11px] text-slate-400 mt-0.5">Send a message below to start the conversation!</p>
 							</div>
 						</div>
 
@@ -1948,6 +1993,9 @@ const comments = createResource({
 	url: "tactix.api.ticket.get_comments",
 	initialData: [],
 	auto: false,
+	onSuccess: () => {
+		scrollToBottom()
+	},
 })
 
 /* DIALOG CONFIG */
@@ -2060,6 +2108,7 @@ function openEditDialog(ticket) {
 		activeSidebarTab.value = 0
 		comments.submit({ ticket: ticket.name })
 		editPanelReady.value = true
+		scrollToBottom(false)
 		if (route.params.name !== ticket.name) {
 			router.push({ path: `/tickets/${ticket.name}` })
 		}
@@ -2586,6 +2635,73 @@ function getPriorityTheme(p) {
 	)
 }
 
+const activityContainerRef = ref(null)
+
+function scrollToBottom(smooth = true) {
+	nextTick(() => {
+		if (activityContainerRef.value) {
+			activityContainerRef.value.scrollTo({
+				top: activityContainerRef.value.scrollHeight,
+				behavior: smooth ? "smooth" : "auto",
+			})
+		}
+	})
+}
+
+const isCurrentViewerTicketRaiser = computed(() => {
+	if (session.isTicketRaiser) return true
+	if (ticketForm.raised_by && ticketForm.raised_by === session.user) return true
+	if (ticketForm.raised_by_user && ticketForm.raised_by_user === session.user) return true
+	return false
+})
+
+function isCommentFromTicketRaiser(c) {
+	if (!c) return false
+	const author = c.owner || c.comment_by
+	if (!author) return false
+
+	if (ticketForm.raised_by && author === ticketForm.raised_by) return true
+	if (ticketForm.raised_by_user && author === ticketForm.raised_by_user) return true
+
+	if (session.isTicketRaiser && author === session.user) return true
+
+	if (userResource.data && userResource.data.some((u) => u.value === author)) {
+		return true
+	}
+
+	if (
+		ticketForm.owner &&
+		author === ticketForm.owner &&
+		!userResourceTask.data?.some((u) => u.value === author) &&
+		author !== "Administrator"
+	) {
+		return true
+	}
+
+	return false
+}
+
+function isCommentOnRight(c) {
+	if (!c) return false
+	const fromRaiser = isCommentFromTicketRaiser(c)
+	if (isCurrentViewerTicketRaiser.value) {
+		// When ticket raiser is messaging he should see his message on right side
+		return fromRaiser || c.owner === session.user
+	} else {
+		// When support team opens their activity should show right side and ticket raiser activity should show left side
+		if (c.owner === session.user) return true
+		return !fromRaiser
+	}
+}
+
+watch(
+	() => comments.data,
+	() => {
+		scrollToBottom()
+	},
+	{ deep: true }
+)
+
 const commentSubmitting = ref(false)
 const commentUpdating = ref(false)
 
@@ -2598,7 +2714,8 @@ async function addComment() {
 			params: { ticket: ticketForm.name, content: newComment.value },
 		}).submit()
 		newComment.value = ""
-		comments.submit({ ticket: ticketForm.name })
+		await comments.submit({ ticket: ticketForm.name })
+		scrollToBottom()
 	} catch (e) {
 		console.error("Add comment failed", e)
 	} finally {
