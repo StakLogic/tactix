@@ -9,23 +9,14 @@ def get_user_info():
 	is_ticket_raiser = "Tactix Ticket Raiser" in roles and not is_admin
 
 	user_details = frappe.db.get_value(
-		"User", user, ["tactix_customer", "tactix_department", "user_image"], 
+		"User", user, ["tactix_customer", "user_image"], 
 		as_dict=1
-	)
-	is_department_head = False
-	if user_details.get("tactix_department"):
-		if frappe.get_value("Tactix Department", {
-			"name": user_details.get("tactix_department"), "department_head": user}, 
-			"department_head"
-		):
-			is_department_head = True
+	) or {}
 
 	return {
 		"admin": is_admin,
 		"is_ticket_raiser": is_ticket_raiser,
 		"tactix_customer": user_details.get("tactix_customer"),
-		"tactix_department": user_details.get("tactix_department"),
-		"is_department_head": is_department_head,
 		"user_image": user_details.get("user_image"),
 		"roles": roles
 	}

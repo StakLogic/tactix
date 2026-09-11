@@ -9,7 +9,7 @@
           Contributions
         </h1>
         <p class="text-xs text-slate-400 dark:text-slate-500">
-          Monitor recent Pull Requests and engineering activity across Teciza-Solutions.
+          Monitor recent Pull Requests and engineering activity across Organization.
         </p>
       </div>
       
@@ -1032,8 +1032,8 @@ const mockPRs = [
 		state: "open",
 		draft: false,
 		created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-		html_url: "https://github.com/Teciza-Solutions/tactix/pull/412",
-		repository_url: "https://api.github.com/repos/Teciza-Solutions/tactix",
+		html_url: "https://github.com/organization/tactix/pull/412",
+		repository_url: "https://api.github.com/repos/organization/tactix",
 		user: {
 			login: "john-doe",
 			avatar_url:
@@ -1048,8 +1048,8 @@ const mockPRs = [
 		state: "closed",
 		is_merged: true,
 		created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
-		html_url: "https://github.com/Teciza-Solutions/tactix/pull/398",
-		repository_url: "https://api.github.com/repos/Teciza-Solutions/tactix",
+		html_url: "https://github.com/organization/tactix/pull/398",
+		repository_url: "https://api.github.com/repos/organization/tactix",
 		user: {
 			login: "jane-smith",
 			avatar_url:
@@ -1064,8 +1064,8 @@ const mockPRs = [
 		state: "closed",
 		is_merged: true,
 		created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-		html_url: "https://github.com/Teciza-Solutions/core/pull/88",
-		repository_url: "https://api.github.com/repos/Teciza-Solutions/core",
+		html_url: "https://github.com/organization/core/pull/88",
+		repository_url: "https://api.github.com/repos/organization/core",
 		user: {
 			login: "alice-dev",
 			avatar_url:
@@ -1137,9 +1137,6 @@ function processPRs(prs) {
 // Connect direct backend resource calling get_contributions whitelisted python endpoint
 const contributionsResource = createResource({
 	url: "tactix.api.github.get_contributions",
-	params: {
-		orgs: "Teciza-Solutions",
-	},
 	auto: true,
 	onSuccess(data) {
 		if (data?.error) {

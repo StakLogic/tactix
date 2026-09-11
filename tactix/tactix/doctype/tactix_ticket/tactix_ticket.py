@@ -38,7 +38,8 @@ class TactixTicket(Document):
 
 		# Fetch all users with "Support Team" role
 		support_team_members = frappe.get_all("Has Role", filters={"role": "Support Team", "parenttype": "User"}, fields=["parent"])
-		users = list(set([u.parent for u in support_team_members]))
+		users = list(set([u.parent for u in support_team_members if frappe.db.exists("User", u.parent)]))
+
 		
 		# Publish a real-time event to each connected Support Team member
 		for user in users:

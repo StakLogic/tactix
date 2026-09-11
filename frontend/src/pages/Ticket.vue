@@ -267,7 +267,7 @@
 			variant="solid"
 			class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
 			style="background-color: var(--primary-color);"
-			@click="isEditMode=false; resetForm(); customerResource.reload(); departmentResource.reload(); showCreateDialog=true"
+			@click="isEditMode=false; resetForm(); customerResource.reload(); showCreateDialog=true"
 		>
 			<template #prefix><IconPlus class="w-3.5 h-3.5" /></template> New Ticket
 		</Button>
@@ -297,35 +297,7 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getClientLabel(selectedFilters.customer) }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
-				</button>
-			  </template>
-			</Autocomplete>
-		</div>
-
-		<!-- Department Autocomplete Filter -->
-		<div class="w-36 shrink-0">
-			<Autocomplete
-			  ref="departmentAutocomplete"
-			  :options="departmentFilterSelectOptions"
-			  :modelValue="selectedFilters.department"
-			  @update:modelValue="val => selectedFilters.department = val?.value ?? val ?? ''"
-			  :compare-fn="compareOption"
-			  :max-options="100"
-			>
-			  <template #target>
-				<button
-				  type="button"
-				  @click="() => departmentAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.department !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
-				>
-				  <span class="truncate">{{ getDepartmentLabel(selectedFilters.department) }}</span>
+				  <span class="truncate">{{ getClientLabel(selectedFilters.customer, 'Client') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
@@ -336,7 +308,7 @@
 		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="statusAutocomplete"
-			  :options="filterStatusOptions"
+			  :options="filterStatusSelectOptions"
 			  :modelValue="selectedFilters.status"
 			  @update:modelValue="val => selectedFilters.status = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
@@ -352,7 +324,7 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getStatusLabel(selectedFilters.status) }}</span>
+				  <span class="truncate">{{ getStatusLabel(selectedFilters.status, 'Status') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
@@ -363,7 +335,7 @@
 		<div class="w-36 shrink-0">
 			<Autocomplete
 			  ref="priorityAutocomplete"
-			  :options="priorityOptions"
+			  :options="priorityFilterSelectOptions"
 			  :modelValue="selectedFilters.priority"
 			  @update:modelValue="val => selectedFilters.priority = val?.value ?? val ?? ''"
 			  :compare-fn="compareOption"
@@ -379,7 +351,7 @@
 					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
 				  ]"
 				>
-				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority) }}</span>
+				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority, 'Priority') }}</span>
 				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
 				</button>
 			  </template>
@@ -511,11 +483,7 @@
 				</span>
 				</template>
 
-				<template v-if="column.key === 'department'">
-				<span class="text-xs text-slate-600 font-medium truncate">
-					{{ getDepartmentLabel(row.department) }}
-				</span>
-				</template>
+
 
 				<template v-if="column.key === 'creation'">
 				<div class="flex items-center gap-2 text-slate-500 whitespace-nowrap">
@@ -689,11 +657,9 @@
 		  </p>
 		  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="space-y-4">
-			  <div :class="['rounded-lg transition-all', { 'field-invalid-blink': ticketInvalidFields.subject }]">
-				<FormControl label="Subject *" v-model="ticketForm.subject" />
-			  </div>
+			  <FormControl label="Subject *" v-model="ticketForm.subject" />
 			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Customer</label>
+				<label class="block text-xs text-ink-gray-5">Customer *</label>
 				<Autocomplete
 				  ref="createCustomerAutocomplete"
 				  :options="customerFilterSelectOptions"
@@ -708,14 +674,14 @@
 					  @click="() => createCustomerAutocomplete?.togglePopover()"
 					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 					>
-					  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+					  <span class="truncate">{{ getClientLabel(ticketForm.customer, 'Select Customer') }}</span>
 					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 					</button>
 				  </template>
 				</Autocomplete>
 			  </div>
 			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Raised By</label>
+				<label class="block text-xs text-ink-gray-5">Raised By *</label>
 				<Autocomplete
 				  ref="createRaisedByAutocomplete"
 				  :options="raisedByFilterOptions"
@@ -783,39 +749,66 @@
 				  </Autocomplete>
 				</div>
 			  </div>
-			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Department</label>
-				<Autocomplete
-				  ref="createDepartmentAutocomplete"
-				  :options="departmentFilterSelectOptions"
-				  :modelValue="ticketForm.department"
-				  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
-				  :compare-fn="compareOption"
-				  :max-options="100"
-				>
-				  <template #target>
-					<button
-					  type="button"
-					  @click="() => createDepartmentAutocomplete?.togglePopover()"
-					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-					>
-					  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
-					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-					</button>
-				  </template>
-				</Autocomplete>
-			  </div>
 			</div>
 		  </div>
 		  <div class="space-y-2 border-t pt-4">
-			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Description</label>
-			<div class="border rounded-lg bg-white shadow-sm overflow-hidden min-h-[200px]">
+			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Description *</label>
+			<div class="border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden min-h-[200px]">
 			  <TextEditor
 				editor-class="prose-sm max-w-none p-6 outline-none"
 				:content="ticketForm.description"
 				@change="(val) => (ticketForm.description = val)"
 				:fixed-menu="true"
 			  />
+			</div>
+		  </div>
+
+		  <!-- Attachments Field -->
+		  <div class="space-y-3 border-t pt-4">
+			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider block">Attachments</label>
+			<FileUploader @success="handleFileUploadTicket">
+			  <template #default="{ openFileSelector }">
+				<button 
+				  type="button"
+				  @click="openFileSelector" 
+				  class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-lg p-3 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer"
+				>
+				  <IconPaperclip class="w-4 h-4" />
+				  <span class="text-xs font-semibold">Attach Files</span>
+				</button>
+			  </template>
+			</FileUploader>
+			
+			<div v-if="ticketForm.attachments && ticketForm.attachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+			  <div 
+				v-for="(file, idx) in ticketForm.attachments" 
+				:key="idx" 
+				class="flex items-center justify-between bg-surface-gray-2 border border-slate-200 rounded-lg p-2 transition-all"
+			  >
+				<a 
+				  :href="file.file_url" 
+				  target="_blank" 
+				  class="flex flex-1 items-center gap-2 truncate"
+				>
+				  <div class="h-7 w-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+					<IconBriefcase class="w-3.5 h-3.5" /> 
+				  </div>
+				  <div class="truncate text-left">
+					<span class="block truncate font-medium text-slate-700 text-xs hover:text-blue-600 transition-colors">
+					  {{ file.file_name }}
+					</span>
+				  </div>
+				</a>
+
+				<button 
+				  type="button"
+				  @click.stop="removeAttachmentTicket(idx)" 
+				  class="p-1 ml-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
+				  title="Remove file"
+				>
+				  <IconX class="w-3.5 h-3.5" />
+				</button>
+			  </div>
 			</div>
 		  </div>
 		</div>
@@ -837,44 +830,81 @@
 				<div v-else class="flex w-full h-full flex-col md:flex-row">
 					<!-- Left Column: Activity (Full Width) -->
 					<div class="h-[400px] md:h-full md:w-[60%] flex flex-col bg-white min-h-0 border-b md:border-b-0 md:border-r border-slate-100 shrink-0">
-						<header class="p-4 border-b bg-white flex justify-between items-center shrink-0 shadow-sm z-10">
-							<h3 class="text-sm font-bold text-slate-800">Activity</h3>
+						<header class="px-5 py-3.5 border-b bg-white flex justify-between items-center shrink-0 shadow-xs z-10">
+							<div class="flex items-center gap-2">
+								<h3 class="text-sm font-bold text-slate-800">Activity</h3>
+								<span v-if="comments.data?.length" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+									{{ comments.data.length }}
+								</span>
+							</div>
+							<div class="flex items-center gap-2 text-xs text-slate-500">
+								<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+								<span class="font-medium text-[11px] text-slate-400">Conversation feed</span>
+							</div>
 						</header>
 						
-						<div class="flex-grow md:flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative before:absolute before:inset-y-0 before:left-[40px] before:w-0.5 before:bg-slate-200/50">
-							<!-- Timeline Activity Comments -->
-							<div v-for="c in comments.data || []" :key="c.name" class="relative pl-12 group">
-								<!-- Timeline Avatar absolute aligned on the rail line -->
-								<div class="absolute left-0 top-1 z-10">
-									<Avatar 
-										:image="getUserAvatarImage(c.owner)"
-										:label="getUserLabel(c.owner) || 'User'" 
-										size="md" 
-										class="ring-4 ring-white shadow-sm shrink-0" 
-									/>
-								</div>
+						<div 
+							ref="activityContainerRef" 
+							class="flex-grow md:flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-slate-50/60"
+						>
+							<!-- Loading Spinner -->
+							<div v-if="comments.loading && (!comments.data || comments.data.length === 0)" class="flex justify-center items-center py-12 text-slate-400 gap-2">
+								<div class="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+								<span class="text-xs">Loading activity...</span>
+							</div>
 
-								<!-- Comment Card -->
-								<div class="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-all duration-200">
-									<div class="flex items-center justify-between mb-2">
-										<div class="flex items-center gap-1.5 text-xs">
-											<span class="font-bold text-slate-800">{{ getUserLabel(c.owner) }}</span>
+							<!-- Timeline Activity Comments -->
+							<div 
+								v-for="c in comments.data || []" 
+								:key="c.name" 
+								class="flex items-start gap-2.5 group w-full"
+								:class="isCommentOnRight(c) ? 'flex-row-reverse justify-start' : 'flex-row justify-start'"
+							>
+								<!-- Avatar -->
+								<Avatar 
+									:image="getUserAvatarImage(c.owner)"
+									:label="getUserLabel(c.owner) || 'User'" 
+									size="md" 
+									class="ring-2 ring-white shadow-xs shrink-0 mt-0.5" 
+								/>
+
+								<!-- Bubble Card -->
+								<div 
+									class="w-fit max-w-[85%] sm:max-w-[78%] rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all duration-200"
+									:class="isCommentOnRight(c) ? 'rounded-tr-xs' : 'rounded-tl-xs'"
+								>
+									<!-- Header (Author, Badge, Time, Actions) -->
+									<div class="flex items-center justify-between gap-3 mb-1.5 text-xs">
+										<div class="flex items-center gap-1.5 flex-wrap">
+											<span class="font-bold text-xs text-slate-800">
+												{{ c.owner === session.user ? (isCommentOnRight(c) ? 'You' : getUserLabel(c.owner)) : getUserLabel(c.owner) }}
+											</span>
+											<span 
+												class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+												:class="isCommentFromTicketRaiser(c) 
+													? 'bg-amber-50 text-amber-700 border border-amber-200/60' 
+													: 'bg-blue-50 text-blue-700 border border-blue-200/60'"
+											>
+												{{ isCommentFromTicketRaiser(c) ? 'Ticket Raiser' : 'Support' }}
+											</span>
 											<span class="text-slate-300">·</span>
-											<span class="text-slate-400 font-medium">{{ dayjs(c.creation).fromNow() }}</span>
+											<span class="font-medium text-[11px] text-slate-400">
+												{{ dayjs(c.creation).fromNow() }}
+											</span>
 										</div>
 
 										<!-- Comment Edit/Delete Actions -->
-										<div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" v-if="c.owner === session.user">
+										<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" v-if="c.owner === session.user">
 											<button 
 												@click="startEditing(c)"
-												class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-blue-600 transition-colors"
+												class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
 												title="Edit Comment"
 											>
 												<IconEdit3 class="w-3.5 h-3.5" />
 											</button>
 											<button 
 												@click="handleDeleteComment(c.name)"
-												class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-colors"
+												class="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
 												title="Delete Comment"
 											>
 												<IconTrash2 class="w-3.5 h-3.5" />
@@ -882,27 +912,35 @@
 										</div>
 									</div>
 
-									<div class="text-sm text-slate-600 leading-relaxed">
-										<div v-if="editingCommentName === c.name" class="space-y-3">
+									<!-- Body -->
+									<div class="text-sm leading-relaxed">
+										<div v-if="editingCommentName === c.name" class="space-y-3 min-w-[240px] sm:min-w-[300px]">
 											<FormControl 
 												type="textarea"
 												v-model="editContent" 
-												class="w-full rounded-xl border border-slate-200 p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+												class="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none resize-none"
 											/>
 											<div class="flex justify-end gap-2">
 												<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-												<Button size="sm" variant="solid" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)" class="!bg-blue-600">Save</Button>
+												<Button size="sm" variant="solid" class="!bg-blue-600 text-white" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)">Save</Button>
 											</div>
 										</div>
-										<div v-else class="prose prose-sm max-w-none text-slate-600" v-html="c.content"></div>
+										<div 
+											v-else 
+											class="prose prose-sm max-w-none break-words leading-relaxed text-slate-700 [&_a]:text-blue-600 [&_a]:underline" 
+											v-html="c.content"
+										></div>
 									</div>
 								</div>
 							</div>
 
 							<!-- Empty State Placeholder -->
-							<div v-if="!(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-8 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200/60 mx-2 my-2 shadow-sm">
-								<IconMessageSquare class="w-8 h-8 mb-2 opacity-25 text-slate-500" />
-								<p class="text-[11px] font-semibold italic text-slate-400">No comments yet. Start the conversation!</p>
+							<div v-if="!comments.loading && !(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200/80 mx-2 my-2 shadow-xs">
+								<div class="p-3 bg-blue-50 text-blue-500 rounded-full mb-2.5">
+									<IconMessageSquare class="w-6 h-6" />
+								</div>
+								<p class="text-xs font-semibold text-slate-700">No messages yet</p>
+								<p class="text-[11px] text-slate-400 mt-0.5">Send a message below to start the conversation!</p>
 							</div>
 						</div>
 
@@ -947,7 +985,7 @@
 							<!-- Metadata Card -->
 							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Status</label>
 										<Autocomplete
 										  ref="editStatusAutocomplete"
@@ -969,7 +1007,7 @@
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
+									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Priority</label>
 										<Autocomplete
 										  ref="editPriorityAutocomplete"
@@ -992,9 +1030,9 @@
 									</div>
 								</div>
 
-								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
-									<div class="space-y-1.5 shadow-sm">
-										<label class="block text-xs text-ink-gray-5">Customer</label>
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
+									<div class="space-y-1.5">
+										<label class="block text-xs text-ink-gray-5">Customer *</label>
 										<Autocomplete
 										  ref="editCustomerAutocomplete"
 										  :options="customerFilterOptions"
@@ -1009,15 +1047,15 @@
 											  @click="() => editCustomerAutocomplete?.togglePopover()"
 											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 											>
-											  <span class="truncate">{{ getClientLabel(ticketForm.customer) }}</span>
+											  <span class="truncate">{{ getClientLabel(ticketForm.customer, 'Select Customer') }}</span>
 											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 											</button>
 										  </template>
 										</Autocomplete>
 									</div>
 
-									<div class="space-y-1.5 shadow-sm">
-										<label class="block text-xs text-ink-gray-5">Raised By</label>
+									<div class="space-y-1.5">
+										<label class="block text-xs text-ink-gray-5">Raised By *</label>
 										<Autocomplete
 										  ref="editRaisedByAutocomplete"
 										  :options="raisedByFilterOptions"
@@ -1039,37 +1077,14 @@
 										  </template>
 										</Autocomplete>
 									</div>
-
-									<div class="space-y-1.5 shadow-sm">
-										<label class="block text-xs text-ink-gray-5">Department</label>
-										<Autocomplete
-										  ref="editDepartmentAutocomplete"
-										  :options="departmentFilterOptions"
-										  :modelValue="ticketForm.department"
-										  @update:modelValue="val => ticketForm.department = val?.value ?? val ?? ''"
-										  :compare-fn="compareOption"
-										  :max-options="100"
-										>
-										  <template #target>
-											<button
-											  type="button"
-											  @click="() => editDepartmentAutocomplete?.togglePopover()"
-											  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-											>
-											  <span class="truncate">{{ getDepartmentLabel(ticketForm.department) }}</span>
-											  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-											</button>
-										  </template>
-										</Autocomplete>
-									</div>
 								</div>
 							</div>
 
 							
 							<!-- Description Field -->
 							<div class="space-y-2 border-t pt-4">
-								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description</label>
-								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description *</label>
+								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
 										:content="ticketForm.description"
@@ -1082,7 +1097,7 @@
 							<!-- Resolution Field -->
 							<div v-if="!isTicketRaiser" class="space-y-2 border-t pt-4 pb-2" >
 								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Resolution</label>
-								<div class="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
 									<TextEditor
 										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
 										:content="ticketForm.resolution_details"
@@ -1180,28 +1195,6 @@
 					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
 					>
 					  <span class="truncate">{{ getProjectLabel(newTask.project) }}</span>
-					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-					</button>
-				  </template>
-				</Autocomplete>
-			  </div>
-			  <div class="space-y-1.5">
-				<label class="block text-xs text-ink-gray-5">Department</label>
-				<Autocomplete
-				  ref="taskDepartmentAutocomplete"
-				  :options="departmentResourceTask.data || []"
-				  :modelValue="newTask.department"
-				  @update:modelValue="val => newTask.department = val?.value ?? val ?? ''"
-				  :compare-fn="compareOption"
-				  :max-options="100"
-				>
-				  <template #target>
-					<button
-					  type="button"
-					  @click="() => taskDepartmentAutocomplete?.togglePopover()"
-					  class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-					>
-					  <span class="truncate">{{ getDepartmentLabel(newTask.department) }}</span>
 					  <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
 					</button>
 				  </template>
@@ -1435,17 +1428,10 @@ function getProjectLabel(val) {
 }
 
 // Friendly labels for Autocomplete dropdowns
-function getClientLabel(val) {
+function getClientLabel(val, defaultLabel = "Client") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Client"
+	if (!rawVal) return defaultLabel
 	const match = customerFilterOptions.value.find((c) => c.value === rawVal)
-	return match ? match.label : rawVal
-}
-
-function getDepartmentLabel(val) {
-	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Department"
-	const match = departmentFilterOptions.value.find((d) => d.value === rawVal)
 	return match ? match.label : rawVal
 }
 
@@ -1456,16 +1442,16 @@ function getUserLabel(val, defaultLabel = "User") {
 	return match ? match.label : rawVal
 }
 
-function getStatusLabel(val) {
+function getStatusLabel(val, defaultLabel = "Status") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Status"
+	if (!rawVal) return defaultLabel
 	const match = filterStatusOptions.find((s) => s.value === rawVal)
 	return match ? match.label : rawVal
 }
 
-function getPriorityLabel(val) {
+function getPriorityLabel(val, defaultLabel = "Priority") {
 	const rawVal = val && typeof val === "object" ? val.value : val
-	if (!rawVal) return "Priority"
+	if (!rawVal) return defaultLabel
 	const match = priorityOptions.find((p) => p.value === rawVal)
 	return match ? match.label : rawVal
 }
@@ -1532,6 +1518,9 @@ const taskFormError = ref("")
 
 const ticketInvalidFields = reactive({
 	subject: false,
+	customer: false,
+	raised_by: false,
+	description: false,
 })
 
 const taskInvalidFields = reactive({
@@ -1647,15 +1636,12 @@ const assignedToOptionsTask = computed(() => {
 	return userResourceTask.data || []
 })
 const ticketCustomerId = session.ticketCustomerId
-const tactixDepartment = session.tactixDepartment
-const isTactixDeptHead = session.isTactixDeptHead
 
 const selectedFilters = reactive({
 	status: "",
 	priority: "",
 	customer: "",
 	raised_by: "",
-	department: "",
 })
 
 /* RESOURCES */
@@ -1666,7 +1652,6 @@ const ticketFilters = computed(() => {
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
 	if (selectedFilters.customer) f.customer = selectedFilters.customer
 	if (selectedFilters.raised_by) f.raised_by_user = selectedFilters.raised_by
-	if (selectedFilters.department) f.department = selectedFilters.department
 	return f
 })
 
@@ -1867,52 +1852,7 @@ function getUserAvatarImage(userName) {
 	return match?.image || ""
 }
 
-const departmentResource = createListResource({
-	doctype: "Tactix Department",
-	fields: ["name"],
-	auto: true,
-	transform: (departments) => {
-		const departmentRows = Array.isArray(departments)
-			? departments
-			: Array.isArray(departments?.message)
-				? departments.message
-				: Array.isArray(departments?.message?.message)
-					? departments.message.message
-					: Array.isArray(departments?.data)
-						? departments.data
-						: Array.isArray(departments?.data?.message)
-							? departments.data.message
-							: []
 
-		if (!departmentRows.length) return []
-
-		return departmentRows
-			.map((d) => {
-				if (d == null) return null
-				if (
-					Object.prototype.hasOwnProperty.call(d, "label") &&
-					Object.prototype.hasOwnProperty.call(d, "value")
-				) {
-					return { label: d.label, value: String(d.value) }
-				}
-				const name =
-					d.name ?? d.department_name ?? d.department ?? d.label ?? d.value
-				if (name == null) return null
-				return { label: String(name), value: String(name) }
-			})
-			.filter((opt) => opt && opt.value !== "" && opt.value != null)
-	},
-	pageLength: 10000,
-})
-
-const departmentResourceTask = createListResource({
-	doctype: "Department",
-	fields: ["name"],
-	auto: true,
-	transform: (departments) =>
-		departments.map((d) => ({ label: d.name, value: d.name })),
-	pageLength: 10000,
-})
 
 const unwrapListPayload = (payload) => {
 	if (Array.isArray(payload)) return payload
@@ -1986,21 +1926,14 @@ const customerFilterOptions = computed(() => {
 	return allOptions
 })
 
-const departmentFilterOptions = computed(() => {
-	const allOptions = normalizeOptions(departmentResource.data, [
-		"name",
-		"department_name",
-		"department",
-	])
+const customerFilterSelectOptions = computed(() => {
 	if (session.isTicketRaiser) {
-		const userDept = session.tactixDepartment || session.userInfo.data?.tactix_department
-		if (userDept) {
-			const match = allOptions.find((d) => d.value === userDept)
-			return [match || { label: userDept, value: userDept }]
-		}
-		return []
+		return customerFilterOptions.value
 	}
-	return allOptions
+	return [
+		{ label: "Client", value: "" },
+		...customerFilterOptions.value,
+	]
 })
 
 const raisedByFilterOptions = computed(() => {
@@ -2017,25 +1950,6 @@ const raisedByFilterOptions = computed(() => {
 	return normalizeOptions(userResource.data, ["name"])
 })
 
-const customerFilterSelectOptions = computed(() => {
-	if (session.isTicketRaiser) {
-		return customerFilterOptions.value
-	}
-	return [
-		{ label: "Client", value: "" },
-		...customerFilterOptions.value,
-	]
-})
-
-const departmentFilterSelectOptions = computed(() => {
-	if (session.isTicketRaiser) {
-		return departmentFilterOptions.value
-	}
-	return [
-		{ label: "Department", value: "" },
-		...departmentFilterOptions.value,
-	]
-})
 const raisedByFilterSelectOptions = computed(() => [
 	{ label: "Raised By", value: "" },
 	...raisedByFilterOptions.value,
@@ -2065,10 +1979,23 @@ const priorityOptions = [
 	{ label: "Urgent", value: "Urgent" },
 ]
 
+const filterStatusSelectOptions = computed(() => [
+	{ label: "Status", value: "" },
+	...filterStatusOptions,
+])
+
+const priorityFilterSelectOptions = computed(() => [
+	{ label: "Priority", value: "" },
+	...priorityOptions,
+])
+
 const comments = createResource({
 	url: "tactix.api.ticket.get_comments",
 	initialData: [],
 	auto: false,
+	onSuccess: () => {
+		scrollToBottom()
+	},
 })
 
 /* DIALOG CONFIG */
@@ -2093,27 +2020,32 @@ const dialogOptions = computed(() => ({
 }))
 
 /* FORM LOGIC */
-const emptyTicket = () => ({
-	name: "",
-	subject: "",
-	raised_by: isTicketRaiser ? session.user : "",
-	raised_by_user: "",
-	status: "Open",
-	priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
-	ticket_type: "Support",
-	department: isTicketRaiser && tactixDepartment ? tactixDepartment : "",
-	agent_group: "",
-	description: "",
-	customer: isTicketRaiser && ticketCustomerId ? ticketCustomerId : "",
-	resolution_details: "",
-	attachments: [],
-})
+const emptyTicket = () => {
+	const userCust = session.ticketCustomerId || session.userInfo.data?.tactix_customer || ""
+	return {
+		name: "",
+		subject: "",
+		raised_by: session.isTicketRaiser ? session.user : "",
+		raised_by_user: "",
+		status: "Open",
+		priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
+		ticket_type: "Support",
+		agent_group: "",
+		description: "",
+		customer: session.isTicketRaiser ? userCust : "",
+		resolution_details: "",
+		attachments: [],
+	}
+}
 
 const ticketForm = reactive(emptyTicket())
 const resetForm = () => {
 	Object.assign(ticketForm, emptyTicket())
 	ticketFormError.value = ""
 	ticketInvalidFields.subject = false
+	ticketInvalidFields.customer = false
+	ticketInvalidFields.raised_by = false
+	ticketInvalidFields.description = false
 }
 
 const initialForm = {
@@ -2176,6 +2108,7 @@ function openEditDialog(ticket) {
 		activeSidebarTab.value = 0
 		comments.submit({ ticket: ticket.name })
 		editPanelReady.value = true
+		scrollToBottom(false)
 		if (route.params.name !== ticket.name) {
 			router.push({ path: `/tickets/${ticket.name}` })
 		}
@@ -2184,14 +2117,28 @@ function openEditDialog(ticket) {
 
 async function handleSaveTicket() {
 	ticketFormError.value = ""
-	ticketInvalidFields.subject = false
+
+	const missingFields = []
 
 	if (!ticketForm.subject?.trim()) {
-		ticketInvalidFields.subject = true
-		ticketFormError.value = "Please fill all mandatory fields: Subject."
-		setTimeout(() => {
-			ticketInvalidFields.subject = false
-		}, 700)
+		missingFields.push("Subject")
+	}
+
+	if (!ticketForm.customer?.trim()) {
+		missingFields.push("Customer")
+	}
+
+	if (!ticketForm.raised_by?.trim()) {
+		missingFields.push("Raised By")
+	}
+
+	const descText = (ticketForm.description || "").replace(/<[^>]*>/g, "").trim()
+	if (!descText) {
+		missingFields.push("Description")
+	}
+
+	if (missingFields.length > 0) {
+		ticketFormError.value = `Please fill all mandatory fields: ${missingFields.join(", ")}.`
 		return
 	}
 
@@ -2291,7 +2238,6 @@ const handleSaveTask = async () => {
 /* DYNAMIC FILTER RULES & ACTIVE CHIPS */
 const FILTERABLE_FIELDS = [
 	{ label: "Client", value: "customer", key: "customer" },
-	{ label: "Department", value: "department", key: "department" },
 	{ label: "Status", value: "status", key: "status" },
 	{ label: "Priority", value: "priority", key: "priority" },
 	{ label: "Raised By", value: "raised_by", key: "raised_by" },
@@ -2450,7 +2396,6 @@ const ALL_COLUMNS = [
 	{ label: "Subject", key: "subject", icon: IconList, width: "3.5fr", mandatory: true },
 	{ label: "Ticket ID", key: "name", icon: IconHash, width: "140px" },
 	{ label: "Client", key: "customer", icon: IconBriefcase, width: "160px" },
-	{ label: "Department", key: "department", icon: IconBriefcase, width: "200px" },
 	{ label: "Status", key: "status", icon: IconAlertCircle, width: "130px" },
 	{ label: "Priority", key: "priority", icon: IconBriefcase, width: "130px" },
 	{ label: "Raised By", key: "raised_by", icon: IconUser, width: "200px" },
@@ -2465,13 +2410,10 @@ const DEFAULT_COLUMN_KEYS = [
 	"name",
 	"subject",
 	"customer",
-	"department",
 	"status",
 	"priority",
 	"raised_by",
 	"creation",
-	"first_response_time",
-	"closed_time",
 ]
 
 const STORAGE_KEY = "tactix_tickets_columns_config"
@@ -2693,6 +2635,73 @@ function getPriorityTheme(p) {
 	)
 }
 
+const activityContainerRef = ref(null)
+
+function scrollToBottom(smooth = true) {
+	nextTick(() => {
+		if (activityContainerRef.value) {
+			activityContainerRef.value.scrollTo({
+				top: activityContainerRef.value.scrollHeight,
+				behavior: smooth ? "smooth" : "auto",
+			})
+		}
+	})
+}
+
+const isCurrentViewerTicketRaiser = computed(() => {
+	if (session.isTicketRaiser) return true
+	if (ticketForm.raised_by && ticketForm.raised_by === session.user) return true
+	if (ticketForm.raised_by_user && ticketForm.raised_by_user === session.user) return true
+	return false
+})
+
+function isCommentFromTicketRaiser(c) {
+	if (!c) return false
+	const author = c.owner || c.comment_by
+	if (!author) return false
+
+	if (ticketForm.raised_by && author === ticketForm.raised_by) return true
+	if (ticketForm.raised_by_user && author === ticketForm.raised_by_user) return true
+
+	if (session.isTicketRaiser && author === session.user) return true
+
+	if (userResource.data && userResource.data.some((u) => u.value === author)) {
+		return true
+	}
+
+	if (
+		ticketForm.owner &&
+		author === ticketForm.owner &&
+		!userResourceTask.data?.some((u) => u.value === author) &&
+		author !== "Administrator"
+	) {
+		return true
+	}
+
+	return false
+}
+
+function isCommentOnRight(c) {
+	if (!c) return false
+	const fromRaiser = isCommentFromTicketRaiser(c)
+	if (isCurrentViewerTicketRaiser.value) {
+		// When ticket raiser is messaging he should see his message on right side
+		return fromRaiser || c.owner === session.user
+	} else {
+		// When support team opens their activity should show right side and ticket raiser activity should show left side
+		if (c.owner === session.user) return true
+		return !fromRaiser
+	}
+}
+
+watch(
+	() => comments.data,
+	() => {
+		scrollToBottom()
+	},
+	{ deep: true }
+)
+
 const commentSubmitting = ref(false)
 const commentUpdating = ref(false)
 
@@ -2705,7 +2714,8 @@ async function addComment() {
 			params: { ticket: ticketForm.name, content: newComment.value },
 		}).submit()
 		newComment.value = ""
-		comments.submit({ ticket: ticketForm.name })
+		await comments.submit({ ticket: ticketForm.name })
+		scrollToBottom()
 	} catch (e) {
 		console.error("Add comment failed", e)
 	} finally {
@@ -2830,7 +2840,6 @@ watch(showEditTicket, (val) => {
 watch(showCreateDialog, (val) => {
 	if (!val) {
 		ticketFormError.value = ""
-		ticketInvalidFields.subject = false
 	}
 })
 
@@ -2889,16 +2898,4 @@ onUnmounted(() => {
 :global([data-radix-popper-content-wrapper]), :global([data-reka-popper-content-wrapper]), :global(.PopoverContent), :global(.ticket-modal-autocomplete) { z-index: 100005 !important; }
 /* Ensure list-view filter dropdowns render above cards/list containers as well. */
 :global(.ticket-filter-autocomplete) { z-index: 100005 !important; }
-
-.field-invalid-blink {
-	border: 1px solid #ef4444;
-	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-	animation: fieldBlink 0.7s ease-out 1;
-}
-
-@keyframes fieldBlink {
-	0% { opacity: 1; transform: translateY(0); }
-	30% { opacity: 0.85; transform: translateY(-1px); }
-	100% { opacity: 1; transform: translateY(0); }
-}
 </style>

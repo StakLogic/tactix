@@ -24,15 +24,12 @@ def get_tickets(filters=None, start=0, page_length=20):
 	roles = frappe.get_roles(user)
 	or_filters = None
 	if "System Manager" not in roles and "Support Team" not in roles:
-		user_details = frappe.db.get_value("User", user, ["tactix_customer", "tactix_department"], as_dict=True) or {}
+		user_details = frappe.db.get_value("User", user, ["tactix_customer"], as_dict=True) or {}
 		customer = user_details.get("tactix_customer")
-		department = user_details.get("tactix_department")
 
 		if "Tactix Ticket Raiser" in roles:
 			if customer:
 				filters["customer"] = customer
-			if department:
-				filters["department"] = department
 
 		or_filters = []
 		if "Employee" in roles:
@@ -46,12 +43,6 @@ def get_tickets(filters=None, start=0, page_length=20):
 			or_filters.append(["raised_by_user", "=", user])
 
 		if "Tactix Ticket Raiser" in roles:
-			is_dept_head = False
-			if department:
-				is_dept_head = bool(frappe.db.exists("Tactix Department", {"name": department, "department_head": user}))
-			
-			if is_dept_head and department:
-				or_filters.append(["department", "=", department])
 			or_filters.append(["owner", "=", user])
 			or_filters.append(["raised_by_user", "=", user])
 
@@ -70,7 +61,7 @@ def get_tickets(filters=None, start=0, page_length=20):
 		filters=filters or {},
 		or_filters=or_filters,
 		fields=[
-			"name", "subject", "raised_by", "status", "department",
+			"name", "subject", "raised_by", "status",
 			"priority", "ticket_type", "opening_date", "description",
 			"customer", "agent_group", "resolution_details", "creation",
 			"first_response_time", "first_responded_on", "closed_on", "closed_time",
@@ -105,15 +96,12 @@ def get_ticket_summary(filters=None):
 	roles = frappe.get_roles(user)
 	or_filters = None
 	if "System Manager" not in roles:
-		user_details = frappe.db.get_value("User", user, ["tactix_customer", "tactix_department"], as_dict=True) or {}
+		user_details = frappe.db.get_value("User", user, ["tactix_customer"], as_dict=True) or {}
 		customer = user_details.get("tactix_customer")
-		department = user_details.get("tactix_department")
 
 		if "Tactix Ticket Raiser" in roles:
 			if customer:
 				filters["customer"] = customer
-			if department:
-				filters["department"] = department
 
 		or_filters = []
 		if "Employee" in roles:
@@ -127,12 +115,6 @@ def get_ticket_summary(filters=None):
 			or_filters.append(["raised_by_user", "=", user])
 
 		if "Tactix Ticket Raiser" in roles:
-			is_dept_head = False
-			if department:
-				is_dept_head = bool(frappe.db.exists("Tactix Department", {"name": department, "department_head": user}))
-			
-			if is_dept_head and department:
-				or_filters.append(["department", "=", department])
 			or_filters.append(["owner", "=", user])
 			or_filters.append(["raised_by_user", "=", user])
 
@@ -317,22 +299,12 @@ def create_portal_user():
 				"user": data.get("email")
 			}
 
-		department = {}
-		if data.get("department") and not frappe.db.exists("Tactix Department", data.get("department")):
-			department = frappe.get_doc({
-				"doctype": "Tactix Department",
-				"department_name": data.get("department"),
-			})
-			department.insert(ignore_permissions=True)
-
-
 		user = frappe.get_doc({
 			"doctype": "User",
 			"email": data.get("email"),
 			"first_name": data.get("first_name"),
 			"enabled": 1,
 			"tactix_customer": data.get("customer"),
-			"tactix_department": data.get("department"),
 			"roles": [
 				{"role": "Tactix Ticket Raiser"}
 			],
@@ -340,10 +312,6 @@ def create_portal_user():
 		})
 
 		user.insert(ignore_permissions=True)
-
-		if department and data.get("is_department_head"):
-			department.department_head = user.name
-			department.save()
 
 		return {
 			"exists": False,

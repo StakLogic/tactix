@@ -302,33 +302,6 @@
             </div>
           </template>
 
-          <!-- Fields for Tactix Department -->
-          <template v-if="activeTab === 'tactix_dept'">
-            <FormControl type="text" label="Department Name *" v-model="modal.form.department_name" placeholder="Enter department name" />
-            <div class="space-y-1.5">
-              <label class="block text-xs text-ink-gray-5">Department Head</label>
-              <Autocomplete
-                ref="departmentHeadAutocomplete"
-                :options="userOptions || []"
-                :modelValue="modal.form.department_head"
-                @update:modelValue="val => modal.form.department_head = val?.value ?? val ?? ''"
-                :compare-fn="compareOption"
-                :max-options="100"
-              >
-                <template #target>
-                  <button
-                    type="button"
-                    @click="() => departmentHeadAutocomplete?.togglePopover()"
-                    class="flex h-7 w-full items-center justify-between gap-2 rounded bg-surface-gray-2 px-2 py-1 text-xs transition-colors hover:bg-surface-gray-3 border border-transparent focus:border-outline-gray-4 focus:outline-none focus:ring-2 focus:ring-outline-gray-3 text-ink-gray-8 cursor-pointer"
-                  >
-                    <span class="truncate">{{ getUserLabel(modal.form.department_head) }}</span>
-                    <FeatherIcon name="chevron-down" class="h-4 w-4 text-ink-gray-5 shrink-0" />
-                  </button>
-                </template>
-              </Autocomplete>
-            </div>
-          </template>
-
           <!-- Fields for Tactix Customer -->
           <template v-if="activeTab === 'tactix_cust'">
             <FormControl type="text" label="Customer Name / ID *" v-model="modal.form.name" :disabled="modal.isEdit" placeholder="Enter customer name" />
@@ -458,7 +431,6 @@ const tabIndex = ref(0)
 const tabs = [
 	{ label: "Projects", id: "project" },
 	{ label: "Departments", id: "department" },
-	{ label: "Tactix Departments", id: "tactix_dept" },
 	{ label: "Tactix Customers", id: "tactix_cust" },
 	{ label: "Tactix Teams", id: "tactix_team" },
 ]
@@ -498,8 +470,6 @@ const currentTabLabelSingular = computed(() => {
 			return "Project"
 		case "department":
 			return "Department"
-		case "tactix_dept":
-			return "Tactix Department"
 		case "tactix_cust":
 			return "Tactix Customer"
 		case "tactix_team":
@@ -515,8 +485,6 @@ const currentTabDoctype = computed(() => {
 			return "Project"
 		case "department":
 			return "Department"
-		case "tactix_dept":
-			return "Tactix Department"
 		case "tactix_cust":
 			return "Tactix Customer"
 		case "tactix_team":
@@ -540,13 +508,6 @@ const columns = computed(() => {
 				{ label: "Name / ID", key: "name", width: "200px" },
 				{ label: "Department Name", key: "department_name" },
 				{ label: "Company", key: "company", width: "200px" },
-				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
-			]
-		case "tactix_dept":
-			return [
-				{ label: "Name / ID", key: "name", width: "200px" },
-				{ label: "Department Name", key: "department_name" },
-				{ label: "Head of Dept", key: "department_head", width: "250px" },
 				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
 			]
 		case "tactix_cust":

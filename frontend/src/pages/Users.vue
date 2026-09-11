@@ -238,6 +238,13 @@
     <Dialog v-model="modal.show" :disable-outside-click-to-close="true" :options="dialogOptions">
       <template #body-content>
         <div class="space-y-4 py-1.5 text-left">
+          <!-- Error Alert Banner -->
+          <div v-if="modal.errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-xs text-red-700 font-medium">
+            <span class="font-bold text-red-800 shrink-0">Error:</span>
+            <span class="flex-1 leading-relaxed">{{ modal.errorMessage }}</span>
+            <button type="button" @click="modal.errorMessage = ''" class="text-red-400 hover:text-red-600 font-bold shrink-0 ml-1">✕</button>
+          </div>
+
           <!-- General User Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormControl type="text" label="First Name *" v-model="modal.form.first_name" placeholder="First name" />
@@ -660,6 +667,7 @@ const modal = reactive({
 	show: false,
 	isEdit: false,
 	saving: false,
+	errorMessage: "",
 	form: {
 		first_name: "",
 		last_name: "",
@@ -676,9 +684,38 @@ const modal = reactive({
 	},
 })
 
+function extractErrorMessage(data) {
+	if (!data) return "An unknown error occurred while processing your request."
+	if (data.message?.error) return data.message.error
+	if (typeof data.message === "string") return data.message
+	if (data._server_messages) {
+		try {
+			const serverMsgs = JSON.parse(data._server_messages)
+			const parsedMsgs = serverMsgs.map((m) => {
+				try {
+					const obj = JSON.parse(m)
+					return obj.message || m
+				} catch {
+					return m
+				}
+			})
+			const text = parsedMsgs.join(" ").replace(/<[^>]*>/g, "").trim()
+			if (text) return text
+		} catch (e) {
+			// ignore JSON parse error
+		}
+	}
+	if (data.exception) {
+		const parts = data.exception.split(":")
+		return parts.length > 1 ? parts.slice(1).join(":").trim() : data.exception
+	}
+	return "Failed to save user. Verify entries or check duplicate email errors."
+}
+
 function openCreateModal() {
 	modal.show = true
 	modal.isEdit = false
+	modal.errorMessage = ""
 	modal.form = {
 		first_name: "",
 		last_name: "",
@@ -698,6 +735,7 @@ function openCreateModal() {
 function openEditModal(user) {
 	modal.show = true
 	modal.isEdit = true
+	modal.errorMessage = ""
 	modal.form = {
 		first_name: user.first_name,
 		last_name: user.last_name || "",
@@ -715,24 +753,26 @@ function openEditModal(user) {
 }
 
 async function saveUserRecord() {
+	modal.errorMessage = ""
+
 	if (!modal.form.first_name || (!modal.isEdit && !modal.form.email)) {
-		alert("First Name and Email are mandatory fields.")
+		modal.errorMessage = "First Name and Email are mandatory fields."
 		return
 	}
 	if (!modal.isEdit && !modal.form.password) {
-		alert("Password is required for new users.")
+		modal.errorMessage = "Password is required for new users."
 		return
 	}
 
 	const isTicketRaiser = modal.form.roles.includes("Ticker Raiser")
 	if (isTicketRaiser) {
 		if (!modal.form.tactix_customer) {
-			alert("Tactix Customer is mandatory for Ticket Raiser users.")
+			modal.errorMessage = "Tactix Customer is mandatory for Ticket Raiser users."
 			return
 		}
 	} else {
 		if (!modal.form.gender || !modal.form.date_of_birth || !modal.form.date_of_joining) {
-			alert("Gender, Date of Birth, and Date of Joining are mandatory fields.")
+			modal.errorMessage = "Gender, Date of Birth, and Date of Joining are mandatory fields."
 			return
 		}
 	}
@@ -753,17 +793,14 @@ async function saveUserRecord() {
 			}),
 		})
 		const data = await res.json()
-		if (data.message?.status === "success") {
+		if (res.ok && data.message?.status === "success") {
 			modal.show = false
 			fetchUsersData()
 		} else {
-			alert(
-				data.message?.error ||
-					"Failed to save user. Verify entries or check duplicate email errors.",
-			)
+			modal.errorMessage = extractErrorMessage(data)
 		}
 	} catch (err) {
-		alert("An error occurred while saving the user.")
+		modal.errorMessage = "An error occurred while communicating with the server."
 	} finally {
 		modal.saving = false
 	}
@@ -788,26 +825,34 @@ async function executeUserDelete() {
 	try {
 		if (deleteConfirm.isBulk) {
 			for (const email of Array.from(selectedUsers.value)) {
-				await fetch("/api/method/tactix.api.users.delete_user", {
+				const res = await fetch("/api/method/tactix.api.users.delete_user", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ email }),
 				})
+				const data = await res.json()
+				if (!res.ok || data.message?.status === "error") {
+					console.error("Failed to delete user:", email, extractErrorMessage(data))
+				}
 			}
 			selectedUsers.value.clear()
 		} else if (deleteConfirm.targetEmail) {
-			await fetch("/api/method/tactix.api.users.delete_user", {
+			const res = await fetch("/api/method/tactix.api.users.delete_user", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email: deleteConfirm.targetEmail }),
 			})
-			selectedUsers.value.delete(deleteConfirm.targetEmail)
+			const data = await res.json()
+			if (res.ok && data.message?.status === "success") {
+				selectedUsers.value.delete(deleteConfirm.targetEmail)
+			} else {
+				console.error("Failed to delete user:", extractErrorMessage(data))
+			}
 		}
 		deleteConfirm.show = false
 		fetchUsersData()
 	} catch (err) {
 		console.error("Failed to delete user account(s):", err)
-		alert("Failed to delete user account(s).")
 	} finally {
 		deleteConfirm.loading = false
 	}
