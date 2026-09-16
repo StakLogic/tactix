@@ -1,7 +1,7 @@
 app_name = "tactix"
 app_title = "Tactix"
 app_publisher = "CodeVenturers"
-app_description = "Opera"
+app_description = "Tactix"
 app_email = "codeventurers@gmail.com"
 app_license = "mit"
 
