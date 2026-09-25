@@ -930,7 +930,7 @@ function syncActiveFilterRules() {
 
 function addFilterRule() {
 	const unusedField = FILTERABLE_FIELDS.find(
-		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value),
 	)
 	const field = unusedField ? unusedField.value : "repo"
 	activeFilterRules.value.push({
@@ -975,9 +975,12 @@ function applyFilterRules() {
 }
 
 function getFieldOptionsForSelect(fieldKey) {
-	if (fieldKey === "repo") return repoOptions.value.filter((o) => o.value !== "")
-	if (fieldKey === "status") return statusOptions.filter((o) => o.value !== "all")
-	if (fieldKey === "author") return authorOptions.value.filter((o) => o.value !== "")
+	if (fieldKey === "repo")
+		return repoOptions.value.filter((o) => o.value !== "")
+	if (fieldKey === "status")
+		return statusOptions.filter((o) => o.value !== "all")
+	if (fieldKey === "author")
+		return authorOptions.value.filter((o) => o.value !== "")
 	return []
 }
 
@@ -1003,10 +1006,18 @@ const hasActiveFilterChips = computed(() => activeFilterChips.value.length > 0)
 const activeFilterChips = computed(() => {
 	const chips = []
 	if (filters.repo) {
-		chips.push({ key: "repo", label: "Repository", displayValue: getFilterLabel("repo", filters.repo) })
+		chips.push({
+			key: "repo",
+			label: "Repository",
+			displayValue: getFilterLabel("repo", filters.repo),
+		})
 	}
 	if (filters.status !== "all") {
-		chips.push({ key: "status", label: "Status", displayValue: getFilterLabel("status", filters.status) })
+		chips.push({
+			key: "status",
+			label: "Status",
+			displayValue: getFilterLabel("status", filters.status),
+		})
 	}
 	return chips
 })

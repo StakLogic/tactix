@@ -20,6 +20,8 @@ import {
 	setConfig,
 } from "frappe-ui"
 
+import DatePicker from "./components/DatePicker.vue"
+
 import "./index.css"
 import "./mobile-responsive/mobile-menu.js"
 
@@ -28,6 +30,7 @@ const globalComponents = {
 	TextInput,
 	Input,
 	FormControl,
+	DatePicker,
 	ErrorMessage,
 	Dialog,
 	Alert,

@@ -271,16 +271,10 @@
 </template>
 
 <script setup>
-import {
-  Badge,
-  Button,
-  ErrorMessage,
-  Switch,
-  createResource,
-} from "frappe-ui"
-import { computed, reactive, ref, watch, onMounted } from "vue"
 import { session } from "@/data/session"
 import { playNotificationSound } from "@/utils/audio"
+import { Badge, Button, ErrorMessage, Switch, createResource } from "frappe-ui"
+import { computed, onMounted, reactive, ref, watch } from "vue"
 
 // Icons
 import IconArrowLeft from "~icons/lucide/arrow-left"
@@ -294,31 +288,31 @@ import IconSliders from "~icons/lucide/sliders"
 
 // Grouped Tabs Definition
 const groups = [
-  {
-    label: "User settings",
-    tabs: [
-      {
-        label: "Personal Preferences",
-        value: "personal",
-        iconComponent: IconSliders,
-      },
-    ],
-  },
-  {
-    label: "Integrations & System",
-    tabs: [
-      {
-        label: "GitHub Sync",
-        value: "github",
-        iconComponent: IconGitBranch,
-      },
-      {
-        label: "Workspace System Settings",
-        value: "system",
-        iconComponent: IconSettings,
-      },
-    ],
-  },
+	{
+		label: "User settings",
+		tabs: [
+			{
+				label: "Personal Preferences",
+				value: "personal",
+				iconComponent: IconSliders,
+			},
+		],
+	},
+	{
+		label: "Integrations & System",
+		tabs: [
+			{
+				label: "GitHub Sync",
+				value: "github",
+				iconComponent: IconGitBranch,
+			},
+			{
+				label: "Workspace System Settings",
+				value: "system",
+				iconComponent: IconSettings,
+			},
+		],
+	},
 ]
 
 const activeTab = ref("personal")
@@ -326,57 +320,62 @@ const isAdmin = computed(() => session.isAdmin)
 
 // Personal preferences model (local storage)
 const personalSettings = reactive({
-  enableSound: true
+	enableSound: true,
 })
 
 onMounted(() => {
-  const storedSound = localStorage.getItem("tactix_personal_enable_sound")
-  personalSettings.enableSound = storedSound !== "false"
+	const storedSound = localStorage.getItem("tactix_personal_enable_sound")
+	personalSettings.enableSound = storedSound !== "false"
 })
 
 function savePersonalSettings() {
-  localStorage.setItem("tactix_personal_enable_sound", personalSettings.enableSound ? "true" : "false")
+	localStorage.setItem(
+		"tactix_personal_enable_sound",
+		personalSettings.enableSound ? "true" : "false",
+	)
 }
 
 function triggerTestSound() {
-  const savedPersonal = localStorage.getItem("tactix_personal_enable_sound")
-  const savedGlobal = localStorage.getItem("tactix_global_enable_sound")
+	const savedPersonal = localStorage.getItem("tactix_personal_enable_sound")
+	const savedGlobal = localStorage.getItem("tactix_global_enable_sound")
 
-  localStorage.setItem("tactix_personal_enable_sound", "true")
-  localStorage.setItem("tactix_global_enable_sound", "true")
-  
-  playNotificationSound()
+	localStorage.setItem("tactix_personal_enable_sound", "true")
+	localStorage.setItem("tactix_global_enable_sound", "true")
 
-  setTimeout(() => {
-    if (savedPersonal !== null) localStorage.setItem("tactix_personal_enable_sound", savedPersonal)
-    else localStorage.removeItem("tactix_personal_enable_sound")
+	playNotificationSound()
 
-    if (savedGlobal !== null) localStorage.setItem("tactix_global_enable_sound", savedGlobal)
-    else localStorage.removeItem("tactix_global_enable_sound")
-  }, 100)
+	setTimeout(() => {
+		if (savedPersonal !== null)
+			localStorage.setItem("tactix_personal_enable_sound", savedPersonal)
+		else localStorage.removeItem("tactix_personal_enable_sound")
+
+		if (savedGlobal !== null)
+			localStorage.setItem("tactix_global_enable_sound", savedGlobal)
+		else localStorage.removeItem("tactix_global_enable_sound")
+	}, 100)
 }
 
 // GitHub Settings (Moved from DataSource)
 const configResource = createResource({
-  url: "tactix.api.github.get_github_config",
-  initialData: { has_token: false, organization_name: "" },
-  auto: true,
+	url: "tactix.api.github.get_github_config",
+	initialData: { has_token: false, organization_name: "" },
+	auto: true,
 })
 
 const githubForm = reactive({
-  token: "",
-  organization_name: "",
+	token: "",
+	organization_name: "",
 })
 
 watch(
-  () => configResource.data,
-  (data) => {
-    if (data) {
-      githubForm.token = data.has_token ? "******" : ""
-      githubForm.organization_name = data.organization_name || ""
-    }
-  },
-  { immediate: true }
+	() => configResource.data,
+	(data) => {
+		if (data) {
+			githubForm.token = data.has_token ? "******" : ""
+			githubForm.organization_name = data.organization_name || ""
+		}
+	},
+	{ immediate: true },
 )
 
 const savingGithub = ref(false)
@@ -384,158 +383,172 @@ const syncingGithub = ref(false)
 const githubFeedback = ref(null)
 
 const webhookUrl = computed(() => {
-  return `${window.location.origin}/api/method/tactix.api.github.handle_webhook`
+	return `${window.location.origin}/api/method/tactix.api.github.handle_webhook`
 })
 
 function copyWebhook() {
-  navigator.clipboard.writeText(webhookUrl.value)
-  alert("Webhook URL copied to clipboard!")
+	navigator.clipboard.writeText(webhookUrl.value)
+	alert("Webhook URL copied to clipboard!")
 }
 
 async function saveGithubConfig() {
-  savingGithub.value = true
-  githubFeedback.value = null
-  try {
-    const res = await fetch(
-      "/api/method/tactix.api.github.save_github_config",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(githubForm),
-      }
-    )
-    const data = await res.json()
-    if (data.message?.status === "success") {
-      githubFeedback.value = {
-        type: "success",
-        message: "Configuration saved successfully!",
-      }
-      configResource.reload()
-    } else {
-      githubFeedback.value = {
-        type: "error",
-        message: "Failed to save configuration.",
-      }
-    }
-  } catch (err) {
-    githubFeedback.value = {
-      type: "error",
-      message: "An error occurred while saving.",
-    }
-  } finally {
-    savingGithub.value = false
-  }
+	savingGithub.value = true
+	githubFeedback.value = null
+	try {
+		const res = await fetch(
+			"/api/method/tactix.api.github.save_github_config",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(githubForm),
+			},
+		)
+		const data = await res.json()
+		if (data.message?.status === "success") {
+			githubFeedback.value = {
+				type: "success",
+				message: "Configuration saved successfully!",
+			}
+			configResource.reload()
+		} else {
+			githubFeedback.value = {
+				type: "error",
+				message: "Failed to save configuration.",
+			}
+		}
+	} catch (err) {
+		githubFeedback.value = {
+			type: "error",
+			message: "An error occurred while saving.",
+		}
+	} finally {
+		savingGithub.value = false
+	}
 }
 
 async function syncPRs() {
-  syncingGithub.value = true
-  githubFeedback.value = null
-  try {
-    const res = await fetch(
-      "/api/method/tactix.api.github.sync_all_pull_requests",
-      {
-        method: "POST",
-      }
-    )
-    const data = await res.json()
-    if (data.message?.status === "success") {
-      githubFeedback.value = {
-        type: "success",
-        message: "Synchronized pull requests successfully!",
-      }
-    } else if (data.message?.error) {
-      githubFeedback.value = {
-        type: "error",
-        message: `Sync error: ${data.message.error}`,
-      }
-    } else {
-      githubFeedback.value = {
-        type: "success",
-        message: "Sync job dispatched successfully in background!",
-      }
-    }
-  } catch (err) {
-    githubFeedback.value = {
-      type: "error",
-      message: "An error occurred while synchronizing.",
-    }
-  } finally {
-    syncingGithub.value = false
-  }
+	syncingGithub.value = true
+	githubFeedback.value = null
+	try {
+		const res = await fetch(
+			"/api/method/tactix.api.github.sync_all_pull_requests",
+			{
+				method: "POST",
+			},
+		)
+		const data = await res.json()
+		if (data.message?.status === "success") {
+			githubFeedback.value = {
+				type: "success",
+				message: "Synchronized pull requests successfully!",
+			}
+		} else if (data.message?.error) {
+			githubFeedback.value = {
+				type: "error",
+				message: `Sync error: ${data.message.error}`,
+			}
+		} else {
+			githubFeedback.value = {
+				type: "success",
+				message: "Sync job dispatched successfully in background!",
+			}
+		}
+	} catch (err) {
+		githubFeedback.value = {
+			type: "error",
+			message: "An error occurred while synchronizing.",
+		}
+	} finally {
+		syncingGithub.value = false
+	}
 }
 
 // System Configurations Model (saved to db)
 const systemSettings = reactive({
-  company_name: "",
-  default_ticket_priority: "Medium",
-  enable_real_time_notification_sound: true,
-  allow_ticket_raiser_to_close_tickets: true
+	company_name: "",
+	default_ticket_priority: "Medium",
+	enable_real_time_notification_sound: true,
+	allow_ticket_raiser_to_close_tickets: true,
 })
 
 const settingsResource = createResource({
-  url: "tactix.api.generic.get_tactix_settings",
-  auto: true,
-  onSuccess(data) {
-    if (data) {
-      systemSettings.company_name = data.company_name || ""
-      systemSettings.default_ticket_priority = data.default_ticket_priority || "Medium"
-      systemSettings.enable_real_time_notification_sound = !!data.enable_real_time_notification_sound
-      systemSettings.allow_ticket_raiser_to_close_tickets = !!data.allow_ticket_raiser_to_close_tickets
-      
-      localStorage.setItem("tactix_global_enable_sound", systemSettings.enable_real_time_notification_sound ? "true" : "false")
-      localStorage.setItem("tactix_allow_ticket_raiser_to_close_tickets", systemSettings.allow_ticket_raiser_to_close_tickets ? "1" : "0")
-      localStorage.setItem("tactix_default_ticket_priority", systemSettings.default_ticket_priority)
-      localStorage.setItem("tactix_company_name", systemSettings.company_name)
-      
-      document.title = systemSettings.company_name || "Tactix"
-    }
-  }
+	url: "tactix.api.generic.get_tactix_settings",
+	auto: true,
+	onSuccess(data) {
+		if (data) {
+			systemSettings.company_name = data.company_name || ""
+			systemSettings.default_ticket_priority =
+				data.default_ticket_priority || "Medium"
+			systemSettings.enable_real_time_notification_sound =
+				!!data.enable_real_time_notification_sound
+			systemSettings.allow_ticket_raiser_to_close_tickets =
+				!!data.allow_ticket_raiser_to_close_tickets
+
+			localStorage.setItem(
+				"tactix_global_enable_sound",
+				systemSettings.enable_real_time_notification_sound ? "true" : "false",
+			)
+			localStorage.setItem(
+				"tactix_allow_ticket_raiser_to_close_tickets",
+				systemSettings.allow_ticket_raiser_to_close_tickets ? "1" : "0",
+			)
+			localStorage.setItem(
+				"tactix_default_ticket_priority",
+				systemSettings.default_ticket_priority,
+			)
+			localStorage.setItem("tactix_company_name", systemSettings.company_name)
+
+			document.title = systemSettings.company_name || "Tactix"
+		}
+	},
 })
 
 const saving = ref(false)
 const feedback = ref(null)
 
 async function saveSystemSettings() {
-  saving.value = true
-  feedback.value = null
-  try {
-    const res = await fetch(
-      "/api/method/tactix.api.generic.save_tactix_settings",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company_name: systemSettings.company_name,
-          default_ticket_priority: systemSettings.default_ticket_priority,
-          enable_real_time_notification_sound: systemSettings.enable_real_time_notification_sound ? 1 : 0,
-          allow_ticket_raiser_to_close_tickets: systemSettings.allow_ticket_raiser_to_close_tickets ? 1 : 0
-        })
-      }
-    )
-    const data = await res.json()
-    if (data.message?.status === "success") {
-      feedback.value = {
-        type: "success",
-        message: "Settings saved successfully!"
-      }
-      settingsResource.reload()
-    } else {
-      feedback.value = {
-        type: "error",
-        message: data.message?.error || "An error occurred while saving."
-      }
-    }
-  } catch (err) {
-    feedback.value = {
-      type: "error",
-      message: "Network error occurred."
-    }
-  } finally {
-    saving.value = false
-    setTimeout(() => {
-      feedback.value = null
-    }, 5000)
-  }
+	saving.value = true
+	feedback.value = null
+	try {
+		const res = await fetch(
+			"/api/method/tactix.api.generic.save_tactix_settings",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					company_name: systemSettings.company_name,
+					default_ticket_priority: systemSettings.default_ticket_priority,
+					enable_real_time_notification_sound:
+						systemSettings.enable_real_time_notification_sound ? 1 : 0,
+					allow_ticket_raiser_to_close_tickets:
+						systemSettings.allow_ticket_raiser_to_close_tickets ? 1 : 0,
+				}),
+			},
+		)
+		const data = await res.json()
+		if (data.message?.status === "success") {
+			feedback.value = {
+				type: "success",
+				message: "Settings saved successfully!",
+			}
+			settingsResource.reload()
+		} else {
+			feedback.value = {
+				type: "error",
+				message: data.message?.error || "An error occurred while saving.",
+			}
+		}
+	} catch (err) {
+		feedback.value = {
+			type: "error",
+			message: "Network error occurred.",
+		}
+	} finally {
+		saving.value = false
+		setTimeout(() => {
+			feedback.value = null
+		}, 5000)
+	}
 }
 </script>
 

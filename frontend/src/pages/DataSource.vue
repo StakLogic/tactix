@@ -410,7 +410,9 @@ function compareOption(a, b) {
 function getCompanyLabel(val) {
 	const rawVal = val && typeof val === "object" ? val.value : val
 	if (!rawVal) return "Select Company"
-	const match = linkOptions.companies?.find((c) => (typeof c === "object" ? c.value === rawVal : c === rawVal))
+	const match = linkOptions.companies?.find((c) =>
+		typeof c === "object" ? c.value === rawVal : c === rawVal,
+	)
 	return match ? (typeof match === "object" ? match.label : match) : rawVal
 }
 
@@ -501,19 +503,25 @@ const columns = computed(() => {
 				{ label: "Name / ID", key: "name", width: "200px" },
 				{ label: "Project Name", key: "project_name" },
 				{ label: "Company", key: "company", width: "200px" },
-				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+				...(isAdmin.value
+					? [{ label: "Actions", key: "actions", width: "100px" }]
+					: []),
 			]
 		case "department":
 			return [
 				{ label: "Name / ID", key: "name", width: "200px" },
 				{ label: "Department Name", key: "department_name" },
 				{ label: "Company", key: "company", width: "200px" },
-				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+				...(isAdmin.value
+					? [{ label: "Actions", key: "actions", width: "100px" }]
+					: []),
 			]
 		case "tactix_cust":
 			return [
 				{ label: "Name / ID", key: "name" },
-				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+				...(isAdmin.value
+					? [{ label: "Actions", key: "actions", width: "100px" }]
+					: []),
 			]
 		case "tactix_team":
 			return [
@@ -521,7 +529,9 @@ const columns = computed(() => {
 				{ label: "Team Name", key: "team_name", width: "180px" },
 				{ label: "Team Lead", key: "team_lead", width: "200px" },
 				{ label: "Team Members", key: "members" },
-				...(isAdmin.value ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+				...(isAdmin.value
+					? [{ label: "Actions", key: "actions", width: "100px" }]
+					: []),
 			]
 		default:
 			return []
@@ -555,10 +565,13 @@ const userOptions = computed(() => {
 })
 
 function getUserLabel(userName) {
-	const rawVal = userName && typeof userName === "object" ? userName.value : userName
+	const rawVal =
+		userName && typeof userName === "object" ? userName.value : userName
 	if (!rawVal) return "—"
-	const match = usersResource.data?.find((u) => u.name === rawVal || u.value === rawVal)
-	return match ? (match.full_name || match.label || rawVal) : rawVal
+	const match = usersResource.data?.find(
+		(u) => u.name === rawVal || u.value === rawVal,
+	)
+	return match ? match.full_name || match.label || rawVal : rawVal
 }
 
 // Fetch Link Options
@@ -634,7 +647,9 @@ const filteredRecords = computed(() => {
 })
 
 const totalCount = computed(() => filteredRecords.value.length)
-const totalPages = computed(() => Math.ceil(totalCount.value / pageLength.value) || 1)
+const totalPages = computed(
+	() => Math.ceil(totalCount.value / pageLength.value) || 1,
+)
 
 const pageOptions = computed(() =>
 	Array.from({ length: totalPages.value }, (_, i) => ({

@@ -44,7 +44,6 @@ const crmSidebar = computed(() => {
 	// 1. Build Header Menu Items (Dropdown menu on user profile)
 	const menuItems = [
 		{ label: "Toggle Theme", icon: Moon, onClick: toggleTheme },
-		
 	]
 
 	if (isAdmin.value) {

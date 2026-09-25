@@ -1238,8 +1238,21 @@
 
 <script setup>
 import dayjs from "dayjs"
-import { Autocomplete, Avatar, Badge, Button, Dialog, FeatherIcon, FormControl, LoadingIndicator, Popover, Select, Tabs, createResource } from "frappe-ui"
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue"
+import {
+	Autocomplete,
+	Avatar,
+	Badge,
+	Button,
+	Dialog,
+	FeatherIcon,
+	FormControl,
+	LoadingIndicator,
+	Popover,
+	Select,
+	Tabs,
+	createResource,
+} from "frappe-ui"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { session } from "../data/session"
 
@@ -1351,23 +1364,39 @@ const activeFilterRules = ref([])
 function syncActiveFilterRules() {
 	const newRules = []
 	if (fileTypeFilter.value !== "All") {
-		newRules.push({ id: "rule_fileTypeFilter", field: "fileTypeFilter", value: fileTypeFilter.value })
+		newRules.push({
+			id: "rule_fileTypeFilter",
+			field: "fileTypeFilter",
+			value: fileTypeFilter.value,
+		})
 	}
 	if (sourceFilter.value !== "All") {
-		newRules.push({ id: "rule_sourceFilter", field: "sourceFilter", value: sourceFilter.value })
+		newRules.push({
+			id: "rule_sourceFilter",
+			field: "sourceFilter",
+			value: sourceFilter.value,
+		})
 	}
 	if (accessFilter.value !== "All") {
-		newRules.push({ id: "rule_accessFilter", field: "accessFilter", value: accessFilter.value })
+		newRules.push({
+			id: "rule_accessFilter",
+			field: "accessFilter",
+			value: accessFilter.value,
+		})
 	}
 	if (newRules.length === 0) {
-		newRules.push({ id: "rule_" + Date.now(), field: "fileTypeFilter", value: "" })
+		newRules.push({
+			id: "rule_" + Date.now(),
+			field: "fileTypeFilter",
+			value: "",
+		})
 	}
 	activeFilterRules.value = newRules
 }
 
 function addFilterRule() {
 	const unusedField = FILTERABLE_FIELDS.find(
-		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value),
 	)
 	const field = unusedField ? unusedField.value : "fileTypeFilter"
 	activeFilterRules.value.push({
@@ -1412,9 +1441,12 @@ function applyFilterRules() {
 }
 
 function getFieldOptionsForSelect(fieldKey) {
-	if (fieldKey === "fileTypeFilter") return fileTypeOptions.filter((o) => o.value !== "All")
-	if (fieldKey === "sourceFilter") return sourceOptions.filter((o) => o.value !== "All")
-	if (fieldKey === "accessFilter") return accessOptions.filter((o) => o.value !== "All")
+	if (fieldKey === "fileTypeFilter")
+		return fileTypeOptions.filter((o) => o.value !== "All")
+	if (fieldKey === "sourceFilter")
+		return sourceOptions.filter((o) => o.value !== "All")
+	if (fieldKey === "accessFilter")
+		return accessOptions.filter((o) => o.value !== "All")
 	return []
 }
 
@@ -1457,13 +1489,25 @@ const hasActiveFilterChips = computed(() => activeFilterChips.value.length > 0)
 const activeFilterChips = computed(() => {
 	const chips = []
 	if (fileTypeFilter.value !== "All") {
-		chips.push({ key: "fileTypeFilter", label: "File Type", displayValue: getFilterLabel("fileTypeFilter", fileTypeFilter.value) })
+		chips.push({
+			key: "fileTypeFilter",
+			label: "File Type",
+			displayValue: getFilterLabel("fileTypeFilter", fileTypeFilter.value),
+		})
 	}
 	if (sourceFilter.value !== "All") {
-		chips.push({ key: "sourceFilter", label: "Source", displayValue: getFilterLabel("sourceFilter", sourceFilter.value) })
+		chips.push({
+			key: "sourceFilter",
+			label: "Source",
+			displayValue: getFilterLabel("sourceFilter", sourceFilter.value),
+		})
 	}
 	if (accessFilter.value !== "All") {
-		chips.push({ key: "accessFilter", label: "Access Level", displayValue: getFilterLabel("accessFilter", accessFilter.value) })
+		chips.push({
+			key: "accessFilter",
+			label: "Access Level",
+			displayValue: getFilterLabel("accessFilter", accessFilter.value),
+		})
 	}
 	return chips
 })
@@ -1538,11 +1582,13 @@ const textPreviewContent = ref("")
 const loadingTextPreview = ref(false)
 
 function zoomIn() {
-	if (imageZoom.value < 3) imageZoom.value = Math.round((imageZoom.value + 0.25) * 100) / 100
+	if (imageZoom.value < 3)
+		imageZoom.value = Math.round((imageZoom.value + 0.25) * 100) / 100
 }
 
 function zoomOut() {
-	if (imageZoom.value > 0.5) imageZoom.value = Math.round((imageZoom.value - 0.25) * 100) / 100
+	if (imageZoom.value > 0.5)
+		imageZoom.value = Math.round((imageZoom.value - 0.25) * 100) / 100
 }
 
 function resetZoom() {
@@ -1565,7 +1611,20 @@ function onImageLoad(e) {
 function isTextFile(filename) {
 	if (!filename) return false
 	const ext = filename.split(".").pop().toLowerCase()
-	return ["txt", "md", "csv", "json", "py", "js", "html", "css", "log", "xml", "yml", "yaml"].includes(ext)
+	return [
+		"txt",
+		"md",
+		"csv",
+		"json",
+		"py",
+		"js",
+		"html",
+		"css",
+		"log",
+		"xml",
+		"yml",
+		"yaml",
+	].includes(ext)
 }
 
 async function fetchTextPreview(url) {
@@ -1626,7 +1685,9 @@ function nextPreview() {
 
 function prevPreview() {
 	if (!filteredFiles.value || filteredFiles.value.length === 0) return
-	previewModal.index = (previewModal.index - 1 + filteredFiles.value.length) % filteredFiles.value.length
+	previewModal.index =
+		(previewModal.index - 1 + filteredFiles.value.length) %
+		filteredFiles.value.length
 	previewModal.file = filteredFiles.value[previewModal.index]
 	resetZoom()
 	if (isTextFile(previewModal.file.file_name)) {
@@ -1812,7 +1873,10 @@ async function executeBulkShare() {
 			target_user: shareModal.targetUser,
 			permission: shareModal.permission,
 		})
-		showToast(`Shared ${selectedItems.value.length} files successfully`, "success")
+		showToast(
+			`Shared ${selectedItems.value.length} files successfully`,
+			"success",
+		)
 		shareModal.show = false
 		clearSelection()
 		loadPathContents(currentPath.value)
@@ -1867,7 +1931,9 @@ async function executeShare() {
 		})
 		showToast("File shared successfully", "success")
 		shareModal.targetUser = ""
-		const res = await getFileSharesResource.fetch({ file_name: shareModal.file.name })
+		const res = await getFileSharesResource.fetch({
+			file_name: shareModal.file.name,
+		})
 		shareModal.owner = res.owner
 		shareModal.shares = res.shares || []
 		loadPathContents(currentPath.value)
@@ -1959,7 +2025,8 @@ function getFolderTypeLabel(folderPath) {
 function getFileIconBg(filename) {
 	if (!filename) return "bg-slate-100 dark:bg-slate-800"
 	const ext = filename.split(".").pop().toLowerCase()
-	if (["pdf"].includes(ext)) return "bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40"
+	if (["pdf"].includes(ext))
+		return "bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40"
 	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
 		return "bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/40"
 	if (["xls", "xlsx", "csv", "ods"].includes(ext))
@@ -2004,13 +2071,24 @@ function getCsrfToken() {
 }
 
 function onWindowDragEnter() {
-	if (uploadAllowed.value && !previewModal.show && !shareModal.show && !deleteConfirm.show && !showNewFolderModal.value) {
+	if (
+		uploadAllowed.value &&
+		!previewModal.show &&
+		!shareModal.show &&
+		!deleteConfirm.show &&
+		!showNewFolderModal.value
+	) {
 		dragActive.value = true
 	}
 }
 
 function onWindowDragLeave(e) {
-	if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+	if (
+		e.clientX <= 0 ||
+		e.clientY <= 0 ||
+		e.clientX >= window.innerWidth ||
+		e.clientY >= window.innerHeight
+	) {
 		dragActive.value = false
 	}
 }
@@ -2177,10 +2255,13 @@ function getFileIconColor(filename) {
 	if (!filename) return "text-slate-400"
 	const ext = filename.split(".").pop().toLowerCase()
 	if (["pdf"].includes(ext)) return "text-rose-500"
-	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) return "text-sky-500"
+	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
+		return "text-sky-500"
 	if (["xls", "xlsx", "csv", "ods"].includes(ext)) return "text-emerald-500"
-	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return "text-purple-500"
-	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return "text-amber-500"
+	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext))
+		return "text-purple-500"
+	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext))
+		return "text-amber-500"
 	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "text-orange-500"
 	return "text-blue-500"
 }
@@ -2188,8 +2269,10 @@ function getFileIconColor(filename) {
 function getFileIcon(filename) {
 	if (!filename) return IconFile
 	const ext = filename.split(".").pop().toLowerCase()
-	if (["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext)) return IconFileText
-	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) return IconFileImage
+	if (["pdf", "doc", "docx", "txt", "rtf", "odt"].includes(ext))
+		return IconFileText
+	if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext))
+		return IconFileImage
 	if (["xls", "xlsx", "csv", "ods"].includes(ext)) return IconFileSpreadsheet
 	if (["mp4", "webm", "mkv", "avi", "mov"].includes(ext)) return IconFileVideo
 	if (["mp3", "wav", "ogg", "aac", "flac"].includes(ext)) return IconFileAudio
@@ -2222,9 +2305,12 @@ function isAudio(filename) {
 }
 
 function getSourceBadgeClass(source) {
-	if (source === "Direct" || source === "Shared") return "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
-	if (source === "Ticket") return "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
-	if (source === "Task") return "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300"
+	if (source === "Direct" || source === "Shared")
+		return "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
+	if (source === "Ticket")
+		return "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
+	if (source === "Task")
+		return "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300"
 	return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
 }
 
