@@ -1005,8 +1005,8 @@
 				</Autocomplete>
 			  </div>
 
-			  <FormControl type="date" label="Start Date" v-model="newTask.assigned_date" />
-			  <FormControl type="date" label="Deadline" v-model="newTask.exp_end_date" />
+			  <DatePicker label="Start Date" v-model="newTask.assigned_date" />
+			  <DatePicker label="Deadline" v-model="newTask.exp_end_date" />
 			</div>
 			<div class="space-y-4">
 			  <div class="space-y-1.5">
@@ -1599,7 +1599,7 @@
 								</div>
 
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 border-t border-slate-200/60 pt-3">
-									<FormControl label="Deadline" type="date" v-model="newTask.exp_end_date" class="!mb-0" :disabled="isFieldDisabled" />
+									<DatePicker label="Deadline" v-model="newTask.exp_end_date" class="!mb-0" :disabled="isFieldDisabled" />
 									<FormControl label="Expected Time (Hrs)" type="number" v-model="newTask.expected_time" class="!mb-0" :disabled="isFieldDisabled" />
 								</div>
 
@@ -1713,7 +1713,16 @@ import {
 	createListResource,
 	createResource,
 } from "frappe-ui"
-import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue"
+import {
+	computed,
+	h,
+	nextTick,
+	onMounted,
+	onUnmounted,
+	reactive,
+	ref,
+	watch,
+} from "vue"
 import { useRoute, useRouter } from "vue-router"
 import CommentBox from "../components/CommentBox.vue"
 import { session } from "../data/session"
@@ -1735,8 +1744,8 @@ import IconClock from "~icons/lucide/clock"
 import IconEdit3 from "~icons/lucide/edit-3"
 import IconFilter from "~icons/lucide/filter"
 import IconFlag from "~icons/lucide/flag"
-import IconLayoutGrid from "~icons/lucide/layout-grid"
 import IconLayers from "~icons/lucide/layers"
+import IconLayoutGrid from "~icons/lucide/layout-grid"
 import IconList from "~icons/lucide/list"
 import IconMessageSquare from "~icons/lucide/message-square"
 import IconPaperclip from "~icons/lucide/paperclip"
@@ -2444,7 +2453,8 @@ function applyFilterRules() {
 function getFieldOptionsForSelect(fieldKey) {
 	if (fieldKey === "status") return filterStatusOptions
 	if (fieldKey === "priority") return priorityOptions
-	if (fieldKey === "deadline") return deadlineOptions.filter((d) => d.value !== "")
+	if (fieldKey === "deadline")
+		return deadlineOptions.filter((d) => d.value !== "")
 	if (fieldKey === "tactix_team") return tactixTeamResource.data || []
 	if (fieldKey === "project") return projectResource.data || []
 	if (fieldKey === "department") return departmentResource.data || []
@@ -2462,7 +2472,8 @@ function getRuleDisplayLabel(rule) {
 	if (!rule.value) return "Select value"
 	if (rule.field === "project") return getProjectLabel(rule.value)
 	if (rule.field === "department") return getDepartmentLabel(rule.value)
-	if (rule.field === "assigned_by" || rule.field === "assigned_to") return getUserLabel(rule.value)
+	if (rule.field === "assigned_by" || rule.field === "assigned_to")
+		return getUserLabel(rule.value)
 	return rule.value
 }
 
@@ -2556,7 +2567,10 @@ watch(
 				} else {
 					activeFilterRules.value.push({
 						id:
-							"rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+							"rule_" +
+							Date.now() +
+							"_" +
+							Math.random().toString(36).substr(2, 4),
 						field: key,
 						value: val,
 					})
@@ -2732,7 +2746,13 @@ const tactixTeamResource = createListResource({
 })
 
 const ALL_COLUMNS = [
-	{ label: "Task Name", key: "subject", icon: IconCheckCircle, width: "280px", mandatory: true },
+	{
+		label: "Task Name",
+		key: "subject",
+		icon: IconCheckCircle,
+		width: "280px",
+		mandatory: true,
+	},
 	{
 		label: "Description",
 		key: "description_for_list",
@@ -2859,9 +2879,7 @@ function moveColumnDown(index) {
 
 const columns = computed(() => {
 	const map = new Map(ALL_COLUMNS.map((c) => [c.key, c]))
-	return activeColumnKeys.value
-		.map((key) => map.get(key))
-		.filter(Boolean)
+	return activeColumnKeys.value.map((key) => map.get(key)).filter(Boolean)
 })
 
 // Resources
@@ -2904,7 +2922,8 @@ const departmentResource = createListResource({
 const taskFilters = computed(() => {
 	const f = {}
 
-	if (debouncedSearchQuery.value) f.subject = ["like", `%${debouncedSearchQuery.value}%`]
+	if (debouncedSearchQuery.value)
+		f.subject = ["like", `%${debouncedSearchQuery.value}%`]
 	if (selectedFilters.project) f.project = selectedFilters.project
 	if (selectedFilters.status) f.status = selectedFilters.status
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
@@ -3191,9 +3210,7 @@ async function onDrop(event, targetValue) {
 	const newVal = targetValue === "__none__" ? "" : targetValue
 
 	const oldKey = currentTaskVal
-	const taskIndex = columnTasks[oldKey]?.findIndex(
-		(t) => t.name === task.name,
-	)
+	const taskIndex = columnTasks[oldKey]?.findIndex((t) => t.name === task.name)
 	if (taskIndex !== undefined && taskIndex > -1) {
 		const [movedTask] = columnTasks[oldKey].splice(taskIndex, 1)
 		if (!columnTasks[targetValue]) columnTasks[targetValue] = []
@@ -3212,10 +3229,7 @@ async function onDrop(event, targetValue) {
 			tasksSummaryResource.data.pending_review > 0
 		)
 			tasksSummaryResource.data.pending_review--
-		else if (
-			oldVal === "Completed" &&
-			tasksSummaryResource.data.completed > 0
-		)
+		else if (oldVal === "Completed" && tasksSummaryResource.data.completed > 0)
 			tasksSummaryResource.data.completed--
 
 		if (newVal === "Open") tasksSummaryResource.data.open++

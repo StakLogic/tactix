@@ -279,13 +279,9 @@ def check_portal_user(email):
 	"""Check if portal user exists"""
 
 	if frappe.db.exists("User", email):
-		return {
-			"exists": True
-		}
+		return True
 
-	return {
-		"exists": False
-	}
+	return False
 
 @frappe.whitelist()
 def create_portal_user():

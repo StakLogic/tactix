@@ -1244,8 +1244,8 @@
 				  </template>
 				</Autocomplete>
 			  </div>
-			  <FormControl type="date" label="Start Date" v-model="newTask.assigned_date" />
-			  <FormControl type="date" label="Deadline" v-model="newTask.exp_end_date" />
+			  <DatePicker label="Start Date" v-model="newTask.assigned_date" />
+			  <DatePicker label="Deadline" v-model="newTask.exp_end_date" />
 			  <FormControl type="number" label="Expected Time (In Hrs)" v-model="newTask.expected_time" />
 			</div>
 			<div class="space-y-4">
@@ -1601,9 +1601,12 @@ const isFieldDisabled = computed(() => {
 })
 
 const ticketStatusOptions = computed(() => {
-	const base = ['Open', 'Replied', 'Resolved', 'Closed']
-	if (session.isTicketRaiser && localStorage.getItem("tactix_allow_ticket_raiser_to_close_tickets") === "0") {
-		return ['Open', 'Replied', 'Resolved']
+	const base = ["Open", "Replied", "Resolved", "Closed"]
+	if (
+		session.isTicketRaiser &&
+		localStorage.getItem("tactix_allow_ticket_raiser_to_close_tickets") === "0"
+	) {
+		return ["Open", "Replied", "Resolved"]
 	}
 	return base
 })
@@ -1647,7 +1650,8 @@ const selectedFilters = reactive({
 /* RESOURCES */
 const ticketFilters = computed(() => {
 	const f = {}
-	if (debouncedSearchQuery.value) f.subject = ["like", `%${debouncedSearchQuery.value}%`]
+	if (debouncedSearchQuery.value)
+		f.subject = ["like", `%${debouncedSearchQuery.value}%`]
 	if (selectedFilters.status) f.status = selectedFilters.status
 	if (selectedFilters.priority) f.priority = selectedFilters.priority
 	if (selectedFilters.customer) f.customer = selectedFilters.customer
@@ -1772,7 +1776,11 @@ const paginationPages = computed(() => {
 const userResource = createListResource({
 	doctype: "User",
 	fields: ["name", "full_name", "user_image"],
-	filters: { enabled: 1, name: ["not in", ["Administrator", "Guest"]], tactix_customer: ["is", "set"] },
+	filters: {
+		enabled: 1,
+		name: ["not in", ["Administrator", "Guest"]],
+		tactix_customer: ["is", "set"],
+	},
 	auto: true,
 	transform: (users) =>
 		users.map((u) => ({
@@ -1852,8 +1860,6 @@ function getUserAvatarImage(userName) {
 	return match?.image || ""
 }
 
-
-
 const unwrapListPayload = (payload) => {
 	if (Array.isArray(payload)) return payload
 	if (!payload || typeof payload !== "object") return []
@@ -1916,7 +1922,8 @@ const customerFilterOptions = computed(() => {
 		"customer",
 	])
 	if (session.isTicketRaiser) {
-		const userCust = session.ticketCustomerId || session.userInfo.data?.tactix_customer
+		const userCust =
+			session.ticketCustomerId || session.userInfo.data?.tactix_customer
 		if (userCust) {
 			const match = allOptions.find((c) => c.value === userCust)
 			return [match || { label: userCust, value: userCust }]
@@ -1930,10 +1937,7 @@ const customerFilterSelectOptions = computed(() => {
 	if (session.isTicketRaiser) {
 		return customerFilterOptions.value
 	}
-	return [
-		{ label: "Client", value: "" },
-		...customerFilterOptions.value,
-	]
+	return [{ label: "Client", value: "" }, ...customerFilterOptions.value]
 })
 
 const raisedByFilterOptions = computed(() => {
@@ -2021,14 +2025,16 @@ const dialogOptions = computed(() => ({
 
 /* FORM LOGIC */
 const emptyTicket = () => {
-	const userCust = session.ticketCustomerId || session.userInfo.data?.tactix_customer || ""
+	const userCust =
+		session.ticketCustomerId || session.userInfo.data?.tactix_customer || ""
 	return {
 		name: "",
 		subject: "",
 		raised_by: session.isTicketRaiser ? session.user : "",
 		raised_by_user: "",
 		status: "Open",
-		priority: localStorage.getItem("tactix_default_ticket_priority") || "Medium",
+		priority:
+			localStorage.getItem("tactix_default_ticket_priority") || "Medium",
 		ticket_type: "Support",
 		agent_group: "",
 		description: "",
@@ -2163,7 +2169,8 @@ async function handleSaveTicket() {
 		resetForm()
 	} catch (err) {
 		console.error("Failed to save ticket", err)
-		ticketFormError.value = err?.message || "An error occurred while saving the ticket."
+		ticketFormError.value =
+			err?.message || "An error occurred while saving the ticket."
 	} finally {
 		saving.value = false
 	}
@@ -2322,9 +2329,12 @@ function applyFilterRules() {
 function getFieldOptionsForSelect(fieldKey) {
 	if (fieldKey === "status") return filterStatusOptions
 	if (fieldKey === "priority") return priorityOptions
-	if (fieldKey === "customer") return customerFilterSelectOptions.value.filter(c => c.value !== "")
-	if (fieldKey === "department") return departmentFilterSelectOptions.value.filter(d => d.value !== "")
-	if (fieldKey === "raised_by") return raisedByFilterSelectOptions.value.filter(u => u.value !== "")
+	if (fieldKey === "customer")
+		return customerFilterSelectOptions.value.filter((c) => c.value !== "")
+	if (fieldKey === "department")
+		return departmentFilterSelectOptions.value.filter((d) => d.value !== "")
+	if (fieldKey === "raised_by")
+		return raisedByFilterSelectOptions.value.filter((u) => u.value !== "")
 	return []
 }
 
@@ -2339,7 +2349,10 @@ watch(
 				} else {
 					activeFilterRules.value.push({
 						id:
-							"rule_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+							"rule_" +
+							Date.now() +
+							"_" +
+							Math.random().toString(36).substr(2, 4),
 						field: key,
 						value: val,
 					})
@@ -2393,16 +2406,32 @@ const filterStatusOptions = [
 
 /* COLUMN PICKER & LISTVIEW CONFIG */
 const ALL_COLUMNS = [
-	{ label: "Subject", key: "subject", icon: IconList, width: "3.5fr", mandatory: true },
+	{
+		label: "Subject",
+		key: "subject",
+		icon: IconList,
+		width: "3.5fr",
+		mandatory: true,
+	},
 	{ label: "Ticket ID", key: "name", icon: IconHash, width: "140px" },
 	{ label: "Client", key: "customer", icon: IconBriefcase, width: "160px" },
 	{ label: "Status", key: "status", icon: IconAlertCircle, width: "130px" },
 	{ label: "Priority", key: "priority", icon: IconBriefcase, width: "130px" },
 	{ label: "Raised By", key: "raised_by", icon: IconUser, width: "200px" },
 	{ label: "Raised On", key: "creation", icon: IconClock, width: "180px" },
-	{ label: "First Response Time", key: "first_response_time", icon: IconClock, width: "180px" },
+	{
+		label: "First Response Time",
+		key: "first_response_time",
+		icon: IconClock,
+		width: "180px",
+	},
 	{ label: "Closed Time", key: "closed_time", icon: IconClock, width: "180px" },
-	{ label: "Ticket Type", key: "ticket_type", icon: IconBriefcase, width: "140px" },
+	{
+		label: "Ticket Type",
+		key: "ticket_type",
+		icon: IconBriefcase,
+		width: "140px",
+	},
 	{ label: "Agent Group", key: "agent_group", icon: IconUser, width: "160px" },
 ]
 
@@ -2493,9 +2522,7 @@ function moveColumnDown(index) {
 
 const columns = computed(() => {
 	const map = new Map(ALL_COLUMNS.map((c) => [c.key, c]))
-	return activeColumnKeys.value
-		.map((key) => map.get(key))
-		.filter(Boolean)
+	return activeColumnKeys.value.map((key) => map.get(key)).filter(Boolean)
 })
 
 const hasActiveFilters = computed(() => {
@@ -2651,7 +2678,8 @@ function scrollToBottom(smooth = true) {
 const isCurrentViewerTicketRaiser = computed(() => {
 	if (session.isTicketRaiser) return true
 	if (ticketForm.raised_by && ticketForm.raised_by === session.user) return true
-	if (ticketForm.raised_by_user && ticketForm.raised_by_user === session.user) return true
+	if (ticketForm.raised_by_user && ticketForm.raised_by_user === session.user)
+		return true
 	return false
 })
 
@@ -2661,7 +2689,8 @@ function isCommentFromTicketRaiser(c) {
 	if (!author) return false
 
 	if (ticketForm.raised_by && author === ticketForm.raised_by) return true
-	if (ticketForm.raised_by_user && author === ticketForm.raised_by_user) return true
+	if (ticketForm.raised_by_user && author === ticketForm.raised_by_user)
+		return true
 
 	if (session.isTicketRaiser && author === session.user) return true
 
@@ -2699,7 +2728,7 @@ watch(
 	() => {
 		scrollToBottom()
 	},
-	{ deep: true }
+	{ deep: true },
 )
 
 const commentSubmitting = ref(false)

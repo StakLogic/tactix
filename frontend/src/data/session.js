@@ -55,7 +55,11 @@ export const session = reactive({
 	}),
 	isAdmin: computed(() => session.userInfo.data?.admin),
 	isTicketRaiser: computed(() => session.userInfo.data?.is_ticket_raiser),
-	isEmployee: computed(() => session.roles.includes("Employee") && !session.userInfo.data?.is_ticket_raiser),
+	isEmployee: computed(
+		() =>
+			session.roles.includes("Employee") &&
+			!session.userInfo.data?.is_ticket_raiser,
+	),
 	ticketCustomerId: computed(() => session.userInfo.data.tactix_customer),
 	userImage: computed(() => session.userInfo.data.user_image),
 	roles: computed(() => session.userInfo.data.roles || []),

@@ -488,8 +488,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <!-- Date Picker -->
-            <FormControl 
-              type="date" 
+            <DatePicker 
               label="Timesheet Date *" 
               v-model="timesheetForm.date" 
             />
@@ -820,7 +819,10 @@ const timespanOptions = [
 
 const employeeOptions = computed(() => {
 	const opts = [{ label: "All Employees", value: "" }]
-	if (employeeOptionsResource.data && Array.isArray(employeeOptionsResource.data)) {
+	if (
+		employeeOptionsResource.data &&
+		Array.isArray(employeeOptionsResource.data)
+	) {
 		return opts.concat(employeeOptionsResource.data)
 	}
 	return opts
@@ -881,7 +883,11 @@ const FILTERABLE_FIELDS = computed(() => {
 		{ label: "Timespan", value: "selectedTimespan", key: "selectedTimespan" },
 	]
 	if (employeeInfoResource.data?.is_system_manager) {
-		fields.push({ label: "Employee", value: "selectedEmployee", key: "selectedEmployee" })
+		fields.push({
+			label: "Employee",
+			value: "selectedEmployee",
+			key: "selectedEmployee",
+		})
 	}
 	return fields
 })
@@ -891,23 +897,39 @@ const activeFilterRules = ref([])
 function syncActiveFilterRules() {
 	const newRules = []
 	if (selectedStatus.value) {
-		newRules.push({ id: "rule_selectedStatus", field: "selectedStatus", value: selectedStatus.value })
+		newRules.push({
+			id: "rule_selectedStatus",
+			field: "selectedStatus",
+			value: selectedStatus.value,
+		})
 	}
 	if (selectedTimespan.value) {
-		newRules.push({ id: "rule_selectedTimespan", field: "selectedTimespan", value: selectedTimespan.value })
+		newRules.push({
+			id: "rule_selectedTimespan",
+			field: "selectedTimespan",
+			value: selectedTimespan.value,
+		})
 	}
 	if (selectedEmployee.value && employeeInfoResource.data?.is_system_manager) {
-		newRules.push({ id: "rule_selectedEmployee", field: "selectedEmployee", value: selectedEmployee.value })
+		newRules.push({
+			id: "rule_selectedEmployee",
+			field: "selectedEmployee",
+			value: selectedEmployee.value,
+		})
 	}
 	if (newRules.length === 0) {
-		newRules.push({ id: "rule_" + Date.now(), field: "selectedStatus", value: "" })
+		newRules.push({
+			id: "rule_" + Date.now(),
+			field: "selectedStatus",
+			value: "",
+		})
 	}
 	activeFilterRules.value = newRules
 }
 
 function addFilterRule() {
 	const unusedField = FILTERABLE_FIELDS.value.find(
-		(f) => !activeFilterRules.value.some((r) => r.field === f.value)
+		(f) => !activeFilterRules.value.some((r) => r.field === f.value),
 	)
 	const field = unusedField ? unusedField.value : "selectedStatus"
 	activeFilterRules.value.push({
@@ -952,9 +974,12 @@ function applyFilterRules() {
 }
 
 function getFieldOptionsForSelect(fieldKey) {
-	if (fieldKey === "selectedStatus") return statusOptions.filter((o) => o.value !== "")
-	if (fieldKey === "selectedTimespan") return timespanOptions.filter((o) => o.value !== "")
-	if (fieldKey === "selectedEmployee") return employeeOptions.value.filter((o) => o.value !== "")
+	if (fieldKey === "selectedStatus")
+		return statusOptions.filter((o) => o.value !== "")
+	if (fieldKey === "selectedTimespan")
+		return timespanOptions.filter((o) => o.value !== "")
+	if (fieldKey === "selectedEmployee")
+		return employeeOptions.value.filter((o) => o.value !== "")
 	return []
 }
 
@@ -1138,7 +1163,9 @@ const columns = computed(() => [
 	{ label: "Employee", key: "employee_name", width: "2.5fr", icon: IconUser },
 	{ label: "Total Hours", key: "total_hours", width: "150px", icon: IconClock },
 	{ label: "Status", key: "status", width: "130px", icon: IconAlertCircle },
-	...(employeeInfoResource.data?.is_system_manager ? [{ label: "Actions", key: "actions", width: "100px" }] : []),
+	...(employeeInfoResource.data?.is_system_manager
+		? [{ label: "Actions", key: "actions", width: "100px" }]
+		: []),
 ])
 
 // API Resources

@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AudioPlayer: typeof import('./src/components/AudioPlayer.vue')['default']
     CommentBox: typeof import('./src/components/CommentBox.vue')['default']
+    DatePicker: typeof import('./src/components/DatePicker.vue')['default']
     LucideCheck: typeof import('~icons/lucide/check')['default']
     LucideTrash: typeof import('~icons/lucide/trash')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

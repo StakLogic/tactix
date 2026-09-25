@@ -853,11 +853,18 @@ const notificationLogResource = createResource({
 		return entries.map((entry) => {
 			let formattedTitle = entry.subject || "Task update"
 			if (entry.document_type === "Pull Request") {
-				formattedTitle = formattedTitle
-					.replace(/New PR (#\d+) raised in (.+?) by (.+)/i, "<strong>New PR Raised:</strong> $1 in <strong>$2</strong> by <strong>$3</strong>")
-			} else if (entry.document_type === "Tactix Ticket" || entry.document_type === "Ticket") {
-				formattedTitle = formattedTitle
-					.replace(/New Ticket Raised: (.+)/i, "<strong>New Ticket Raised:</strong> '$1'")
+				formattedTitle = formattedTitle.replace(
+					/New PR (#\d+) raised in (.+?) by (.+)/i,
+					"<strong>New PR Raised:</strong> $1 in <strong>$2</strong> by <strong>$3</strong>",
+				)
+			} else if (
+				entry.document_type === "Tactix Ticket" ||
+				entry.document_type === "Ticket"
+			) {
+				formattedTitle = formattedTitle.replace(
+					/New Ticket Raised: (.+)/i,
+					"<strong>New Ticket Raised:</strong> '$1'",
+				)
 			}
 			return {
 				id: entry.name,
@@ -882,13 +889,22 @@ const tactixSettingsResource = createResource({
 	auto: true,
 	onSuccess(data) {
 		if (data) {
-			localStorage.setItem("tactix_global_enable_sound", data.enable_real_time_notification_sound ? "true" : "false")
-			localStorage.setItem("tactix_allow_ticket_raiser_to_close_tickets", data.allow_ticket_raiser_to_close_tickets ? "1" : "0")
-			localStorage.setItem("tactix_default_ticket_priority", data.default_ticket_priority || "Medium")
+			localStorage.setItem(
+				"tactix_global_enable_sound",
+				data.enable_real_time_notification_sound ? "true" : "false",
+			)
+			localStorage.setItem(
+				"tactix_allow_ticket_raiser_to_close_tickets",
+				data.allow_ticket_raiser_to_close_tickets ? "1" : "0",
+			)
+			localStorage.setItem(
+				"tactix_default_ticket_priority",
+				data.default_ticket_priority || "Medium",
+			)
 			localStorage.setItem("tactix_company_name", data.company_name || "Tactix")
 			document.title = data.company_name || "Tactix"
 		}
-	}
+	},
 })
 
 const markAsReadResource = createResource({
@@ -927,7 +943,7 @@ function onTaskAssignment(payload) {
 		showToastAlert(
 			payload.title || "Task Assigned",
 			payload.subject || "A new task has been assigned to you.",
-			"info"
+			"info",
 		)
 	}
 }
@@ -939,7 +955,7 @@ function onPRNotification(payload) {
 	showToastAlert(
 		"New Pull Request Raised",
 		`'${payload.title_text}' in <strong>${payload.repo}</strong> by <strong>${payload.author}</strong>`,
-		"pr"
+		"pr",
 	)
 }
 
@@ -960,8 +976,8 @@ function onTicketRaised(payload) {
 	playWarningNotificationSound()
 	showToastAlert(
 		"New Ticket Raised",
-		`'${escapeHTML(payload.subject)}' raised by <strong>${payload.raised_by || 'System'}</strong>`,
-		"ticket"
+		`'${escapeHTML(payload.subject)}' raised by <strong>${payload.raised_by || "System"}</strong>`,
+		"ticket",
 	)
 }
 

@@ -335,8 +335,8 @@
               <FormControl type="text" label="GitHub Username" v-model="modal.form.github_username" placeholder="GitHub username" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormControl type="date" label="Date of Birth *" v-model="modal.form.date_of_birth" />
-              <FormControl type="date" label="Date of Joining *" v-model="modal.form.date_of_joining" />
+              <DatePicker label="Date of Birth *" v-model="modal.form.date_of_birth" />
+              <DatePicker label="Date of Joining *" v-model="modal.form.date_of_joining" />
             </div>
           </div>
 
@@ -525,7 +525,7 @@ const displayRoles = [
 	"System Manager",
 	"Code Reviewer",
 	"Support Team",
-	"Ticker Raiser"
+	"Ticker Raiser",
 ]
 
 function mapDbToUiRoles(dbRoles) {
@@ -566,7 +566,10 @@ const departmentOptions = computed(() => [
 
 const customerOptions = computed(() => [
 	{ label: "Select Tactix Customer", value: "" },
-	...customers.value.map((c) => ({ label: typeof c === "object" ? c.name : c, value: typeof c === "object" ? c.name : c })),
+	...customers.value.map((c) => ({
+		label: typeof c === "object" ? c.name : c,
+		value: typeof c === "object" ? c.name : c,
+	})),
 ])
 
 // Fetch raw user data
@@ -600,7 +603,9 @@ const filteredUsers = computed(() => {
 })
 
 const totalCount = computed(() => filteredUsers.value.length)
-const totalPages = computed(() => Math.ceil(totalCount.value / pageLength.value) || 1)
+const totalPages = computed(
+	() => Math.ceil(totalCount.value / pageLength.value) || 1,
+)
 
 const pageOptions = computed(() =>
 	Array.from({ length: totalPages.value }, (_, i) => ({
@@ -699,7 +704,10 @@ function extractErrorMessage(data) {
 					return m
 				}
 			})
-			const text = parsedMsgs.join(" ").replace(/<[^>]*>/g, "").trim()
+			const text = parsedMsgs
+				.join(" ")
+				.replace(/<[^>]*>/g, "")
+				.trim()
 			if (text) return text
 		} catch (e) {
 			// ignore JSON parse error
@@ -767,12 +775,18 @@ async function saveUserRecord() {
 	const isTicketRaiser = modal.form.roles.includes("Ticker Raiser")
 	if (isTicketRaiser) {
 		if (!modal.form.tactix_customer) {
-			modal.errorMessage = "Tactix Customer is mandatory for Ticket Raiser users."
+			modal.errorMessage =
+				"Tactix Customer is mandatory for Ticket Raiser users."
 			return
 		}
 	} else {
-		if (!modal.form.gender || !modal.form.date_of_birth || !modal.form.date_of_joining) {
-			modal.errorMessage = "Gender, Date of Birth, and Date of Joining are mandatory fields."
+		if (
+			!modal.form.gender ||
+			!modal.form.date_of_birth ||
+			!modal.form.date_of_joining
+		) {
+			modal.errorMessage =
+				"Gender, Date of Birth, and Date of Joining are mandatory fields."
 			return
 		}
 	}
@@ -800,7 +814,8 @@ async function saveUserRecord() {
 			modal.errorMessage = extractErrorMessage(data)
 		}
 	} catch (err) {
-		modal.errorMessage = "An error occurred while communicating with the server."
+		modal.errorMessage =
+			"An error occurred while communicating with the server."
 	} finally {
 		modal.saving = false
 	}
@@ -832,7 +847,11 @@ async function executeUserDelete() {
 				})
 				const data = await res.json()
 				if (!res.ok || data.message?.status === "error") {
-					console.error("Failed to delete user:", email, extractErrorMessage(data))
+					console.error(
+						"Failed to delete user:",
+						email,
+						extractErrorMessage(data),
+					)
 				}
 			}
 			selectedUsers.value.clear()

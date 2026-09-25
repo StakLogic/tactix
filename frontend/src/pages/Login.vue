@@ -288,7 +288,9 @@ const errorMessage = computed(() => {
 	// 1. Check if messages array exists and has meaningful text from backend
 	if (Array.isArray(err.messages) && err.messages.length > 0) {
 		const validMsgs = err.messages
-			.map((m) => (typeof m === "string" ? m.replace(/<[^>]*>/g, "").trim() : ""))
+			.map((m) =>
+				typeof m === "string" ? m.replace(/<[^>]*>/g, "").trim() : "",
+			)
 			.filter((m) => {
 				if (!m) return false
 				const lower = m.toLowerCase()
@@ -302,7 +304,10 @@ const errorMessage = computed(() => {
 		if (validMsgs.length > 0) {
 			const msg = validMsgs.join(" ")
 			const lower = msg.toLowerCase()
-			if (lower.includes("invalid login credentials") || lower.includes("incorrect password")) {
+			if (
+				lower.includes("invalid login credentials") ||
+				lower.includes("incorrect password")
+			) {
 				return "Invalid email address or password. Please check your credentials and try again."
 			}
 			return msg
