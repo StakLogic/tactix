@@ -1,40 +1,47 @@
 <template>
   <div class="space-y-3 p-1 flex flex-col h-full overflow-hidden font-sans min-h-0">
-	<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 flex-shrink-0">
-		<Card 
-			v-for="stat in kpiStats" 
-			:key="stat.label" 
-			:class="[
-				'!shadow-xs bg-white cursor-pointer transition-all duration-150 border active:scale-[0.98]',
-				'border-slate-200/80 hover:border-slate-300'
-			]"
+	<div class="grid grid-cols-3 lg:grid-cols-6 gap-2 flex-shrink-0">
+		<button
+			v-for="stat in kpiStats"
+			:key="stat.label"
+			type="button"
+			class="kpi text-left"
+			:class="isCardActive(stat.label) && 'is-active'"
 			@click="filterByStat(stat.label)"
 		>
-			<div class="flex items-center justify-between">
-				<span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
-				<component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
+			<div class="flex items-center justify-between gap-2">
+				<span class="truncate text-xs font-medium text-ink-gray-6">{{ statTitle(stat.label) }}</span>
+				<span class="h-2 w-2 shrink-0 rounded-full" :class="statDot(stat.label)"></span>
 			</div>
-
-			<div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
-				<template v-if="tickets.loading">
-					<div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-				</template>
-				<span v-else>{{ stat.value }}</span>
+			<div class="mt-1.5 flex h-7 items-center">
+				<div v-if="summaryLoading" class="skeleton h-5 w-10"></div>
+				<span v-else class="text-[22px] font-semibold leading-none tabular-nums text-ink-gray-9">{{ stat.value ?? 0 }}</span>
 			</div>
-		</Card>
+		</button>
 	</div>
 
-	<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
+	<div class="toolbar-card flex flex-col gap-2.5 flex-shrink-0">
 	  <!-- Top Row: Search & Actions -->
-	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100">
+	  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-outline-gray-1">
 		<div class="relative w-full sm:w-80">
-		  <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-		  <input 
+		  <IconSearch class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-gray-4" />
+		  <input
+			ref="searchInputEl"
 			v-model="searchQuery"
-			type="text" 
-			placeholder="Search subject or ID..." 
-			class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+			type="text"
+			placeholder="Search subject or ID…"
+			class="h-8 w-full rounded-md border border-outline-gray-2 bg-surface-gray-1 pl-9 pr-9 text-[13px] text-ink-gray-8 outline-none transition focus:border-[color:var(--brand,#29ADFF)] focus:bg-surface-white focus:ring-2 focus:ring-[color:var(--brand-soft,#E9F6FF)]"
 		  />
+		  <kbd v-if="!searchQuery" class="kbd absolute right-2 top-1/2 -translate-y-1/2" title="Press / to search">/</kbd>
+		  <button
+			v-else
+			type="button"
+			class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-ink-gray-4 hover:bg-surface-gray-2 hover:text-ink-gray-7"
+			title="Clear search"
+			@click="searchQuery = ''"
+		  >
+			<IconX class="h-3.5 w-3.5" />
+		  </button>
 		</div>
 
 		<div class="flex items-center gap-2 ml-auto sm:ml-0">
@@ -46,24 +53,24 @@
 				:class="[
 				  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
 				  activeFilterCount > 0
-					? 'border-blue-500 text-blue-600 bg-blue-50/50'
-					: '!text-slate-600 border-slate-200 hover:bg-slate-50'
+					? 'border-[color:var(--brand,#29ADFF)] text-[color:var(--brand-text,#0A84D0)] bg-[color:var(--brand-soft,#E9F6FF)]'
+					: '!text-ink-gray-6 border-outline-gray-2 hover:bg-surface-gray-1'
 				]"
 				@click="syncActiveFilterRules(); togglePopover()"
 				title="Filter Tickets"
 			  >
-				<template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+				<template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-[color:var(--brand-text,#0A84D0)]' : 'text-ink-gray-5'" /></template>
 				<span>Filter</span>
-				<span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+				<span v-if="activeFilterCount > 0" class="bg-[color:var(--brand,#29ADFF)] text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
 				  {{ activeFilterCount }}
 				</span>
 			  </Button>
 			</template>
 			<template #body-main="{ close }">
-			  <div class="w-80 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-3">
-				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
-				  <div class="flex items-center gap-1.5 font-semibold text-slate-800 text-xs">
-					<IconFilter class="w-3.5 h-3.5 text-blue-600" />
+			  <div class="w-80 p-3 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 text-xs space-y-3">
+				<div class="flex items-center justify-between pb-2 border-b border-outline-gray-1">
+				  <div class="flex items-center gap-1.5 font-semibold text-ink-gray-8 text-xs">
+					<IconFilter class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
 					<span>Filter Tickets</span>
 				  </div>
 				  <button 
@@ -80,7 +87,7 @@
 				  <div 
 					v-for="rule in activeFilterRules" 
 					:key="rule.id"
-					class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-md border border-slate-200/80"
+					class="flex items-center gap-1.5 bg-surface-gray-1 p-1.5 rounded-md border border-outline-gray-2"
 				  >
 					<div class="w-1/3 shrink-0">
 					  <Select 
@@ -93,7 +100,7 @@
 					  />
 					</div>
 
-					<span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+					<span class="text-[10px] font-semibold text-ink-gray-4 shrink-0">=</span>
 
 					<div class="flex-1 min-w-0">
 					  <Select
@@ -108,7 +115,7 @@
 
 					<button 
 					  @click="removeFilterRule(rule.id)"
-					  class="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+					  class="p-1 hover:bg-red-50 rounded text-ink-gray-4 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
 					  title="Remove Filter"
 					>
 					  <IconX class="w-3.5 h-3.5" />
@@ -116,17 +123,17 @@
 				  </div>
 				</div>
 
-				<div class="flex items-center justify-between pt-2 border-t border-slate-100">
+				<div class="flex items-center justify-between pt-2 border-t border-outline-gray-1">
 				  <button
 					@click="addFilterRule"
-					class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+					class="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--brand-text,#0A84D0)] hover:text-[color:var(--brand-hover,#0F9EF5)] px-2 py-1 rounded transition-colors cursor-pointer"
 				  >
 					<IconPlus class="w-3.5 h-3.5" /> Add Filter
 				  </button>
 
 				  <Button 
 					variant="solid" 
-					class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+					class="brand-btn !px-3 !h-7 text-xs font-medium rounded-md"
 					@click="applyFilterRules(); close()"
 				  >
 					Apply
@@ -141,21 +148,21 @@
 			<template #target="{ open, togglePopover }">
 			  <Button
 				variant="outline"
-				class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1.5 rounded-md text-xs font-medium"
+				class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all flex items-center gap-1.5 rounded-md text-xs font-medium"
 				@click="togglePopover"
 				title="Customize Columns"
 			  >
-				<template #prefix><IconSlidersHorizontal class="w-3.5 h-3.5 text-slate-500" /></template>
+				<template #prefix><IconSlidersHorizontal class="w-3.5 h-3.5 text-ink-gray-5" /></template>
 				<span class="hidden md:inline">Columns</span>
 			  </Button>
 			</template>
 			<template #body-main="{ close }">
-			  <div class="w-60 p-3 bg-white rounded-lg shadow-lg border border-slate-200 text-xs space-y-2.5">
-				<div class="flex items-center justify-between pb-2 border-b border-slate-100">
-				  <span class="font-semibold text-slate-800 text-xs">Columns</span>
+			  <div class="w-60 p-3 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 text-xs space-y-2.5">
+				<div class="flex items-center justify-between pb-2 border-b border-outline-gray-1">
+				  <span class="font-semibold text-ink-gray-8 text-xs">Columns</span>
 				  <button 
 					@click="resetColumns" 
-					class="text-[11px] font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+					class="text-[11px] font-medium text-[color:var(--brand-text,#0A84D0)] hover:text-[color:var(--brand-hover,#0F9EF5)] flex items-center gap-1 cursor-pointer"
 					title="Reset to default columns"
 				  >
 					<IconRotateCcw class="w-3 h-3" /> Reset
@@ -167,9 +174,9 @@
 					v-model="columnSearchQuery"
 					type="text"
 					placeholder="Search columns..."
-					class="w-full pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="w-full pl-7 pr-2 py-1 text-xs bg-surface-gray-1 border border-outline-gray-2 rounded-md focus:bg-surface-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand,#29ADFF)]"
 				  />
-				  <IconSearch class="w-3 h-3 absolute left-2 top-2 text-slate-400" />
+				  <IconSearch class="w-3 h-3 absolute left-2 top-2 text-ink-gray-4" />
 				</div>
 
 				<div class="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
@@ -177,7 +184,7 @@
 					v-for="(colKey, index) in activeColumnKeys" 
 					:key="colKey"
 					v-show="!columnSearchQuery || getColumnLabel(colKey).toLowerCase().includes(columnSearchQuery.toLowerCase())"
-					class="flex items-center justify-between p-1 rounded hover:bg-slate-50 group transition-all"
+					class="flex items-center justify-between p-1 rounded hover:bg-surface-gray-1 group transition-all"
 				  >
 					<label class="flex items-center gap-2 cursor-pointer select-none truncate flex-1 mr-1">
 					  <input
@@ -185,19 +192,19 @@
 						:checked="true"
 						:disabled="colKey === 'subject'"
 						@change="toggleColumn(colKey)"
-						class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer disabled:opacity-40"
+						class="rounded text-[color:var(--brand-text,#0A84D0)] focus:ring-[color:var(--brand,#29ADFF)] h-3.5 w-3.5 cursor-pointer disabled:opacity-40"
 					  />
-					  <span :class="colKey === 'subject' ? 'font-semibold text-slate-900' : 'text-slate-700'" class="truncate">
+					  <span :class="colKey === 'subject' ? 'font-semibold text-ink-gray-9' : 'text-ink-gray-7'" class="truncate">
 						{{ getColumnLabel(colKey) }}
 					  </span>
-					  <span v-if="colKey === 'subject'" class="text-[9px] bg-slate-100 text-slate-400 px-1 rounded font-medium ml-auto">Fixed</span>
+					  <span v-if="colKey === 'subject'" class="text-[9px] bg-surface-gray-2 text-ink-gray-4 px-1 rounded font-medium ml-auto">Fixed</span>
 					</label>
 
 					<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
 					  <button
 						@click.stop="moveColumnUp(index)"
 						:disabled="index === 0"
-						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						class="p-0.5 hover:bg-surface-gray-3 rounded text-ink-gray-5 disabled:opacity-20 cursor-pointer"
 						title="Move Up"
 					  >
 						<IconArrowUp class="w-3 h-3" />
@@ -205,7 +212,7 @@
 					  <button
 						@click.stop="moveColumnDown(index)"
 						:disabled="index === activeColumnKeys.length - 1"
-						class="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+						class="p-0.5 hover:bg-surface-gray-3 rounded text-ink-gray-5 disabled:opacity-20 cursor-pointer"
 						title="Move Down"
 					  >
 						<IconArrowDown class="w-3 h-3" />
@@ -214,12 +221,12 @@
 				  </div>
 
 				  <!-- Inactive columns available to add -->
-				  <div v-if="inactiveColumns.length > 0 && !columnSearchQuery" class="pt-2 border-t border-slate-100 mt-1">
-					<span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">More Columns</span>
+				  <div v-if="inactiveColumns.length > 0 && !columnSearchQuery" class="pt-2 border-t border-outline-gray-1 mt-1">
+					<span class="text-[10px] font-medium text-ink-gray-4 uppercase tracking-wider block mb-1">More Columns</span>
 					<div
 					  v-for="col in inactiveColumns"
 					  :key="col.key"
-					  class="flex items-center justify-between p-1 rounded hover:bg-slate-50 cursor-pointer"
+					  class="flex items-center justify-between p-1 rounded hover:bg-surface-gray-1 cursor-pointer"
 					  @click="toggleColumn(col.key)"
 					>
 					  <label class="flex items-center gap-2 cursor-pointer select-none truncate">
@@ -227,9 +234,9 @@
 						  type="checkbox"
 						  :checked="false"
 						  @change="toggleColumn(col.key)"
-						  class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
+						  class="rounded text-[color:var(--brand-text,#0A84D0)] focus:ring-[color:var(--brand,#29ADFF)] h-3.5 w-3.5 cursor-pointer"
 						/>
-						<span class="text-slate-500 truncate">{{ col.label }}</span>
+						<span class="text-ink-gray-5 truncate">{{ col.label }}</span>
 					  </label>
 					</div>
 				  </div>
@@ -241,11 +248,20 @@
 		  <!-- Refresh Button -->
 		  <Button
 			variant="outline"
-			class="!text-slate-600 !px-2.5 !h-8 border border-slate-200 hover:bg-slate-50 transition-all rounded-md"
-			@click="tickets.reload()"
+			class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all rounded-md"
+			title="Refresh"
+			@click="refreshAll()"
 		  >
-			<template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500" /></template>
+			<template #prefix><IconRefresh class="w-3.5 h-3.5 text-ink-gray-5" :class="tickets.loading && 'animate-spin'" /></template>
 		  </Button>
+
+		  <!-- Selection info -->
+		  <div v-if="isAdmin && selectedTickets.size > 0" class="flex h-8 items-center gap-1 rounded-md bg-surface-gray-2 pl-2.5 pr-1 text-xs text-ink-gray-7">
+			<span class="font-medium tabular-nums">{{ selectedTickets.size }} selected</span>
+			<button type="button" class="rounded p-1 text-ink-gray-5 hover:bg-surface-gray-3 hover:text-ink-gray-8" title="Clear selection" @click="clearSelection">
+			  <IconX class="h-3.5 w-3.5" />
+			</button>
+		  </div>
 
 		  <!-- Actions Dropdown / New Ticket Button -->
 		  <Dropdown
@@ -255,7 +271,7 @@
 		  >
 			<Button
 			  variant="solid"
-			  class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+			  class="!text-xs !px-3 !h-8 rounded-md font-medium"
 			>
 			  Actions
 			  <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
@@ -265,8 +281,7 @@
 		  <Button
 			v-else
 			variant="solid"
-			class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
-			style="background-color: var(--primary-color);"
+			class="brand-btn !text-xs !px-4 !h-8 rounded-md font-medium"
 			@click="isEditMode=false; resetForm(); customerResource.reload(); showCreateDialog=true"
 		>
 			<template #prefix><IconPlus class="w-3.5 h-3.5" /></template> New Ticket
@@ -290,15 +305,10 @@
 				<button
 				  type="button"
 				  @click="() => customerAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.customer !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
+				  :class="['qf', selectedFilters.customer !== '' && 'on']"
 				>
 				  <span class="truncate">{{ getClientLabel(selectedFilters.customer, 'Client') }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -317,15 +327,10 @@
 				<button
 				  type="button"
 				  @click="() => statusAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.status !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
+				  :class="['qf', selectedFilters.status !== '' && 'on']"
 				>
 				  <span class="truncate">{{ getStatusLabel(selectedFilters.status, 'Status') }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -344,15 +349,10 @@
 				<button
 				  type="button"
 				  @click="() => priorityAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.priority !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
+				  :class="['qf', selectedFilters.priority !== '' && 'on']"
 				>
 				  <span class="truncate">{{ getPriorityLabel(selectedFilters.priority, 'Priority') }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -372,15 +372,10 @@
 				<button
 				  type="button"
 				  @click="() => raisedByAutocomplete?.togglePopover()"
-				  :class="[
-					'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-					selectedFilters.raised_by !== ''
-					  ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium'
-					  : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7'
-				  ]"
+				  :class="['qf', selectedFilters.raised_by !== '' && 'on']"
 				>
 				  <span class="truncate">{{ getUserLabel(selectedFilters.raised_by, 'Raised By') }}</span>
-				  <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+				  <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
 				</button>
 			  </template>
 			</Autocomplete>
@@ -399,7 +394,8 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0">
-	  <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
+	  <div class="relative bg-surface-white rounded-xl border border-outline-gray-2 shadow-sm flex flex-col min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden">
+		  <div v-if="tickets.loading" class="busy-bar" aria-hidden="true"></div>
 		  <ListView
 		  class="h-full flex flex-col min-h-0"
 		  :columns="columns"
@@ -408,15 +404,19 @@
 			  selectable: isAdmin, 
 			  showTooltip: true, 
 			  resizeColumn: true, 
-			  onRowClick: (row) => openEditDialog(row) 
+			  onRowClick: (row) => openEditDialog(row),
+			  emptyState: {
+				title: hasActiveFilters ? 'No tickets match your filters' : 'No tickets yet',
+				description: hasActiveFilters ? 'Try removing a filter or clearing the search.' : 'New tickets will appear here.',
+			  },
 		  }"
 		  row-key="name"
 		  v-model:selections="selectedTickets"
 		  >
-		  <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
+		  <ListHeader class="shrink-0 bg-surface-gray-1 border-b border-outline-gray-2 shadow-sm">
 			  <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
 			  <template #prefix="{ item }">
-				  <component :is="item.icon" class="size-3.5 text-slate-400" />
+				  <component :is="item.icon" class="size-3.5 text-ink-gray-4" />
 			  </template>
 			  </ListHeaderItem>
 		  </ListHeader>
@@ -432,23 +432,23 @@
 			<ListRowItem :item="item">
 				
 				<template v-if="column.key === 'name'">
-				<span class="font-bold text-blue-600">#{{ row.name }}</span>
+				<span class="font-mono text-[12px] font-semibold text-[color:var(--brand-text,#0A84D0)]">#{{ row.name }}</span>
 				</template>
 
 				<template v-if="column.key === 'subject'" #prefix>
-				<div class="flex items-center -space-x-2 mr-4 isolate">
+				<div class="flex items-center -space-x-1.5 mr-2.5 isolate">
 					<Avatar 
 					v-for="(assignment, index) in (row.assigned_to || []).slice(0, 3)" 
 					:key="index"
 					:image="getUserAvatarImage(assignment)"
-					:label="assignment" 
-					size="lg" 
-					class="border-2 border-white ring-1 ring-gray-100 rounded-full"
-					v-tooltip="assignment"
+					:label="getUserLabel(assignment)"
+					size="md"
+					class="avatar-ring rounded-full"
+					v-tooltip="getUserLabel(assignment)"
 					/>
 					<div 
 					v-if="row.assigned_to?.length > 3" 
-					class="flex items-center justify-center h-7 w-7 rounded-full bg-gray-100 border-2 border-white text-[10px] font-medium text-gray-600 ring-1 ring-gray-100 z-10"
+					class="avatar-ring flex items-center justify-center h-6 w-6 rounded-full bg-surface-gray-3 text-[10px] font-semibold text-ink-gray-6 z-10"
 					>
 					+{{ row.assigned_to.length - 3 }}
 					</div>
@@ -456,14 +456,12 @@
 				</template>
 
 				<template v-if="column.key === 'status'">
-				<div class="flex items-center">
-					<div class="h-2 w-2 rounded-full mr-2 shrink-0" :class="getStatusColor(item)" />
-					<span class="text-sm truncate">
-					{{ item }}
-					<span v-if="row.is_overdue" class="text-red-500 font-bold ml-1 text-xs">
-						- (Overdue)
+				<div class="flex min-w-0 items-center gap-1.5">
+					<span class="status-pill" :class="getStatusPillClass(item)">
+						<span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="getStatusColor(item)" />
+						<span class="truncate">{{ item }}</span>
 					</span>
-					</span>
+					<span v-if="row.is_overdue" class="text-[11px] font-medium text-ink-red-4">Overdue</span>
 				</div>
 				</template>
 
@@ -472,13 +470,13 @@
 				</template>
 
 				<template v-if="column.key === 'raised_by'">
-				<span class="text-xs text-slate-600 font-medium truncate">
+				<span class="text-xs text-ink-gray-6 font-medium truncate">
 					{{ getUserLabel(row.raised_by) }}
 				</span>
 				</template>
 
 				<template v-if="column.key === 'customer'">
-				<span class="text-xs text-slate-600 font-medium truncate">
+				<span class="text-xs text-ink-gray-6 font-medium truncate">
 					{{ getClientLabel(row.customer) }}
 				</span>
 				</template>
@@ -486,12 +484,9 @@
 
 
 				<template v-if="column.key === 'creation'">
-				<div class="flex items-center gap-2 text-slate-500 whitespace-nowrap">
-					<IconClock class="w-3.5 h-3.5" v-if="row.creation"/>
-					<span class="text-xs font-medium">
-					{{ row.creation ? formatDateTime(row.creation) : '' }}
-					</span>
-				</div>
+				<span v-if="row.creation" class="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-ink-gray-5" v-tooltip="formatDateTime(row.creation)">
+					<IconClock class="w-3.5 h-3.5 shrink-0" />{{ dayjs(row.creation).fromNow() }}
+				</span>
 				</template>
 
 				<template v-if="column.key === 'first_response_time'">
@@ -504,7 +499,7 @@
 						{{ formatDuration(row.first_response_time) }}
 					</Badge>
 				</div>
-				<span v-else class="text-xs text-slate-400 font-medium pl-2">—</span>
+				<span v-else class="text-xs text-ink-gray-4 font-medium pl-2">—</span>
 				</template>
 
 				<template v-if="column.key === 'closed_time'">
@@ -517,7 +512,7 @@
 						{{ formatDuration(row.closed_time) }}
 					</Badge>
 				</div>
-				<span v-else class="text-xs text-slate-400 font-medium pl-2">—</span>
+				<span v-else class="text-xs text-ink-gray-4 font-medium pl-2">—</span>
 				</template>
 
 			</ListRowItem>
@@ -527,7 +522,7 @@
 		  </ListView>
 		<!-- Pagination controls -->
 		<!-- Pagination Bar -->
-		<div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-2 shrink-0">
+		<div class="flex items-center justify-between border-t border-outline-gray-1 bg-surface-white px-4 py-2 shrink-0">
 		  <div class="flex items-center gap-1">
 			<!-- First Page (<<) -->
 			<Button
@@ -536,7 +531,7 @@
 			  :disabled="currentPage === 1"
 			  @click="currentPage = 1"
 			  title="First Page"
-			  class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+			  class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
 			>
 			  <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
 			</Button>
@@ -548,7 +543,7 @@
 			  :disabled="currentPage === 1"
 			  @click="currentPage = Math.max(1, currentPage - 1)"
 			  title="Previous Page"
-			  class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+			  class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
 			>
 			  <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
 			</Button>
@@ -558,14 +553,14 @@
 			  <template #target="{ togglePopover }">
 				<button
 				  @click="togglePopover"
-				  class="h-6 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 rounded border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+				  class="h-6 px-2 text-[11px] font-bold text-ink-gray-7 hover:bg-surface-gray-2 rounded border border-outline-gray-2 transition-all flex items-center gap-1 cursor-pointer shrink-0"
 				>
 				  <span>{{ currentPage }} / {{ totalPages }}</span>
-				  <IconChevronDown class="w-3 h-3 text-slate-400" />
+				  <IconChevronDown class="w-3 h-3 text-ink-gray-4" />
 				</button>
 			  </template>
 			  <template #body="{ close }">
-				<div class="p-1 max-h-48 overflow-y-auto w-32 bg-white rounded-lg shadow-lg border border-slate-200 custom-scrollbar">
+				<div class="p-1 max-h-48 overflow-y-auto w-32 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 custom-scrollbar">
 				  <button
 					v-for="p in totalPages"
 					:key="p"
@@ -573,8 +568,8 @@
 					:class="[
 					  'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
 					  currentPage === p
-						? 'bg-slate-900 text-white font-bold'
-						: 'text-slate-700 hover:bg-slate-100'
+						? 'bg-[color:var(--brand,#29ADFF)] text-white font-semibold'
+						: 'text-ink-gray-7 hover:bg-surface-gray-2'
 					]"
 				  >
 					<span>Page {{ p }}</span>
@@ -591,7 +586,7 @@
 			  :disabled="currentPage >= totalPages"
 			  @click="currentPage = Math.min(totalPages, currentPage + 1)"
 			  title="Next Page"
-			  class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+			  class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
 			>
 			  <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
 			</Button>
@@ -603,14 +598,14 @@
 			  :disabled="currentPage >= totalPages"
 			  @click="currentPage = totalPages"
 			  title="Last Page"
-			  class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+			  class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
 			>
 			  <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
 			</Button>
 		  </div>
 
-		  <div class="text-xs text-slate-500 font-medium">
-			Showing <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800">{{ totalCount }}</span>
+		  <div class="text-xs text-ink-gray-5 font-medium">
+			Showing <span class="font-bold text-ink-gray-8">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-ink-gray-8">{{ totalCount }}</span>
 		  </div>
 		</div>
 	  </div>
@@ -627,8 +622,8 @@
 		] 
 		}">
 	  <template #body-content>
-		<p class="text-sm text-slate-600 leading-relaxed py-2">
-		  Are you sure you want to permanently delete the <span class="font-bold text-slate-900">{{ selectedTickets.size }}</span> selected ticket(s)? This action cannot be undone.
+		<p class="text-sm text-ink-gray-6 leading-relaxed py-2">
+		  Are you sure you want to permanently delete the <span class="font-bold text-ink-gray-9">{{ selectedTickets.size }}</span> selected ticket(s)? This action cannot be undone.
 		</p>
 	  </template>
 	</Dialog>
@@ -752,8 +747,8 @@
 			</div>
 		  </div>
 		  <div class="space-y-2 border-t pt-4">
-			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Description *</label>
-			<div class="border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden min-h-[200px]">
+			<label class="text-xs font-medium text-ink-gray-6 uppercase tracking-wider">Description *</label>
+			<div class="border border-outline-gray-2 rounded-lg bg-surface-white shadow-sm overflow-hidden min-h-[200px]">
 			  <TextEditor
 				editor-class="prose-sm max-w-none p-6 outline-none"
 				:content="ticketForm.description"
@@ -765,13 +760,13 @@
 
 		  <!-- Attachments Field -->
 		  <div class="space-y-3 border-t pt-4">
-			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider block">Attachments</label>
+			<label class="text-xs font-medium text-ink-gray-6 uppercase tracking-wider block">Attachments</label>
 			<FileUploader @success="handleFileUploadTicket">
 			  <template #default="{ openFileSelector }">
 				<button 
 				  type="button"
 				  @click="openFileSelector" 
-				  class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-lg p-3 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer"
+				  class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-outline-gray-2 rounded-lg p-3 text-ink-gray-5 hover:border-[color:var(--brand,#29ADFF)] hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-all cursor-pointer"
 				>
 				  <IconPaperclip class="w-4 h-4" />
 				  <span class="text-xs font-semibold">Attach Files</span>
@@ -783,18 +778,18 @@
 			  <div 
 				v-for="(file, idx) in ticketForm.attachments" 
 				:key="idx" 
-				class="flex items-center justify-between bg-surface-gray-2 border border-slate-200 rounded-lg p-2 transition-all"
+				class="flex items-center justify-between bg-surface-gray-2 border border-outline-gray-2 rounded-lg p-2 transition-all"
 			  >
 				<a 
 				  :href="file.file_url" 
 				  target="_blank" 
 				  class="flex flex-1 items-center gap-2 truncate"
 				>
-				  <div class="h-7 w-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-					<IconBriefcase class="w-3.5 h-3.5" /> 
+				  <div class="h-7 w-7 rounded bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)] flex items-center justify-center shrink-0">
+					<IconPaperclip class="w-3.5 h-3.5" />
 				  </div>
 				  <div class="truncate text-left">
-					<span class="block truncate font-medium text-slate-700 text-xs hover:text-blue-600 transition-colors">
+					<span class="block truncate font-medium text-ink-gray-7 text-xs hover:text-[color:var(--brand-text,#0A84D0)] transition-colors">
 					  {{ file.file_name }}
 					</span>
 				  </div>
@@ -803,7 +798,7 @@
 				<button 
 				  type="button"
 				  @click.stop="removeAttachmentTicket(idx)" 
-				  class="p-1 ml-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
+				  class="p-1 ml-1 hover:bg-red-50 rounded text-ink-gray-4 hover:text-red-500 transition-colors"
 				  title="Remove file"
 				>
 				  <IconX class="w-3.5 h-3.5" />
@@ -819,37 +814,37 @@
 		<div v-if="showEditTicket" class="fixed inset-0 flex justify-end z-50">
 			<div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="showEditTicket=false"></div>
 			
-			<div class="relative w-full md:max-w-8xl lg:max-w-8xl h-full bg-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
-				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-slate-50/30 min-h-0">
-					<div class="flex items-center gap-3 text-slate-500">
-						<div class="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+			<div class="relative w-full md:max-w-8xl lg:max-w-8xl h-full bg-surface-white flex flex-col md:flex-row shadow-2xl border-l overflow-y-auto md:overflow-hidden">
+				<div v-if="!editPanelReady" class="flex-1 grid place-items-center bg-surface-gray-1 min-h-0">
+					<div class="flex items-center gap-3 text-ink-gray-5">
+						<div class="w-5 h-5 border-2 border-outline-gray-2 border-t-[color:var(--brand,#29ADFF)] rounded-full animate-spin"></div>
 						<span class="text-sm font-medium">Loading ticket details...</span>
 					</div>
 				</div>
 
 				<div v-else class="flex w-full h-full flex-col md:flex-row">
 					<!-- Left Column: Activity (Full Width) -->
-					<div class="h-[400px] md:h-full md:w-[60%] flex flex-col bg-white min-h-0 border-b md:border-b-0 md:border-r border-slate-100 shrink-0">
-						<header class="px-5 py-3.5 border-b bg-white flex justify-between items-center shrink-0 shadow-xs z-10">
+					<div class="h-[400px] md:h-full md:w-[60%] flex flex-col bg-surface-white min-h-0 border-b md:border-b-0 md:border-r border-outline-gray-1 shrink-0">
+						<header class="px-5 py-3.5 border-b bg-surface-white flex justify-between items-center shrink-0 shadow-xs z-10">
 							<div class="flex items-center gap-2">
-								<h3 class="text-sm font-bold text-slate-800">Activity</h3>
-								<span v-if="comments.data?.length" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+								<h3 class="text-sm font-bold text-ink-gray-8">Activity</h3>
+								<span v-if="comments.data?.length" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-gray-2 text-ink-gray-6">
 									{{ comments.data.length }}
 								</span>
 							</div>
-							<div class="flex items-center gap-2 text-xs text-slate-500">
+							<div class="flex items-center gap-2 text-xs text-ink-gray-5">
 								<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-								<span class="font-medium text-[11px] text-slate-400">Conversation feed</span>
+								<span class="font-medium text-[11px] text-ink-gray-4">Conversation feed</span>
 							</div>
 						</header>
 						
 						<div 
 							ref="activityContainerRef" 
-							class="flex-grow md:flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-slate-50/60"
+							class="flex-grow md:flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-surface-gray-1"
 						>
 							<!-- Loading Spinner -->
-							<div v-if="comments.loading && (!comments.data || comments.data.length === 0)" class="flex justify-center items-center py-12 text-slate-400 gap-2">
-								<div class="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+							<div v-if="comments.loading && (!comments.data || comments.data.length === 0)" class="flex justify-center items-center py-12 text-ink-gray-4 gap-2">
+								<div class="w-4 h-4 border-2 border-outline-gray-3 border-t-[color:var(--brand,#29ADFF)] rounded-full animate-spin"></div>
 								<span class="text-xs">Loading activity...</span>
 							</div>
 
@@ -870,25 +865,25 @@
 
 								<!-- Bubble Card -->
 								<div 
-									class="w-fit max-w-[85%] sm:max-w-[78%] rounded-2xl p-3.5 sm:p-4 bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all duration-200"
+									class="w-fit max-w-[85%] sm:max-w-[78%] rounded-xl p-3.5 sm:p-4 bg-surface-white border border-outline-gray-2 shadow-xs hover:shadow-sm transition-all duration-200"
 									:class="isCommentOnRight(c) ? 'rounded-tr-xs' : 'rounded-tl-xs'"
 								>
 									<!-- Header (Author, Badge, Time, Actions) -->
 									<div class="flex items-center justify-between gap-3 mb-1.5 text-xs">
 										<div class="flex items-center gap-1.5 flex-wrap">
-											<span class="font-bold text-xs text-slate-800">
+											<span class="font-bold text-xs text-ink-gray-8">
 												{{ c.owner === session.user ? (isCommentOnRight(c) ? 'You' : getUserLabel(c.owner)) : getUserLabel(c.owner) }}
 											</span>
 											<span 
 												class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
 												:class="isCommentFromTicketRaiser(c) 
 													? 'bg-amber-50 text-amber-700 border border-amber-200/60' 
-													: 'bg-blue-50 text-blue-700 border border-blue-200/60'"
+													: 'bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)] border border-[color:var(--brand-border,#A6DCFF)]'"
 											>
 												{{ isCommentFromTicketRaiser(c) ? 'Ticket Raiser' : 'Support' }}
 											</span>
-											<span class="text-slate-300">·</span>
-											<span class="font-medium text-[11px] text-slate-400">
+											<span class="text-ink-gray-3">·</span>
+											<span class="font-medium text-[11px] text-ink-gray-4">
 												{{ dayjs(c.creation).fromNow() }}
 											</span>
 										</div>
@@ -897,14 +892,14 @@
 										<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" v-if="c.owner === session.user">
 											<button 
 												@click="startEditing(c)"
-												class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+												class="p-1 rounded text-ink-gray-4 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-surface-gray-2 transition-colors"
 												title="Edit Comment"
 											>
 												<IconEdit3 class="w-3.5 h-3.5" />
 											</button>
 											<button 
 												@click="handleDeleteComment(c.name)"
-												class="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+												class="p-1 rounded text-ink-gray-4 hover:text-red-600 hover:bg-red-50 transition-colors"
 												title="Delete Comment"
 											>
 												<IconTrash2 class="w-3.5 h-3.5" />
@@ -918,16 +913,16 @@
 											<FormControl 
 												type="textarea"
 												v-model="editContent" 
-												class="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 bg-white focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+												class="w-full rounded-xl border border-outline-gray-2 p-2.5 text-sm text-ink-gray-8 bg-surface-white focus:ring-1 focus:ring-[color:var(--brand,#29ADFF)] outline-none resize-none"
 											/>
 											<div class="flex justify-end gap-2">
 												<Button size="sm" variant="ghost" @click="cancelEdit">Cancel</Button>
-												<Button size="sm" variant="solid" class="!bg-blue-600 text-white" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)">Save</Button>
+												<Button size="sm" variant="solid" class="brand-btn" :loading="editingCommentName === c.name && commentUpdating" @click="handleUpdateComment(c.name)">Save</Button>
 											</div>
 										</div>
 										<div 
 											v-else 
-											class="prose prose-sm max-w-none break-words leading-relaxed text-slate-700 [&_a]:text-blue-600 [&_a]:underline" 
+											class="prose prose-sm max-w-none break-words leading-relaxed text-ink-gray-7 [&_a]:text-[color:var(--brand-text,#0A84D0)] [&_a]:underline" 
 											v-html="c.content"
 										></div>
 									</div>
@@ -935,34 +930,42 @@
 							</div>
 
 							<!-- Empty State Placeholder -->
-							<div v-if="!comments.loading && !(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200/80 mx-2 my-2 shadow-xs">
-								<div class="p-3 bg-blue-50 text-blue-500 rounded-full mb-2.5">
+							<div v-if="!comments.loading && !(comments.data && comments.data.length > 0)" class="flex flex-col items-center justify-center py-12 text-ink-gray-4 bg-surface-white rounded-xl border border-dashed border-outline-gray-2 mx-2 my-2 shadow-xs">
+								<div class="p-3 bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)] rounded-full mb-2.5">
 									<IconMessageSquare class="w-6 h-6" />
 								</div>
-								<p class="text-xs font-semibold text-slate-700">No messages yet</p>
-								<p class="text-[11px] text-slate-400 mt-0.5">Send a message below to start the conversation!</p>
+								<p class="text-xs font-semibold text-ink-gray-7">No messages yet</p>
+								<p class="text-[11px] text-ink-gray-4 mt-0.5">Send a message below to start the conversation!</p>
 							</div>
 						</div>
 
-						<div class="p-4 bg-white border-t shrink-0">
+						<div class="p-4 bg-surface-white border-t shrink-0">
+							<p v-if="commentError" class="mb-2 flex items-center justify-between gap-2 rounded-md bg-red-50 px-3 py-1.5 text-xs text-red-600">
+								<span>{{ commentError }}</span>
+								<button type="button" class="text-red-400 hover:text-red-600" @click="commentError = ''"><IconX class="h-3.5 w-3.5" /></button>
+							</p>
 							<CommentBox
 								v-model="newComment"
 								:avatar="getUserAvatarImage(session.user)"
 								:user="session.user"
 								:userName="session.userFullName"
 								placeholder="Type a message..."
-								:loading="comments.loading || commentSubmitting"
+								:loading="commentSubmitting"
 								@submit="addComment"
 							/>
 						</div>
 					</div>
 
 					<!-- Right Column: Ticket Details Form (40% Width) -->
-					<div class="w-full md:w-[40%] md:shrink-0 flex flex-col bg-white min-h-0">
-						<header class="p-4 border-b flex justify-between items-center bg-white shrink-0 shadow-sm z-10">
+					<div class="w-full md:w-[40%] md:shrink-0 flex flex-col bg-surface-white min-h-0">
+						<header class="p-4 border-b flex justify-between items-center bg-surface-white shrink-0 shadow-sm z-10">
 							<div class="min-w-0 flex-1 mr-2">
 								<div class="flex flex-wrap items-center gap-1.5">
-									<span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2 py-0.5 uppercase tracking-wider">{{ ticketForm.name }}</span>
+									<span class="font-mono text-[11px] font-medium text-ink-gray-6 bg-surface-gray-2 rounded px-1.5 py-0.5">#{{ ticketForm.name }}</span>
+									<span class="status-pill" :class="getStatusPillClass(ticketForm.status)">
+										<span class="h-1.5 w-1.5 rounded-full" :class="getStatusColor(ticketForm.status)" />{{ ticketForm.status }}
+									</span>
+									<Badge v-if="ticketForm.priority" :theme="getPriorityTheme(ticketForm.priority)" variant="subtle" size="sm">{{ ticketForm.priority }}</Badge>
 									<Badge v-if="ticketForm.first_responded_on" theme="blue" variant="subtle" class="font-semibold !px-2 !py-0.5 text-[10px]" v-tooltip="'First Response: ' + formatDateTime(ticketForm.first_responded_on)">
 										Responded in {{ formatDuration(ticketForm.first_response_time) }}
 									</Badge>
@@ -970,12 +973,15 @@
 										Closed in {{ formatDuration(ticketForm.closed_time) }}
 									</Badge>
 								</div>
-								<h2 class="font-extrabold text-slate-900 text-base md:text-lg mt-2 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
+								<h2 class="font-semibold text-ink-gray-9 text-base md:text-lg mt-1.5 truncate max-w-full" :title="ticketForm.subject">{{ ticketForm.subject }}</h2>
 							</div>
 							<div class="flex items-center gap-1.5 shrink-0">
-								<Button v-if="!isTicketRaiser" variant="solid" size="sm" theme="blue" @click="openTaskCreateDialog(ticketForm)" class="shadow-sm !px-2 sm:!px-3 text-xs">Create Task</Button>
-								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="shadow-sm !px-2 sm:!px-3 text-xs">Save</Button>
-								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-slate-400 hover:text-slate-600 !p-1">
+								<Button v-if="!isTicketRaiser" variant="outline" size="sm" @click="openTaskCreateDialog(ticketForm)" class="!px-2 sm:!px-3 text-xs">
+									<template #prefix><IconPlus class="h-3.5 w-3.5" /></template>
+									Create Task
+								</Button>
+								<Button variant="solid" size="sm" :loading="saving" @click="handleSaveTicket" class="brand-btn !px-2 sm:!px-3 text-xs" title="Save (Ctrl S)">Save</Button>
+								<Button variant="ghost" size="sm" @click="showEditTicket=false" class="text-ink-gray-4 hover:text-ink-gray-6 !p-1" title="Close">
 									<IconX class="w-4 h-4"/>
 								</Button>
 							</div>
@@ -983,7 +989,7 @@
 
 						<div class="flex-grow md:flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
 							<!-- Metadata Card -->
-							<div class="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm mb-6">
+							<div class="bg-surface-gray-1 rounded-xl border border-outline-gray-1 p-4 space-y-4 shadow-sm mb-6">
 								<div class="grid grid-cols-2 gap-4">
 									<div class="space-y-1.5">
 										<label class="block text-xs text-ink-gray-5">Status</label>
@@ -1083,10 +1089,10 @@
 							
 							<!-- Description Field -->
 							<div class="space-y-2 border-t pt-4">
-								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Description *</label>
-								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<label class="section-title">Description *</label>
+								<div class="border border-outline-gray-2 rounded-xl bg-surface-white overflow-hidden min-h-[200px] focus-within:border-[color:var(--brand,#29ADFF)] focus-within:ring-2 focus-within:ring-[color:var(--brand-soft,#E9F6FF)] transition-all">
 									<TextEditor
-										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
+										editor-class="prose-sm max-w-none p-4 outline-none bg-surface-white min-h-[200px]"
 										:content="ticketForm.description"
 										@change="(val) => (ticketForm.description = val)"
 										:fixed-menu="true"
@@ -1096,10 +1102,10 @@
 
 							<!-- Resolution Field -->
 							<div v-if="!isTicketRaiser" class="space-y-2 border-t pt-4 pb-2" >
-								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Resolution</label>
-								<div class="border border-slate-200 rounded-2xl bg-white overflow-hidden min-h-[200px] focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100/50 transition-all">
+								<label class="section-title">Resolution</label>
+								<div class="border border-outline-gray-2 rounded-xl bg-surface-white overflow-hidden min-h-[200px] focus-within:border-[color:var(--brand,#29ADFF)] focus-within:ring-2 focus-within:ring-[color:var(--brand-soft,#E9F6FF)] transition-all">
 									<TextEditor
-										editor-class="prose-sm max-w-none p-4 outline-none bg-white min-h-[200px]"
+										editor-class="prose-sm max-w-none p-4 outline-none bg-surface-white min-h-[200px]"
 										:content="ticketForm.resolution_details"
 										@change="(val) => (ticketForm.resolution_details = val)"
 										:fixed-menu="true"
@@ -1108,8 +1114,8 @@
 							</div>
 
 							<!-- Attachments Field -->
-							<div class="pt-4 border-t border-slate-200">
-								<label class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block mb-3">
+							<div class="pt-4 border-t border-outline-gray-2">
+								<label class="section-title mb-3">
 									Attachments
 								</label>
 								<div class="space-y-4">
@@ -1117,7 +1123,7 @@
 										<template #default="{ openFileSelector }">
 											<button 
 												@click="openFileSelector" 
-												class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all group"
+												class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-outline-gray-2 rounded-xl p-4 text-ink-gray-5 hover:border-[color:var(--brand,#29ADFF)] hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-all group"
 											>
 												<IconPaperclip class="w-4 h-4" />
 												<span class="text-xs font-semibold">Add Files</span>
@@ -1129,27 +1135,27 @@
 										<div 
 											v-for="(file, idx) in ticketForm.attachments" 
 											:key="idx" 
-											class="group flex items-center justify-between bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-300 hover:shadow-md transition-all overflow-hidden p-2"
+											class="group flex items-center justify-between bg-surface-white border border-outline-gray-2 rounded-xl shadow-sm hover:border-[color:var(--brand,#29ADFF)] hover:shadow-md transition-all overflow-hidden p-2"
 										>
 											<a 
 												:href="file.file_url" 
 												target="_blank" 
 												class="flex flex-1 items-center gap-2.5 truncate"
 											>
-												<div class="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-													<IconBriefcase class="w-4 h-4" /> 
+												<div class="h-8 w-8 rounded-lg bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)] flex items-center justify-center shrink-0">
+													<IconPaperclip class="w-4 h-4" />
 												</div>
 												<div class="truncate text-left">
-													<span class="block truncate font-semibold text-slate-700 text-xs group-hover:text-blue-600 transition-colors">
+													<span class="block truncate font-semibold text-ink-gray-7 text-xs group-hover:text-[color:var(--brand-text,#0A84D0)] transition-colors">
 														{{ file.file_name }}
 													</span>
-													<span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Attachment</span>
+													<span class="text-[10px] text-ink-gray-4 font-semibold uppercase tracking-wider">{{ fileExt(file.file_name) }}</span>
 												</div>
 											</a>
 
 											<button 
 												@click.stop="removeAttachmentTicket(idx)" 
-												class="p-2 ml-1 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+												class="p-2 ml-1 hover:bg-red-50 rounded-lg text-ink-gray-4 hover:text-red-500 transition-colors"
 												title="Remove file"
 											>
 												<IconX class="w-4 h-4" />
@@ -1306,25 +1312,25 @@
 		  </div>
 
 		  <div v-if="newTask.attachments && newTask.attachments.length > 0" class="space-y-2">
-			<label class="text-xs font-medium text-slate-600 uppercase">Attachments</label>
-			<div class="border rounded-lg overflow-hidden border-slate-200">
+			<label class="text-xs font-medium text-ink-gray-6 uppercase">Attachments</label>
+			<div class="border rounded-lg overflow-hidden border-outline-gray-2">
 			  <table class="w-full text-left text-sm">
-				<thead class="bg-slate-50 border-b border-slate-200">
+				<thead class="bg-surface-gray-1 border-b border-outline-gray-2">
 				  <tr>
 					<th class="px-4 py-2">File Name</th>
 					<th class="px-4 py-2 text-right"></th>
 				  </tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100 bg-white">
+				<tbody class="divide-y divide-outline-gray-1 bg-surface-white">
 				  <tr v-for="(file, index) in newTask.attachments" :key="index">
 					<td class="px-4 py-2">
-					  <a :href="file.file_url" target="_blank" class="text-blue-600 flex items-center gap-2">
-						<IconBriefcase class="w-3.5 h-3.5" /> {{ file.file_name }}
+					  <a :href="file.file_url" target="_blank" class="text-[color:var(--brand-text,#0A84D0)] flex items-center gap-2">
+						<IconPaperclip class="w-3.5 h-3.5" /> {{ file.file_name }}
 					  </a>
 					</td>
 					<td class="px-4 py-2 text-right">
 					  <Button variant="ghost" @click="removeAttachment(index)" class="!text-red-500">
-						<IconPlus class="w-4 h-4 rotate-45" />
+						<IconX class="w-4 h-4" />
 					  </Button>
 					</td>
 				  </tr>
@@ -1334,8 +1340,8 @@
 		  </div>
 
 		  <div class="space-y-2 border-t pt-4">
-			<label class="text-xs font-medium text-slate-600 uppercase tracking-wider">Task Description</label>
-			<div class="border rounded-lg bg-white shadow-sm overflow-hidden editor-container">
+			<label class="text-xs font-medium text-ink-gray-6 uppercase tracking-wider">Task Description</label>
+			<div class="border rounded-lg bg-surface-white shadow-sm overflow-hidden editor-container">
 			  <TextEditor
 				editor-class="prose-sm max-w-none p-6 outline-none infinite-editor"
 				:content="newTask.description"
@@ -1482,6 +1488,8 @@ import IconSlidersHorizontal from "~icons/lucide/sliders-horizontal"
 import IconTrash2 from "~icons/lucide/trash-2"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
+
+const searchInputEl = ref(null)
 import IconXCircle from "~icons/lucide/x-circle"
 
 import dayjs from "dayjs"
@@ -1571,6 +1579,7 @@ async function executeBulkDelete() {
 	}
 
 	tickets.reload()
+	ticketsSummaryResource.reload()
 
 	if (failed) {
 		errorMessage.value =
@@ -1712,18 +1721,14 @@ function fetchTicketSummary() {
 fetchTickets()
 fetchTicketSummary()
 
-onMounted(() => {
-	fetchTickets()
-	fetchTicketSummary()
-})
 
 // Watch filters and reset current page to 1
 watch(
 	ticketFilters,
 	() => {
-		currentPage.value = 1
-		fetchTickets()
 		fetchTicketSummary()
+		if (currentPage.value !== 1) currentPage.value = 1 // the page watcher fetches
+		else fetchTickets()
 	},
 	{ deep: true },
 )
@@ -2010,6 +2015,7 @@ const dialogOptions = computed(() => ({
 		{
 			label: isEditMode.value ? "Save Changes" : "Create Ticket",
 			variant: "solid",
+			class: "brand-btn",
 			loading: saving.value,
 			onClick: handleSaveTicket,
 		},
@@ -2063,7 +2069,7 @@ const initialForm = {
 	ticket: "",
 	exp_end_date: "",
 	assigned_to: [],
-	assigned_date: new Date().toISOString().split("T")[0],
+	assigned_date: dayjs().format("YYYY-MM-DD"),
 	is_overdue: 0,
 	assigned_by: "",
 	description: "",
@@ -2180,6 +2186,7 @@ function openTaskCreateDialog(ticket) {
 	Object.assign(newTask, {
 		...initialForm,
 		attachments: [],
+		assigned_date: dayjs().format("YYYY-MM-DD"),
 		assigned_by: session.user,
 		assigned_to:
 			isTaskFieldDisabled.value || isEmployeeOnly.value ? [session.user] : [],
@@ -2204,6 +2211,7 @@ const createTaskDialogOptions = computed(() => ({
 		{
 			label: "Create Task",
 			variant: "solid",
+			class: "brand-btn",
 			loading: taskSaving.value,
 			onClick: handleSaveTask,
 		},
@@ -2237,6 +2245,7 @@ const handleSaveTask = async () => {
 		showCreateTaskDialog.value = false
 	} catch (e) {
 		console.error(e)
+		taskFormError.value = (e?.message || "Could not create the task.").replace(/<[^>]*>/g, "").trim()
 	} finally {
 		taskSaving.value = false
 	}
@@ -2648,12 +2657,68 @@ const kpiStats = computed(() => {
 })
 
 function getStatusColor(status) {
-	return {
-		Open: "bg-blue-400",
-		Replied: "bg-orange-400",
-		Resolved: "bg-green-500",
-		Closed: "bg-green-500",
-	}[status]
+	return (
+		{
+			Open: "bg-blue-500",
+			Replied: "bg-orange-400",
+			Resolved: "bg-green-500",
+			Closed: "bg-slate-400",
+		}[status] || "bg-slate-300"
+	)
+}
+
+function getStatusPillClass(status) {
+	return (
+		{
+			Open: "bg-surface-blue-1 text-ink-blue-3",
+			Replied: "bg-surface-amber-1 text-ink-amber-3",
+			Resolved: "bg-surface-green-1 text-ink-green-3",
+			Closed: "bg-surface-gray-2 text-ink-gray-6",
+		}[status] || "bg-surface-gray-2 text-ink-gray-6"
+	)
+}
+
+const summaryLoading = computed(() => ticketsSummaryResource.loading)
+
+function statTitle(label) {
+	return label.charAt(0) + label.slice(1).toLowerCase()
+}
+
+function statDot(label) {
+	return (
+		{
+			TOTAL: "bg-slate-400",
+			OPEN: "bg-blue-500",
+			REPLIED: "bg-orange-400",
+			RESOLVED: "bg-green-500",
+			CLOSED: "bg-slate-400",
+			URGENT: "bg-red-500",
+		}[label] || "bg-slate-300"
+	)
+}
+
+function fileExt(name) {
+	const m = /\.([a-z0-9]+)$/i.exec(name || "")
+	return m ? m[1].toUpperCase() : "File"
+}
+
+function clearSelection() {
+	selectedTickets.value = new Set()
+}
+
+function refreshAll() {
+	fetchTickets()
+	fetchTicketSummary()
+}
+
+// "/" focuses the search box (when not typing and no panel/dialog is open)
+function handleSlashKey(e) {
+	if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+	const t = e.target
+	const typing = t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))
+	if (typing || showEditTicket.value || showCreateDialog.value || showCreateTaskDialog.value) return
+	e.preventDefault()
+	searchInputEl.value?.focus()
 }
 
 function getPriorityTheme(p) {
@@ -2732,10 +2797,12 @@ watch(
 )
 
 const commentSubmitting = ref(false)
+const commentError = ref("")
 const commentUpdating = ref(false)
 
 async function addComment() {
-	if (!newComment.value) return
+	if (!newComment.value || commentSubmitting.value) return
+	commentError.value = ""
 	commentSubmitting.value = true
 	try {
 		await createResource({
@@ -2747,6 +2814,7 @@ async function addComment() {
 		scrollToBottom()
 	} catch (e) {
 		console.error("Add comment failed", e)
+		commentError.value = "Message not sent. " + (e?.message || "Please try again.").replace(/<[^>]*>/g, "")
 	} finally {
 		commentSubmitting.value = false
 	}
@@ -2777,12 +2845,14 @@ async function handleUpdateComment(name) {
 		comments.submit({ ticket: ticketForm.name })
 	} catch (e) {
 		console.error("Update failed", e)
+		commentError.value = "Could not update the message."
 	} finally {
 		commentUpdating.value = false
 	}
 }
 
 async function handleDeleteComment(name) {
+	if (!window.confirm("Delete this message?")) return
 	try {
 		await createResource({
 			url: "tactix.api.ticket.delete_comment",
@@ -2793,6 +2863,7 @@ async function handleDeleteComment(name) {
 		comments.submit({ ticket: ticketForm.name })
 	} catch (e) {
 		console.error("Delete failed", e)
+		commentError.value = "Could not delete the message."
 	}
 }
 
@@ -2889,6 +2960,7 @@ function onTicketRaised(payload) {
 }
 
 onMounted(() => {
+	window.addEventListener("keydown", handleSlashKey)
 	if (socket) {
 		socket.on("tactix_ticket_raised", onTicketRaised)
 	}
@@ -2896,6 +2968,7 @@ onMounted(() => {
 
 onUnmounted(() => {
 	window.removeEventListener("keydown", handleGlobalKeydown)
+	window.removeEventListener("keydown", handleSlashKey)
 	if (socket) {
 		socket.off("tactix_ticket_raised", onTicketRaised)
 	}
@@ -2904,6 +2977,132 @@ onUnmounted(() => {
 
 
 <style scoped>
+/* ---- KPI strip ---- */
+.kpi {
+	padding: 10px 12px;
+	border: 1px solid var(--outline-gray-1, #ededed);
+	border-radius: 10px;
+	background: var(--surface-cards, #fff);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+.kpi:hover {
+	border-color: var(--brand-border, #a6dcff);
+}
+.kpi.is-active {
+	border-color: var(--brand, #29adff);
+	background: var(--brand-soft, #e9f6ff);
+	box-shadow: 0 0 0 1px var(--brand, #29adff) inset;
+}
+
+/* ---- Toolbar ---- */
+.toolbar-card {
+	padding: 10px 12px;
+	border: 1px solid var(--outline-gray-1, #ededed);
+	border-radius: 10px;
+	background: var(--surface-cards, #fff);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.qf {
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	width: 100%;
+	height: 28px;
+	padding: 0 8px;
+	border: 1px dashed var(--outline-gray-3, #d4d4d4);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--ink-gray-6, #6b6b6b);
+	font-size: 12px;
+	cursor: pointer;
+	transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.qf:hover {
+	background: var(--surface-gray-2, #f3f3f3);
+	color: var(--ink-gray-8, #383838);
+}
+.qf.on {
+	border-style: solid;
+	border-color: var(--brand-border, #a6dcff);
+	background: var(--brand-soft, #e9f6ff);
+	color: var(--brand-text, #0a84d0);
+	font-weight: 500;
+}
+.kbd {
+	display: inline-flex;
+	align-items: center;
+	height: 18px;
+	padding: 0 5px;
+	border: 1px solid var(--outline-gray-2, #e2e2e2);
+	border-radius: 4px;
+	background: var(--surface-gray-1, #f8f8f8);
+	color: var(--ink-gray-5, #7c7c7c);
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 10.5px;
+	line-height: 1;
+	pointer-events: none;
+}
+
+/* ---- List ---- */
+.status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	max-width: 100%;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 18px;
+	white-space: nowrap;
+}
+.avatar-ring {
+	box-shadow: 0 0 0 2px var(--surface-white, #fff);
+}
+.busy-bar {
+	position: absolute;
+	inset: 0 0 auto 0;
+	z-index: 20;
+	height: 2px;
+	overflow: hidden;
+	border-radius: 12px 12px 0 0;
+}
+.busy-bar::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	width: 35%;
+	background: var(--brand, #29adff);
+	animation: busy 1s ease-in-out infinite;
+}
+@keyframes busy {
+	from { transform: translateX(-100%); }
+	to { transform: translateX(300%); }
+}
+.skeleton {
+	border-radius: 5px;
+	background: var(--surface-gray-2, #f3f3f3);
+	animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+	50% { opacity: 0.5; }
+}
+input[type="checkbox"] {
+	accent-color: var(--brand, #29adff);
+}
+
+/* ---- Ticket panel ---- */
+.section-title {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-gray-5, #7c7c7c);
+}
+
 .custom-scrollbar::-webkit-scrollbar,
 :deep(*::-webkit-scrollbar) {
 	height: 5px !important;
