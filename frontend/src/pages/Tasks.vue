@@ -2771,7 +2771,7 @@ const ALL_COLUMNS = [
 		label: "Description",
 		key: "description_for_list",
 		icon: IconCheckCircle,
-		width: "3.5fr",
+		width: "280px",
 	},
 	{
 		label: "Project",
