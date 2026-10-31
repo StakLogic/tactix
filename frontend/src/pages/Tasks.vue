@@ -1,14 +1,17 @@
 <template>
   <div class="space-y-3 p-1 flex flex-col h-full overflow-hidden min-h-0">
 	<div class="grid grid-cols-3 lg:grid-cols-6 gap-2 flex-shrink-0">
-	  <button
+	  <div
 		v-for="stat in kpiStats"
 		:key="stat.label"
-		type="button"
+		role="button"
+		tabindex="0"
 		class="kpi text-left"
 		:class="isStatActive(stat.label) && 'is-active'"
 		:title="isStatActive(stat.label) && stat.label !== 'Total' ? 'Click to clear filter' : 'Filter by ' + stat.label"
 		@click="filterByStat(stat.label)"
+		@keydown.enter.prevent="filterByStat(stat.label)"
+		@keydown.space.prevent="filterByStat(stat.label)"
 	  >
 		<div class="flex items-center justify-between gap-2">
 		  <span class="truncate text-xs font-medium text-ink-gray-6">{{ stat.label }}</span>
@@ -18,7 +21,7 @@
 		  <div v-if="summaryLoading" class="skeleton h-5 w-10"></div>
 		  <span v-else class="text-[22px] font-semibold leading-none tabular-nums text-ink-gray-9">{{ stat.value ?? 0 }}</span>
 		</div>
-	  </button>
+	  </div>
 	</div>
 
 	<div class="toolbar-card flex flex-col gap-2.5 flex-shrink-0">
@@ -3778,6 +3781,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.kpi[role="button"] {
+	cursor: pointer;
+	user-select: none;
+}
+.kpi[role="button"]:focus-visible {
+	outline: 2px solid var(--brand, #29adff);
+	outline-offset: 2px;
+}
+
 /* ---- KPI strip ---- */
 .kpi {
 	padding: 10px 12px;

@@ -1,6 +1,6 @@
 <template>
-	<div class="custom-scrollbar h-full flex-1 overflow-y-auto">
-		<div class="mx-auto max-w-[1440px] space-y-5 p-1 pb-6">
+	<div class="custom-scrollbar h-full w-full flex-1 overflow-y-auto">
+		<div class="w-full space-y-5 p-1 pb-6">
 			<!-- Header -->
 			<div class="flex flex-col gap-3 border-b border-outline-gray-1 pb-5 md:flex-row md:items-end md:justify-between">
 				<div>

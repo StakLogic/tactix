@@ -1,140 +1,142 @@
 <template>
-  <div class="space-y-4 p-1 flex flex-col h-full overflow-hidden min-h-0 bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-    
-    <!-- Header Page Title -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3 flex-shrink-0">
-      <div>
-        <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-          <IconGitPullRequest class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          Contributions
-        </h1>
-        <p class="text-xs text-slate-400 dark:text-slate-500">
-          Monitor recent Pull Requests and engineering activity across Organization.
-        </p>
-      </div>
-      
+  <div class="flex h-full min-h-0 flex-col gap-3 overflow-hidden p-1">
+    <!-- Header -->
+    <div class="flex flex-shrink-0 flex-col justify-between gap-3 md:flex-row md:items-center">
       <div class="flex items-center gap-3">
-        <!-- Simulation Button -->
-        <!-- <Button 
-          variant="solid" 
-          class="!bg-indigo-600 hover:!bg-indigo-700 !text-white !text-xs !h-9 !px-4 !shadow-sm" 
-          @click="simulatePRRaised"
-          :disabled="simulating"
-        >
-          <template #prefix>
-            <IconGitPullRequest class="w-4 h-4 mr-1" />
-          </template>
-          Test PR Raised Notification
-        </Button> -->
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)]">
+          <IconGitPullRequest class="h-5 w-5" />
+        </span>
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight text-ink-gray-9">Contributions</h1>
+          <p class="text-xs text-ink-gray-5">Pull requests and engineering activity across the organization.</p>
+        </div>
+      </div>
+      <span v-if="lastUpdated" class="text-xs text-ink-gray-4">Updated {{ lastUpdated }}</span>
+    </div>
 
-        <Button 
-          variant="outline" 
-          class="!text-slate-600 !px-3 !h-9 border border-slate-200 hover:bg-slate-50 transition-all dark:!text-slate-300 dark:border-slate-700" 
-          @click="fetchPullRequests"
-          :disabled="loading"
-        >
-          <template #prefix>
-            <IconRefresh :class="['w-4 h-4', loading ? 'animate-spin' : '']" />
-          </template>
-        </Button>
+    <!-- Sample-data notice (GitHub unreachable) -->
+    <div
+      v-if="usingSampleData"
+      class="flex flex-shrink-0 items-center justify-between gap-3 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+    >
+      <span><b>Couldn't load data from GitHub.</b> Showing sample pull requests for preview only.</span>
+      <button type="button" class="font-semibold underline hover:no-underline" @click="fetchPullRequests">Try again</button>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="grid flex-shrink-0 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div
+        v-for="stat in statsBreakdown"
+        :key="stat.label"
+        role="button"
+        tabindex="0"
+        class="kpi text-left"
+        :class="isCardActive(stat.label) && 'is-active'"
+        @click="filterByStat(stat.label)"
+        @keydown.enter.prevent="filterByStat(stat.label)"
+        @keydown.space.prevent="filterByStat(stat.label)"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <span class="truncate text-xs font-medium text-ink-gray-6">{{ stat.label }}</span>
+          <span class="h-2 w-2 shrink-0 rounded-full" :style="{ background: stat.dot }"></span>
+        </div>
+        <div class="mt-1.5 flex h-7 items-center">
+          <div v-if="loading && !pullRequests.length" class="skeleton h-5 w-10"></div>
+          <span v-else class="text-[22px] font-semibold leading-none tabular-nums text-ink-gray-9">{{ stat.value }}</span>
+        </div>
       </div>
     </div>
 
-    <!-- Stats Breakdown Overview Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
-      <Card 
-        v-for="stat in statsBreakdown" 
-        :key="stat.label" 
-        :class="[
-          '!shadow-xs bg-white dark:bg-slate-800 cursor-pointer transition-all duration-150 border active:scale-[0.98]',
-          'border-slate-200/80 hover:border-slate-300 dark:hover:border-slate-700'
-        ]"
-        @click="filterByStat(stat.label)"
-      >
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-500">{{ stat.label }}</span>
-          <component :is="stat.icon" class="w-4 h-4" :class="stat.color" />
-        </div>
-        <div class="text-xl font-bold mt-1 text-slate-900 dark:text-white flex items-center h-7">
-          <template v-if="loading">
-            <div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-          </template>
-          <span v-else>{{ stat.value }}</span>
-        </div>
-      </Card>
-    </div>
-
-    <!-- Actions & Filter Header -->
-    <div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
-      <!-- Top Row: Search & Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-700/80">
-
-        <!-- Search input -->
+    <!-- Toolbar -->
+    <div class="toolbar-card flex flex-shrink-0 flex-col gap-2.5">
+      <div class="flex w-full flex-col justify-between gap-2.5 sm:flex-row sm:items-center">
+        <!-- Search -->
         <div class="relative w-full sm:w-80">
-          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+          <IconSearch class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-gray-4" />
           <input
+            ref="searchInputEl"
             v-model="filters.search"
             type="text"
-            placeholder="Search PR title, number or author…"
-            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            placeholder="Search title, number or author…"
+            class="h-8 w-full rounded-md border border-outline-gray-2 bg-surface-gray-1 pl-9 pr-9 text-[13px] text-ink-gray-8 outline-none transition focus:border-[color:var(--brand,#29ADFF)] focus:bg-surface-white focus:ring-2 focus:ring-[color:var(--brand-soft,#E9F6FF)]"
           />
+          <kbd v-if="!filters.search" class="kbd absolute right-2 top-1/2 -translate-y-1/2" title="Press / to search">/</kbd>
           <button
-            v-if="filters.search"
+            v-else
+            type="button"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-ink-gray-4 hover:bg-surface-gray-2 hover:text-ink-gray-7"
+            title="Clear search"
             @click="filters.search = ''"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
           >
-            <IconX class="w-3.5 h-3.5" />
+            <IconX class="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <!-- Right Side Action Group -->
-        <div class="flex items-center gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
-          <!-- Dynamic Multi-Field Filter Popover -->
+        <div class="ml-auto flex flex-wrap items-center justify-end gap-2 sm:ml-0">
+          <!-- View tabs -->
+          <div class="flex rounded-md border border-outline-gray-2 bg-surface-gray-2 p-0.5" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="activeTab === 'list'"
+              :class="tabClass('list')"
+              @click="activeTab = 'list'"
+            >
+              <IconList class="h-3.5 w-3.5" /> Pull Requests
+            </button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="activeTab === 'dashboard'"
+              :class="tabClass('dashboard')"
+              @click="activeTab = 'dashboard'"
+            >
+              <IconBarChart class="h-3.5 w-3.5" /> Analytics
+            </button>
+          </div>
+
+          <!-- Filter popover -->
           <Popover placement="bottom-end">
-            <template #target="{ open, togglePopover }">
+            <template #target="{ togglePopover }">
               <Button
                 variant="outline"
                 :class="[
-                  '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
-                  activeFilterCount > 0
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
-                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                  '!h-8 !px-2.5 text-xs font-medium',
+                  activeFilterCount > 0 && '!border-[color:var(--brand,#29ADFF)] !bg-[color:var(--brand-soft,#E9F6FF)] !text-[color:var(--brand-text,#0A84D0)]',
                 ]"
+                title="Filter contributions"
                 @click="syncActiveFilterRules(); togglePopover()"
-                title="Filter Contributions"
               >
-                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <template #prefix><IconFilter class="h-3.5 w-3.5" /></template>
                 <span>Filter</span>
-                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
-                  {{ activeFilterCount }}
-                </span>
+                <span
+                  v-if="activeFilterCount > 0"
+                  class="ml-1 rounded-full bg-[color:var(--brand,#29ADFF)] px-1.5 text-[10px] font-bold leading-4 text-white"
+                >{{ activeFilterCount }}</span>
               </Button>
             </template>
             <template #body-main="{ close }">
-              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
-                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
-                    <span>Filter Contributions</span>
-                  </div>
-                  <button 
+              <div class="w-80 space-y-3 rounded-lg border border-outline-gray-2 bg-surface-modal p-3 text-xs shadow-lg">
+                <div class="flex items-center justify-between border-b border-outline-gray-1 pb-2">
+                  <span class="font-semibold text-ink-gray-8">Filter contributions</span>
+                  <button
                     v-if="hasActiveFilters"
-                    @click="clearFilters" 
-                    class="text-[11px] font-medium text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                    type="button"
+                    class="flex items-center gap-1 text-[11px] font-medium text-red-600 hover:text-red-700"
+                    @click="clearFilters"
                   >
-                    <IconX class="w-3 h-3" /> Clear All
+                    <IconX class="h-3 w-3" /> Clear all
                   </button>
                 </div>
 
-                <!-- Dynamic Filter Rules -->
-                <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
-                  <div 
-                    v-for="rule in activeFilterRules" 
+                <div class="custom-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1">
+                  <div
+                    v-for="rule in activeFilterRules"
                     :key="rule.id"
-                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                    class="flex items-center gap-1.5 rounded-md border border-outline-gray-1 bg-surface-gray-1 p-1.5"
                   >
                     <div class="w-1/3 shrink-0">
-                      <Select 
+                      <Select
                         v-model="rule.field"
                         :options="FILTERABLE_FIELDS"
                         placeholder="Field"
@@ -143,10 +145,8 @@
                         @update:modelValue="rule.value = ''"
                       />
                     </div>
-
-                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
-
-                    <div class="flex-1 min-w-0">
+                    <span class="shrink-0 text-[10px] font-semibold text-ink-gray-4">=</span>
+                    <div class="min-w-0 flex-1">
                       <Select
                         v-model="rule.value"
                         :options="getFieldOptionsForSelect(rule.field)"
@@ -156,80 +156,58 @@
                         class="w-full"
                       />
                     </div>
-
-                    <button 
+                    <button
+                      type="button"
+                      class="shrink-0 rounded p-1 text-ink-gray-4 transition-colors hover:bg-red-50 hover:text-red-500"
+                      title="Remove filter"
                       @click="removeFilterRule(rule.id)"
-                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
-                      title="Remove Filter"
                     >
-                      <IconX class="w-3.5 h-3.5" />
+                      <IconX class="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between border-t border-outline-gray-1 pt-2">
                   <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)]"
                     @click="addFilterRule"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
                   >
-                    <IconPlus class="w-3.5 h-3.5" /> Add Filter
+                    <IconPlus class="h-3.5 w-3.5" /> Add filter
                   </button>
-
-                  <Button 
-                    variant="solid" 
-                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
-                    @click="applyFilterRules(); close()"
-                  >
-                    Apply
-                  </Button>
+                  <Button variant="solid" class="brand-btn !h-7 !px-3 text-xs" @click="applyFilterRules(); close()">Apply</Button>
                 </div>
               </div>
             </template>
           </Popover>
 
-          <!-- Refresh Button -->
-          <Button
-            variant="outline"
-            class="!text-slate-600 dark:!text-slate-300 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all rounded-md"
-            @click="fetchPullRequests"
-            :disabled="loading"
-            title="Refresh contributions"
-          >
-            <template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" :class="{ 'animate-spin': loading }" /></template>
+          <!-- Refresh -->
+          <Button variant="outline" class="!h-8 !px-2.5" :disabled="loading" title="Refresh" @click="fetchPullRequests">
+            <template #prefix><IconRefresh class="h-3.5 w-3.5" :class="loading && 'animate-spin'" /></template>
           </Button>
         </div>
       </div>
 
-      <!-- Bottom Row: Quick Filter Bar -->
-      <div class="filter-row flex flex-nowrap overflow-x-auto pb-1 gap-2 w-full custom-scrollbar sm:flex-wrap sm:overflow-visible sm:pb-0 sm:items-center sm:gap-2">
-        <!-- Repository Autocomplete Filter -->
+      <!-- Quick filters -->
+      <div class="custom-scrollbar flex w-full flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:items-center sm:overflow-visible sm:pb-0">
         <div class="w-48 shrink-0">
           <Autocomplete
             ref="repoAutocomplete"
             :options="repoOptions"
             :modelValue="filters.repo"
-            @update:modelValue="val => filters.repo = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
             :max-options="100"
+            @update:modelValue="val => filters.repo = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
           >
             <template #target>
-              <button
-                type="button"
-                @click="() => repoAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  filters.repo !== ''
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
-                ]"
-              >
-                <span class="truncate">{{ getFilterLabel('repo', filters.repo, 'Repository') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              <button type="button" :class="['qf', filters.repo !== '' && 'on']" @click="() => repoAutocomplete?.togglePopover()">
+                <IconFolder class="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <span class="flex-1 truncate text-left">{{ getFilterLabel('repo', filters.repo, 'Repository') }}</span>
+                <FeatherIcon name="chevron-down" class="size-3.5 shrink-0 opacity-60" />
               </button>
             </template>
           </Autocomplete>
         </div>
 
-        <!-- Status Autocomplete Filter -->
         <div class="w-40 shrink-0">
           <Autocomplete
             ref="statusAutocomplete"
@@ -238,593 +216,392 @@
             @update:modelValue="val => filters.status = (val && typeof val === 'object') ? (val.value ?? 'all') : (val ?? 'all')"
           >
             <template #target>
-              <button
-                type="button"
-                @click="() => statusAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  filters.status !== 'all'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
-                ]"
-              >
-                <span class="truncate">{{ getFilterLabel('status', filters.status, 'Status') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              <button type="button" :class="['qf', filters.status !== 'all' && 'on']" @click="() => statusAutocomplete?.togglePopover()">
+                <span class="flex-1 truncate text-left">{{ getFilterLabel('status', filters.status, 'Status') }}</span>
+                <FeatherIcon name="chevron-down" class="size-3.5 shrink-0 opacity-60" />
               </button>
             </template>
           </Autocomplete>
         </div>
 
-        <!-- Author Autocomplete Filter -->
         <div class="w-40 shrink-0">
           <Autocomplete
             ref="authorAutocomplete"
             :options="authorOptions"
             :modelValue="filters.author"
-            @update:modelValue="val => filters.author = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
             :max-options="100"
+            @update:modelValue="val => filters.author = (val && typeof val === 'object') ? (val.value ?? '') : (val ?? '')"
           >
             <template #target>
-              <button
-                type="button"
-                @click="() => authorAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  filters.author !== ''
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
-                ]"
-              >
-                <span class="truncate">{{ getFilterLabel('author', filters.author, 'Author') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+              <button type="button" :class="['qf', filters.author !== '' && 'on']" @click="() => authorAutocomplete?.togglePopover()">
+                <IconUser class="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <span class="flex-1 truncate text-left">{{ getFilterLabel('author', filters.author, 'Author') }}</span>
+                <FeatherIcon name="chevron-down" class="size-3.5 shrink-0 opacity-60" />
               </button>
             </template>
           </Autocomplete>
         </div>
 
-        <!-- Clear Button -->
-        <Button 
+        <button
           v-if="hasActiveFilters"
-          variant="ghost" 
-          class="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950/40 !px-2 !h-7 text-xs font-medium shrink-0"
+          type="button"
+          class="inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-red-500 hover:bg-red-50"
           @click="clearFilters"
         >
-          <template #prefix><IconX class="w-3.5 h-3.5" /></template>
-          Clear
-        </Button>
+          <IconX class="h-3.5 w-3.5" /> Clear
+        </button>
       </div>
     </div>
 
-    <!-- Tabs Switcher -->
-    <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-800/80 flex-shrink-0 self-start">
-      <button 
-        @click="activeTab = 'list'"
-        :class="[
-          'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer outline-none focus:outline-none flex items-center gap-1.5',
-          activeTab === 'list' 
-            ? '!text-white shadow-sm' 
-            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-        ]"
-        :style="activeTab === 'list' ? { backgroundColor: 'var(--primary-color)' } : {}"
-      >
-        <IconGitPullRequest class="w-3.5 h-3.5" />
-        All Pull Requests
-      </button>
-      <button 
-        @click="activeTab = 'dashboard'"
-        :class="[
-          'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer outline-none focus:outline-none flex items-center gap-1.5',
-          activeTab === 'dashboard' 
-            ? '!text-white shadow-sm' 
-            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-        ]"
-        :style="activeTab === 'dashboard' ? { backgroundColor: 'var(--primary-color)' } : {}"
-      >
-        <IconClock class="w-3.5 h-3.5" />
-        Analytics Dashboard
-      </button>
-    </div>
+    <!-- ===================== LIST ===================== -->
+    <div v-if="activeTab === 'list'" class="panel relative flex min-h-[420px] flex-1 flex-col overflow-y-auto md:min-h-0 md:overflow-hidden">
+      <div v-if="loading && pullRequests.length" class="busy-bar" aria-hidden="true"></div>
 
-    <!-- Main List Container (Pull Request ListView) -->
-    <div v-if="activeTab === 'list'" class="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 shadow-sm min-h-[420px] md:min-h-0">
-      <div v-if="loading && filteredPRs.length === 0" class="flex justify-center p-12 flex-1 items-center">
-        <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+      <!-- first load -->
+      <div v-if="loading && !pullRequests.length" class="divide-y divide-outline-gray-1">
+        <div v-for="n in 6" :key="n" class="flex items-center gap-3 px-4 py-3">
+          <div class="skeleton h-8 w-8 rounded-full"></div>
+          <div class="flex-1 space-y-1.5">
+            <div class="skeleton h-3.5 w-1/2"></div>
+            <div class="skeleton h-3 w-1/4"></div>
+          </div>
+          <div class="skeleton h-5 w-16"></div>
+        </div>
       </div>
 
-      <div v-else-if="filteredPRs.length === 0" class="text-center py-16 flex-1 flex flex-col items-center justify-center space-y-4">
-        <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl">
-          <IconGitPullRequest class="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <div class="max-w-xs space-y-1">
-          <h3 class="text-sm font-bold text-slate-800 dark:text-white">No Pull Requests Found</h3>
-          <p class="text-slate-400 text-xs leading-relaxed">
-            We couldn't find any pull requests matching your active filters.
-          </p>
-        </div>
+      <div v-else-if="filteredPRs.length === 0" class="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+        <span class="grid h-11 w-11 place-items-center rounded-full bg-surface-gray-2 text-ink-gray-5">
+          <IconGitPullRequest class="h-5 w-5" />
+        </span>
+        <h3 class="mt-3 text-sm font-semibold text-ink-gray-8">No pull requests found</h3>
+        <p class="mt-1 max-w-xs text-xs text-ink-gray-5">
+          {{ hasActiveFilters ? 'Nothing matches your filters. Try removing one.' : 'Pull requests will appear here once they are raised.' }}
+        </p>
+        <Button v-if="hasActiveFilters" variant="subtle" size="sm" class="mt-3" @click="clearFilters">Clear filters</Button>
       </div>
 
       <ListView
         v-else
-        class="h-full flex flex-col min-h-0"
+        class="flex h-full min-h-0 flex-col"
         :columns="columns"
         :rows="filteredPRs"
         row-key="id"
         :options="{ showTooltip: true, resizeColumn: true, selectable: false }"
       >
-        <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-          <ListHeaderItem v-for="col in columns" :key="col.key" :item="col" class="font-bold text-slate-500 text-xs">
+        <ListHeader class="shrink-0 border-b border-outline-gray-2 bg-surface-gray-1">
+          <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
             <template #prefix="{ item }">
-              <component :is="item.icon" class="size-3.5 text-slate-400" />
+              <component :is="item.icon" class="size-3.5 text-ink-gray-4" />
             </template>
           </ListHeaderItem>
         </ListHeader>
-        
-        <div class="flex-grow md:flex-1 overflow-y-auto custom-scrollbar relative min-h-0 max-h-[480px] md:max-h-none divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+
+        <div class="custom-scrollbar relative min-h-0 max-h-[480px] flex-grow overflow-y-auto md:max-h-none md:flex-1">
           <ListRows>
-            <ListRow v-for="row in filteredPRs" :key="row.id" v-slot="{ column, item }" :row="row" class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50" @click="openOnGitHub(row.html_url)">
+            <ListRow
+              v-for="row in filteredPRs"
+              :key="row.id"
+              v-slot="{ column, item }"
+              :row="row"
+              class="group cursor-pointer"
+              @click="openOnGitHub(row.html_url)"
+            >
               <ListRowItem :item="item">
-                
-                <!-- PR Title column with User Avatar and opened metadata -->
                 <template v-if="column.key === 'title'">
-                  <div class="flex items-center gap-3 select-none min-w-0 overflow-hidden">
-                    <Avatar :image="row.user.avatar_url" :label="row.user.login" size="md" class="ring-1 ring-slate-100 flex-shrink-0" />
-                    <div class="truncate min-w-0 flex-1">
-                      <div class="font-bold text-sm text-slate-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
+                  <div class="flex min-w-0 items-center gap-3 overflow-hidden">
+                    <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md" :style="statusIconStyle(row)">
+                      <IconGitPullRequest class="h-3.5 w-3.5" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate text-sm font-medium text-ink-gray-9 group-hover:text-[color:var(--brand-text,#0A84D0)]" :title="row.title">
                         {{ row.title }}
-                        <span class="text-xs text-slate-400 font-mono ml-1">#{{ row.number }}</span>
                       </div>
-                      <div class="text-[10px] text-slate-400 mt-0.5">
-                        opened {{ timeAgo(row.created_at) }}
+                      <div class="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-gray-5">
+                        <span class="font-mono">#{{ row.number }}</span>
+                        <span class="text-ink-gray-3">·</span>
+                        <span v-tooltip="formatFullDate(row.created_at)">opened {{ timeAgo(row.created_at) }}</span>
                       </div>
-                    </div>
-                  </div>
-                </template>
-                
-                <!-- Repository name -->
-                <template v-if="column.key === 'repo'">
-                  <span 
-                    class="text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400 truncate block max-w-full cursor-pointer"
-                    @click.stop="openOnGitHub(getRepoHomeUrl(row.repository_url))"
-                  >
-                    {{ formatRepoName(row.repository_url) }}
-                  </span>
-                </template>
-                
-                <!-- Author -->
-                <template v-if="column.key === 'user'">
-                  <span 
-                    class="text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400 truncate block max-w-full cursor-pointer"
-                    @click.stop="openOnGitHub('https://github.com/' + row.user.login)"
-                  >
-                    {{ row.user.login }}
-                  </span>
-                </template>
-                
-                <!-- Status Badge -->
-                <template v-if="column.key === 'state'">
-                  <Badge 
-                    v-if="getPRStatusLabel(row) === 'Merged'"
-                    variant="subtle" 
-                    size="sm" 
-                    class="font-black uppercase text-[9px] px-2.5 py-1 tracking-wide border flex-shrink-0"
-                    :style="{
-                      backgroundColor: '#8250df15',
-                      color: '#8250df',
-                      borderColor: '#8250df35'
-                    }"
-                  >
-                    Merged
-                  </Badge>
-                  <Badge 
-                    v-else
-                    variant="subtle" 
-                    :theme="getPRStatusTheme(row)" 
-                    size="sm" 
-                    class="font-black uppercase text-[9px] px-2.5 py-1 tracking-wide flex-shrink-0"
-                  >
-                    {{ getPRStatusLabel(row) }}
-                  </Badge>
-                </template>
-                
-                <!-- Comments Column -->
-                <template v-if="column.key === 'comments'">
-                  <div class="flex justify-end pr-2">
-                    <div 
-                      v-if="row.comments > 0" 
-                      class="flex items-center gap-1 text-slate-400 hover:text-slate-600 text-xs"
-                      title="Comments"
-                    >
-                      <IconMessageSquare class="w-3.5 h-3.5" />
-                      <span class="text-[10px] font-bold leading-none">
-                        {{ row.comments }}
-                      </span>
                     </div>
                   </div>
                 </template>
 
+                <template v-if="column.key === 'repo'">
+                  <button
+                    type="button"
+                    class="block max-w-full truncate rounded bg-surface-gray-2 px-1.5 py-0.5 font-mono text-[11.5px] text-ink-gray-7 hover:bg-[color:var(--brand-soft,#E9F6FF)] hover:text-[color:var(--brand-text,#0A84D0)]"
+                    :title="'Open ' + formatRepoName(row.repository_url) + ' on GitHub'"
+                    @click.stop="openOnGitHub(getRepoHomeUrl(row.repository_url))"
+                  >
+                    {{ formatRepoName(row.repository_url) }}
+                  </button>
+                </template>
+
+                <template v-if="column.key === 'user'">
+                  <button
+                    type="button"
+                    class="flex min-w-0 max-w-full items-center gap-2 text-xs text-ink-gray-7 hover:text-[color:var(--brand-text,#0A84D0)]"
+                    :title="'Open ' + row.user?.login + ' on GitHub'"
+                    @click.stop="openOnGitHub('https://github.com/' + row.user?.login)"
+                  >
+                    <Avatar :image="row.user?.avatar_url" :label="row.user?.login" size="sm" class="shrink-0" />
+                    <span class="truncate font-medium">{{ row.user?.login }}</span>
+                  </button>
+                </template>
+
+                <template v-if="column.key === 'state'">
+                  <span class="status-pill" :style="statusPillStyle(row)">
+                    <span class="h-1.5 w-1.5 rounded-full" :style="{ background: statusColor(getPRStatusLabel(row)) }"></span>
+                    {{ getPRStatusLabel(row) }}
+                  </span>
+                </template>
+
+                <template v-if="column.key === 'comments'">
+                  <div class="flex justify-end pr-2">
+                    <span v-if="row.comments > 0" class="flex items-center gap-1 text-xs text-ink-gray-5" :title="row.comments + ' comments'">
+                      <IconMessageSquare class="h-3.5 w-3.5" />
+                      <span class="tabular-nums">{{ row.comments }}</span>
+                    </span>
+                  </div>
+                </template>
               </ListRowItem>
             </ListRow>
           </ListRows>
         </div>
       </ListView>
-      
-      <!-- Pagination Bar -->
-      <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 shrink-0">
+
+      <!-- Pagination -->
+      <div v-if="totalCount > 0" class="flex shrink-0 items-center justify-between border-t border-outline-gray-1 px-4 py-2">
         <div class="flex items-center gap-1">
-          <!-- First Page (<<) -->
-          <Button
-            variant="ghost"
-            size="sm"
-            :disabled="currentPage === 1"
-            @click="currentPage = 1"
-            title="First Page"
-            class="!p-1 !h-6 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30"
-          >
-            <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
-          </Button>
-
-          <!-- Previous Page (<) -->
-          <Button
-            variant="ghost"
-            size="sm"
-            :disabled="currentPage === 1"
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            title="Previous Page"
-            class="!p-1 !h-6 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30"
-          >
-            <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
-          </Button>
-
-          <!-- Compact Popover Page Selector -->
+          <button type="button" class="pg-btn" :disabled="currentPage === 1" title="First page" @click="currentPage = 1">
+            <IconChevronsLeft class="h-3.5 w-3.5" />
+          </button>
+          <button type="button" class="pg-btn" :disabled="currentPage === 1" title="Previous page" @click="currentPage = Math.max(1, currentPage - 1)">
+            <IconChevronLeft class="h-3.5 w-3.5" />
+          </button>
           <Popover>
             <template #target="{ togglePopover }">
               <button
+                type="button"
+                class="flex h-6 shrink-0 items-center gap-1 rounded border border-outline-gray-2 px-2 text-[11px] font-semibold tabular-nums text-ink-gray-7 hover:bg-surface-gray-2"
                 @click="togglePopover"
-                class="h-6 px-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded border border-slate-200/80 dark:border-slate-700 transition-all flex items-center gap-1 cursor-pointer shrink-0"
               >
-                <span>{{ currentPage }} / {{ totalPages }}</span>
-                <IconChevronDown class="w-3 h-3 text-slate-400" />
+                {{ currentPage }} / {{ totalPages }}
+                <IconChevronDown class="h-3 w-3 text-ink-gray-4" />
               </button>
             </template>
             <template #body="{ close }">
-              <div class="p-1 max-h-48 overflow-y-auto w-32 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 custom-scrollbar">
+              <div class="custom-scrollbar max-h-48 w-32 overflow-y-auto rounded-lg border border-outline-gray-2 bg-surface-modal p-1 shadow-lg">
                 <button
                   v-for="p in totalPages"
                   :key="p"
-                  @click="currentPage = p; close()"
+                  type="button"
                   :class="[
-                    'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
+                    'flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-colors',
                     currentPage === p
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      ? 'bg-[color:var(--brand,#29ADFF)] font-semibold text-white'
+                      : 'text-ink-gray-7 hover:bg-surface-gray-2',
                   ]"
+                  @click="currentPage = p; close()"
                 >
                   <span>Page {{ p }}</span>
-                  <IconCheck v-if="currentPage === p" class="w-3 h-3" />
+                  <IconCheck v-if="currentPage === p" class="h-3 w-3" />
                 </button>
               </div>
             </template>
           </Popover>
-
-          <!-- Next Page (>) -->
-          <Button
-            variant="ghost"
-            size="sm"
-            :disabled="currentPage >= totalPages"
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            title="Next Page"
-            class="!p-1 !h-6 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30"
-          >
-            <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
-          </Button>
-
-          <!-- Last Page (>>) -->
-          <Button
-            variant="ghost"
-            size="sm"
-            :disabled="currentPage >= totalPages"
-            @click="currentPage = totalPages"
-            title="Last Page"
-            class="!p-1 !h-6 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30"
-          >
-            <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
-          </Button>
+          <button type="button" class="pg-btn" :disabled="currentPage >= totalPages" title="Next page" @click="currentPage = Math.min(totalPages, currentPage + 1)">
+            <IconChevronRight class="h-3.5 w-3.5" />
+          </button>
+          <button type="button" class="pg-btn" :disabled="currentPage >= totalPages" title="Last page" @click="currentPage = totalPages">
+            <IconChevronsRight class="h-3.5 w-3.5" />
+          </button>
         </div>
-
-        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">
-          Showing <span class="font-bold text-slate-800 dark:text-slate-200">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800 dark:text-slate-200">{{ totalCount }}</span>
+        <div class="text-xs text-ink-gray-5">
+          <b class="font-semibold tabular-nums text-ink-gray-8">{{ (currentPage - 1) * pageLength + 1 }}–{{ Math.min(currentPage * pageLength, totalCount) }}</b>
+          of <b class="font-semibold tabular-nums text-ink-gray-8">{{ totalCount }}</b>
         </div>
       </div>
     </div>
 
-    <!-- Analytics Dashboard Tab Container -->
-    <div v-else-if="activeTab === 'dashboard'" class="flex-1 overflow-y-auto custom-scrollbar min-h-0 space-y-6">
-      <div v-if="loading && authorStats.length === 0" class="flex justify-center p-12 flex-1 items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 shadow-sm">
-        <div class="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-      
-      <div v-else-if="authorStats.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-4">
-        <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl">
-          <IconGitPullRequest class="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        <div class="max-w-xs space-y-1">
-          <h3 class="text-sm font-bold text-slate-800 dark:text-white">No Data Available</h3>
-          <p class="text-slate-400 text-xs leading-relaxed">
-            No pull request activity is registered matching your active filters.
-          </p>
-        </div>
+    <!-- ===================== ANALYTICS ===================== -->
+    <div v-else-if="activeTab === 'dashboard'" class="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div v-if="loading && !pullRequests.length" class="panel grid place-items-center p-16">
+        <div class="h-6 w-6 animate-spin rounded-full border-2 border-outline-gray-2 border-t-[color:var(--brand,#29ADFF)]"></div>
       </div>
 
-      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
-        
-        <!-- Left: Leaderboard & Author Rankings (7 cols on lg) -->
-        <div class="lg:col-span-7 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden flex flex-col min-h-[450px]">
-          <div class="p-4 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-900/10 flex justify-between items-center">
+      <div v-else-if="authorStats.length === 0" class="panel flex flex-col items-center justify-center px-4 py-16 text-center">
+        <span class="grid h-11 w-11 place-items-center rounded-full bg-surface-gray-2 text-ink-gray-5">
+          <IconBarChart class="h-5 w-5" />
+        </span>
+        <h3 class="mt-3 text-sm font-semibold text-ink-gray-8">No data available</h3>
+        <p class="mt-1 max-w-xs text-xs text-ink-gray-5">No pull request activity matches your filters.</p>
+      </div>
+
+      <div v-else class="grid min-h-0 grid-cols-1 gap-4 lg:grid-cols-12">
+        <!-- Leaderboard -->
+        <div class="panel flex min-h-[420px] flex-col overflow-hidden lg:col-span-7">
+          <div class="flex items-center justify-between border-b border-outline-gray-1 px-4 py-3">
             <div>
-              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Top Contributors</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Ranked by volume of pull requests submitted</p>
+              <h3 class="text-[15px] font-semibold text-ink-gray-9">Top contributors</h3>
+              <p class="text-xs text-ink-gray-5">Ranked by pull requests raised</p>
             </div>
-            <span class="text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg border border-indigo-100/50 dark:border-indigo-900/30">
-              {{ authorStats.length }} Authors
+            <span class="rounded-full bg-[color:var(--brand-soft,#E9F6FF)] px-2 py-0.5 text-xs font-semibold text-[color:var(--brand-text,#0A84D0)]">
+              {{ authorStats.length }} author{{ authorStats.length === 1 ? '' : 's' }}
             </span>
           </div>
 
-          <div class="p-5 divide-y divide-slate-100 dark:divide-slate-700/50 overflow-y-auto flex-1 custom-scrollbar">
-            <div 
-              v-for="(author, idx) in authorStats" 
-              :key="author.username" 
-              class="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4 group transition-all"
-            >
-              <!-- Left Rank + Avatar + Name -->
-              <div class="flex items-center gap-3.5 min-w-0 flex-1">
-                <!-- Rank Badge -->
-                <div class="flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shadow-sm"
-                  :class="[
-                    idx === 0 ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/40' : '',
-                    idx === 1 ? 'bg-slate-100 text-slate-800 ring-2 ring-slate-300 dark:bg-slate-900/50 dark:text-slate-300 dark:ring-slate-800' : '',
-                    idx === 2 ? 'bg-amber-50 text-amber-900 ring-2 ring-amber-200 dark:bg-amber-950/10 dark:text-amber-400 dark:ring-amber-900/20' : '',
-                    idx > 2 ? 'bg-slate-50 border border-slate-200 text-slate-500 dark:bg-slate-900/60 dark:border-slate-700 dark:text-slate-400' : ''
-                  ]"
-                >
-                  <span v-if="idx === 0">🏆</span>
-                  <span v-else-if="idx === 1">🥈</span>
-                  <span v-else-if="idx === 2">🥉</span>
-                  <span v-else>{{ idx + 1 }}</span>
-                </div>
-
-                <Avatar 
-                  :image="author.avatar_url" 
-                  :label="author.username" 
-                  size="lg" 
-                  class="ring-2 ring-slate-100/50 dark:ring-slate-700/30 flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" 
+          <ul class="custom-scrollbar flex-1 divide-y divide-outline-gray-1 overflow-y-auto">
+            <li v-for="(author, idx) in authorStats" :key="author.username" class="flex items-center gap-3 px-4 py-3 hover:bg-surface-gray-1">
+              <span class="rank" :class="idx < 3 && 'rank-' + (idx + 1)">{{ idx + 1 }}</span>
+              <button type="button" class="shrink-0" :title="'Open ' + author.username + ' on GitHub'" @click="openOnGitHub('https://github.com/' + author.username)">
+                <Avatar :image="author.avatar_url" :label="author.username" size="lg" />
+              </button>
+              <div class="min-w-0 flex-1">
+                <button
+                  type="button"
+                  class="block max-w-full truncate text-left text-sm font-medium text-ink-gray-9 hover:text-[color:var(--brand-text,#0A84D0)]"
                   @click="openOnGitHub('https://github.com/' + author.username)"
-                />
-                
-                <div class="min-w-0 flex-1">
-                  <div 
-                    class="font-bold text-sm text-slate-800 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline cursor-pointer transition-colors"
-                    @click="openOnGitHub('https://github.com/' + author.username)"
+                >
+                  {{ author.username }}
+                </button>
+                <div class="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-ink-gray-5">
+                  <span v-for="s in STATUS_KEYS" v-show="author[s.key] > 0" :key="s.key" class="flex items-center gap-1">
+                    <span class="h-1.5 w-1.5 rounded-full" :style="{ background: s.color }"></span>{{ author[s.key] }} {{ s.label.toLowerCase() }}
+                  </span>
+                </div>
+              </div>
+              <div class="flex w-1/3 min-w-[120px] max-w-[200px] flex-col items-end gap-1.5">
+                <span class="text-xs font-semibold tabular-nums text-ink-gray-8">{{ author.total }} PR{{ author.total === 1 ? '' : 's' }}</span>
+                <div class="track flex">
+                  <div
+                    v-for="s in STATUS_KEYS"
+                    :key="s.key"
+                    class="h-full transition-all duration-500"
+                    :style="{ width: (author[s.key] / author.total) * 100 + '%', background: s.color }"
+                    :title="s.label + ': ' + author[s.key]"
+                  ></div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flex min-h-0 flex-col gap-4 lg:col-span-5">
+          <!-- Status donut -->
+          <div class="panel p-4">
+            <h3 class="text-[15px] font-semibold text-ink-gray-9">Status breakdown</h3>
+            <p class="text-xs text-ink-gray-5">All pull requests in the current filters</p>
+
+            <div class="mt-4 flex items-center gap-6">
+              <div class="relative h-36 w-36 shrink-0">
+                <svg class="h-full w-full -rotate-90" viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--surface-gray-2, #f3f3f3)" stroke-width="4.5" />
+                  <circle
+                    v-for="seg in donutSegments"
+                    :key="seg.key"
+                    cx="21"
+                    cy="21"
+                    r="15.915"
+                    fill="transparent"
+                    :stroke="seg.color"
+                    stroke-width="4.5"
+                    :stroke-dasharray="`${seg.pct} ${100 - seg.pct}`"
+                    :stroke-dashoffset="-seg.offset"
+                    class="transition-all duration-700 ease-out"
                   >
-                    {{ author.username }}
-                  </div>
-                  <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>{{ author.merged }} merged</span>
-                    <span>•</span>
-                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>{{ author.open }} open</span>
-                    <span v-if="author.draft > 0">•</span>
-                    <span v-if="author.draft > 0" class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>{{ author.draft }} drafts</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Right Visual Ratio Progress Bar -->
-              <div class="flex flex-col items-end gap-1.5 w-1/3 min-w-[120px] max-w-[180px]">
-                <div class="text-xs font-black text-slate-800 dark:text-white">
-                  {{ author.total }} PR{{ author.total > 1 ? 's' : '' }}
-                </div>
-                <!-- Stacked Progress Bar Ratio -->
-                <div class="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-900 overflow-hidden flex relative shadow-inner">
-                  <div 
-                    :style="{ width: `${(author.merged / author.total) * 100}%` }"
-                    class="bg-[#8250df] h-full transition-all duration-500" 
-                    title="Merged"
-                  />
-                  <div 
-                    :style="{ width: `${(author.open / author.total) * 100}%` }"
-                    class="bg-green-500 h-full transition-all duration-500" 
-                    title="Open"
-                  />
-                  <div 
-                    :style="{ width: `${(author.draft / author.total) * 100}%` }"
-                    class="bg-slate-400 h-full transition-all duration-500" 
-                    title="Draft"
-                  />
-                  <div 
-                    :style="{ width: `${(author.closed / author.total) * 100}%` }"
-                    class="bg-red-500 h-full transition-all duration-500" 
-                    title="Closed"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: SVG Donut Chart + Repo Splits (5 cols on lg) -->
-        <div class="lg:col-span-5 space-y-6 flex flex-col min-h-0">
-          
-          <!-- Card 2: Interactive SVG Donut Status Chart -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm p-5 flex flex-col items-center justify-center">
-            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider w-full mb-4 text-left">
-              Status Allocation
-            </h3>
-            
-            <div class="flex items-center justify-between w-full gap-6">
-              <!-- SVG Donut Chart -->
-              <div class="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 42 42">
-                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" stroke-width="4.5" class="dark:stroke-slate-900"/>
-                  
-                  <!-- Merged Section (purple) -->
-                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#8250df" stroke-width="4.5" 
-                    :stroke-dasharray="`${(overallDashboardTotals.merged / Math.max(1, overallDashboardTotals.total)) * 100} ${100 - ((overallDashboardTotals.merged / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    stroke-dashoffset="0"
-                    class="transition-all duration-1000 ease-out"
-                  />
-                  
-                  <!-- Open Section (green) -->
-                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#22c55e" stroke-width="4.5" 
-                    :stroke-dasharray="`${(overallDashboardTotals.open / Math.max(1, overallDashboardTotals.total)) * 100} ${100 - ((overallDashboardTotals.open / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    :stroke-dashoffset="`${-((overallDashboardTotals.merged / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    class="transition-all duration-1000 ease-out"
-                  />
-                  
-                  <!-- Draft Section (slate) -->
-                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#94a3b8" stroke-width="4.5" 
-                    :stroke-dasharray="`${(overallDashboardTotals.draft / Math.max(1, overallDashboardTotals.total)) * 100} ${100 - ((overallDashboardTotals.draft / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    :stroke-dashoffset="`${-(((overallDashboardTotals.merged + overallDashboardTotals.open) / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    class="transition-all duration-1000 ease-out"
-                  />
-                  
-                  <!-- Closed Section (red) -->
-                  <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" stroke-width="4.5" 
-                    :stroke-dasharray="`${(overallDashboardTotals.closed / Math.max(1, overallDashboardTotals.total)) * 100} ${100 - ((overallDashboardTotals.closed / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    :stroke-dashoffset="`${-(((overallDashboardTotals.merged + overallDashboardTotals.open + overallDashboardTotals.draft) / Math.max(1, overallDashboardTotals.total)) * 100)}`"
-                    class="transition-all duration-1000 ease-out"
-                  />
+                    <title>{{ seg.label }}: {{ seg.value }}</title>
+                  </circle>
                 </svg>
-                
-                <!-- Inner text displaying total PR count -->
-                <div class="absolute flex flex-col items-center justify-center text-center">
-                  <span class="text-2xl font-black text-slate-800 dark:text-white leading-none">
-                    {{ overallDashboardTotals.total }}
-                  </span>
-                  <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold mt-1">Total PRs</span>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-2xl font-semibold leading-none tabular-nums text-ink-gray-9">{{ overallDashboardTotals.total }}</span>
+                  <span class="mt-1 text-[10px] font-medium uppercase tracking-wider text-ink-gray-5">Total PRs</span>
                 </div>
               </div>
 
-              <!-- Legends list -->
-              <div class="flex-1 space-y-2.5">
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-md bg-[#8250df]"></span>
-                    <span>Merged</span>
-                  </div>
-                  <span class="font-mono font-black text-slate-800 dark:text-white">
-                    {{ overallDashboardTotals.merged }}
+              <ul class="flex-1 space-y-2.5">
+                <li v-for="s in STATUS_KEYS" :key="s.key" class="flex items-center justify-between text-xs">
+                  <span class="flex items-center gap-2 text-ink-gray-7">
+                    <span class="h-2.5 w-2.5 rounded-sm" :style="{ background: s.color }"></span>{{ s.label }}
                   </span>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-md bg-green-500"></span>
-                    <span>Open</span>
-                  </div>
-                  <span class="font-mono font-black text-slate-800 dark:text-white">
-                    {{ overallDashboardTotals.open }}
+                  <span class="tabular-nums text-ink-gray-5">
+                    <b class="font-semibold text-ink-gray-9">{{ overallDashboardTotals[s.key] }}</b>
+                    · {{ pctOf(overallDashboardTotals[s.key]) }}%
                   </span>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-md bg-slate-400"></span>
-                    <span>Draft</span>
-                  </div>
-                  <span class="font-mono font-black text-slate-800 dark:text-white">
-                    {{ overallDashboardTotals.draft }}
-                  </span>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-md bg-red-500"></span>
-                    <span>Closed</span>
-                  </div>
-                  <span class="font-mono font-black text-slate-800 dark:text-white">
-                    {{ overallDashboardTotals.closed }}
-                  </span>
-                </div>
-              </div>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <!-- Card 3: Repository Share Distribution Graph -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm p-5 flex flex-col flex-1 overflow-hidden">
-            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-4 flex items-center justify-between">
-              <span>Repository Share</span>
-              <IconFolder class="w-4 h-4 text-indigo-500" />
-            </h3>
-            
-            <div class="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
-              <div 
-                v-for="repo in repoStats.slice(0, 5)" 
-                :key="repo.name" 
-                class="space-y-1.5 transition-all duration-200 hover:translate-x-0.5"
+          <!-- Repository share -->
+          <div class="panel flex flex-1 flex-col overflow-hidden p-4">
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <h3 class="text-[15px] font-semibold text-ink-gray-9">Repository share</h3>
+                <p class="text-xs text-ink-gray-5">Top {{ Math.min(5, repoStats.length) }} of {{ repoStats.length }} repositories</p>
+              </div>
+              <IconFolder class="h-4 w-4 text-ink-gray-4" />
+            </div>
+
+            <div class="custom-scrollbar flex-1 space-y-3.5 overflow-y-auto pr-1">
+              <button
+                v-for="repo in repoStats.slice(0, 5)"
+                :key="repo.name"
+                type="button"
+                class="block w-full space-y-1.5 text-left"
+                :title="'Show only ' + formatRepoName(repo.name)"
+                @click="filters.repo = repo.name; activeTab = 'list'"
               >
-                <div class="flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-300">
-                  <span class="truncate pr-4 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    {{ formatRepoName(repo.name) }}
-                  </span>
-                  <span class="font-mono text-slate-800 dark:text-white font-black flex-shrink-0">
-                    {{ repo.total }} ({{ Math.round((repo.total / overallDashboardTotals.total) * 100) }}%)
+                <div class="flex items-center justify-between gap-3 text-xs">
+                  <span class="truncate font-mono text-ink-gray-7 hover:text-[color:var(--brand-text,#0A84D0)]">{{ formatRepoName(repo.name) }}</span>
+                  <span class="shrink-0 tabular-nums text-ink-gray-5">
+                    <b class="font-semibold text-ink-gray-9">{{ repo.total }}</b> · {{ pctOf(repo.total) }}%
                   </span>
                 </div>
-                
-                <!-- Progress Line Graph -->
-                <div class="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-900 overflow-hidden relative shadow-inner">
-                  <div 
-                    :style="{ width: `${(repo.total / overallDashboardTotals.total) * 100}%` }"
-                    class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
-                  />
+                <div class="track">
+                  <div class="fill bg-[color:var(--brand,#29ADFF)]" :style="{ width: pctOf(repo.total) + '%' }"></div>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
-    <!-- Realtime PR Notifications Toast Container -->
-    <div class="fixed bottom-6 right-6 z-50 space-y-3 max-w-sm w-full">
-      <div 
-        v-for="notif in activeNotifications" 
+
+    <!-- Realtime PR notifications -->
+    <TransitionGroup name="toast" tag="div" class="fixed bottom-5 right-5 z-50 w-full max-w-sm space-y-2">
+      <div
+        v-for="notif in activeNotifications"
         :key="notif.id"
-        class="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl border-l-4 border-indigo-600 shadow-2xl p-4 flex items-start gap-3 transition-all duration-300 transform translate-y-0 animate-slide-in relative border border-slate-100 dark:border-slate-700"
+        class="relative flex items-start gap-3 rounded-xl border border-outline-gray-2 bg-surface-modal p-3.5 shadow-xl"
       >
-        <div class="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-          <IconGitPullRequest class="w-5 h-5" />
-        </div>
-        
-        <div class="space-y-1 pr-6 flex-1 min-w-0">
-          <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-            {{ notif.title }}
-          </h4>
-          <p class="text-xs font-bold text-slate-800 dark:text-white truncate">
-            {{ notif.repo }}
+        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)]">
+          <IconGitPullRequest class="h-4 w-4" />
+        </span>
+        <div class="min-w-0 flex-1 space-y-0.5 pr-5">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--brand-text,#0A84D0)]">{{ notif.title }}</p>
+          <p class="truncate font-mono text-xs text-ink-gray-7">{{ notif.repo }}</p>
+          <p class="text-xs leading-snug text-ink-gray-6">
+            #{{ notif.number }} {{ notif.titleText }} · by <b class="font-medium text-ink-gray-8">{{ notif.author }}</b>
           </p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 leading-snug">
-            PR #{{ notif.number }}: '{{ notif.titleText }}' raised by <span class="font-bold text-slate-700 dark:text-slate-300">{{ notif.author }}</span>.
-          </p>
-          
-          <div class="pt-2">
-            <a 
-              :href="notif.url" 
-              target="_blank" 
-              class="inline-flex items-center gap-1 text-[11px] font-black text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              Open Pull Request
-              <IconExternalLink class="w-3 h-3" />
-            </a>
-          </div>
+          <a
+            :href="notif.url"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-1 pt-1 text-[11px] font-semibold text-[color:var(--brand-text,#0A84D0)] hover:underline"
+          >
+            Open pull request <IconExternalLink class="h-3 w-3" />
+          </a>
         </div>
-        
-        <button 
+        <button
+          type="button"
+          class="absolute right-2.5 top-2.5 rounded p-0.5 text-ink-gray-4 hover:bg-surface-gray-2 hover:text-ink-gray-7"
+          title="Dismiss"
           @click="activeNotifications = activeNotifications.filter(n => n.id !== notif.id)"
-          class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-white"
         >
-          <IconX class="w-3.5 h-3.5" />
+          <IconX class="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
-
+    </TransitionGroup>
   </div>
 </template>
 
@@ -846,7 +623,7 @@ import {
 	Select,
 	createResource,
 } from "frappe-ui"
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 
 import { useSocket } from "@/socket"
 import IconCheck from "~icons/lucide/check"
@@ -855,6 +632,8 @@ import IconChevronLeft from "~icons/lucide/chevron-left"
 import IconChevronRight from "~icons/lucide/chevron-right"
 import IconChevronsLeft from "~icons/lucide/chevrons-left"
 import IconChevronsRight from "~icons/lucide/chevrons-right"
+import IconBarChart from "~icons/lucide/bar-chart-3"
+import IconList from "~icons/lucide/list"
 import IconClock from "~icons/lucide/clock"
 import IconExternalLink from "~icons/lucide/external-link"
 import IconFilter from "~icons/lucide/filter"
@@ -1031,6 +810,7 @@ const activeFilterCount = computed(() => {
 	let count = 0
 	if (filters.repo !== "") count++
 	if (filters.status !== "all") count++
+	if (filters.author !== "") count++
 	return count
 })
 
@@ -1145,12 +925,22 @@ function processPRs(prs) {
 	})
 }
 
+const usingSampleData = ref(false) // true when GitHub failed and the mock preview data is shown
+const lastFetchedAt = ref(null)
+const nowTick = ref(Date.now())
+const lastUpdated = computed(() => {
+	nowTick.value // re-evaluate every minute
+	return lastFetchedAt.value ? timeAgo(lastFetchedAt.value) : ""
+})
+
 // Connect direct backend resource calling get_contributions whitelisted python endpoint
 const contributionsResource = createResource({
 	url: "tactix.api.github.get_contributions",
 	auto: true,
 	onSuccess(data) {
+		lastFetchedAt.value = Date.now()
 		if (data?.error) {
+			usingSampleData.value = true
 			console.warn(
 				"Backend GitHub API failure, falling back to preview mock dataset:",
 				data.error,
@@ -1158,11 +948,13 @@ const contributionsResource = createResource({
 			pullRequests.value = processPRs([...mockPRs])
 			repositories.value = []
 		} else {
+			usingSampleData.value = false
 			pullRequests.value = processPRs(data?.prs || [])
 			repositories.value = data?.repos || []
 		}
 	},
 	onError(error) {
+		usingSampleData.value = true
 		console.error(
 			"Backend GitHub API failure, falling back to preview mock dataset:",
 			error,
@@ -1178,12 +970,8 @@ const socket = useSocket()
 const activeNotifications = ref([])
 const simulating = ref(false)
 
-onMounted(() => {
-	contributionsResource.reload()
-
-	// Realtime notification listeners when a new pull request is raised
-	socket.on("github_pr_notification", (data) => {
-		const id = Date.now()
+function onPRNotification(data) {
+		const id = Date.now() + Math.random()
 		activeNotifications.value.push({
 			id,
 			title: data.title,
@@ -1200,7 +988,31 @@ onMounted(() => {
 				(n) => n.id !== id,
 			)
 		}, 10000)
-	})
+}
+
+// "/" focuses search when not typing
+const searchInputEl = ref(null)
+function handleSlashKey(e) {
+	if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+	const t = e.target
+	if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return
+	e.preventDefault()
+	searchInputEl.value?.focus()
+}
+
+let tickTimer = null
+onMounted(() => {
+	// contributionsResource has auto: true, so it already loads once — no extra reload here
+	socket?.on("github_pr_notification", onPRNotification)
+	window.addEventListener("keydown", handleSlashKey)
+	tickTimer = setInterval(() => (nowTick.value = Date.now()), 60000)
+})
+
+onUnmounted(() => {
+	// without this, every visit added another listener and toasts showed up 2x, 3x…
+	socket?.off("github_pr_notification", onPRNotification)
+	window.removeEventListener("keydown", handleSlashKey)
+	clearInterval(tickTimer)
 })
 
 // Trigger Pull Request fetch refresh
@@ -1270,16 +1082,18 @@ function clearFilters() {
 	filters.author = ""
 }
 
+const STAT_STATUS = {
+	"Total PRs": "all",
+	"Open PRs": "open",
+	"Merged PRs": "merged",
+	"Draft PRs": "draft",
+	"Closed PRs": "closed",
+}
+
 function filterByStat(label) {
-	if (label === "Total PRs") {
-		filters.status = "all"
-	} else if (label === "Open PRs") {
-		filters.status = "open"
-	} else if (label === "Merged PRs") {
-		filters.status = "merged"
-	} else if (label === "Draft PRs") {
-		filters.status = "draft"
-	}
+	const status = STAT_STATUS[label] || "all"
+	// clicking the active card again goes back to all statuses
+	filters.status = filters.status === status ? "all" : status
 }
 
 function isCardActive(label) {
@@ -1294,6 +1108,9 @@ function isCardActive(label) {
 	}
 	if (label === "Draft PRs") {
 		return filters.status === "draft"
+	}
+	if (label === "Closed PRs") {
+		return filters.status === "closed"
 	}
 	return false
 }
@@ -1357,9 +1174,9 @@ const statsBreakdown = computed(() => {
 	const scopePRs = pullRequests.value.filter((pr) => {
 		if (filters.search) {
 			const term = filters.search.toLowerCase()
-			const matchesTitle = pr.title.toLowerCase().includes(term)
-			const matchesNumber = pr.number.toString().includes(term)
-			const matchesAuthor = pr.user.login.toLowerCase().includes(term)
+			const matchesTitle = (pr.title || "").toLowerCase().includes(term)
+			const matchesNumber = String(pr.number ?? "").includes(term)
+			const matchesAuthor = (pr.user?.login || "").toLowerCase().includes(term)
 			if (!matchesTitle && !matchesNumber && !matchesAuthor) return false
 		}
 		if (filters.repo) {
@@ -1375,32 +1192,16 @@ const statsBreakdown = computed(() => {
 	const merged = scopePRs.filter(
 		(pr) => pr.state === "closed" && pr.is_merged,
 	).length
+	const closed = scopePRs.filter(
+		(pr) => pr.state === "closed" && !pr.is_merged,
+	).length
 
 	return [
-		{
-			label: "Total PRs",
-			value: total,
-			icon: IconGitPullRequest,
-			color: "text-indigo-600 dark:text-indigo-400",
-		},
-		{
-			label: "Open PRs",
-			value: open,
-			icon: IconClock,
-			color: "text-green-600 dark:text-green-400",
-		},
-		{
-			label: "Merged PRs",
-			value: merged,
-			icon: IconClock,
-			color: "text-[#8250df] dark:text-[#8250df]",
-		},
-		{
-			label: "Draft PRs",
-			value: draft,
-			icon: IconClock,
-			color: "text-slate-600 dark:text-slate-400",
-		},
+		{ label: "Total PRs", value: total, dot: "var(--brand, #29ADFF)" },
+		{ label: "Open PRs", value: open, dot: STATUS_COLORS.Open },
+		{ label: "Merged PRs", value: merged, dot: STATUS_COLORS.Merged },
+		{ label: "Draft PRs", value: draft, dot: STATUS_COLORS.Draft },
+		{ label: "Closed PRs", value: closed, dot: STATUS_COLORS.Closed },
 	]
 })
 
@@ -1425,9 +1226,9 @@ const allFilteredPRs = computed(() => {
 	return pullRequests.value.filter((pr) => {
 		if (filters.search) {
 			const term = filters.search.toLowerCase()
-			const matchesTitle = pr.title.toLowerCase().includes(term)
-			const matchesNumber = pr.number.toString().includes(term)
-			const matchesAuthor = pr.user.login.toLowerCase().includes(term)
+			const matchesTitle = (pr.title || "").toLowerCase().includes(term)
+			const matchesNumber = String(pr.number ?? "").includes(term)
+			const matchesAuthor = (pr.user?.login || "").toLowerCase().includes(term)
 			if (!matchesTitle && !matchesNumber && !matchesAuthor) return false
 		}
 
@@ -1487,24 +1288,28 @@ const paginationPages = computed(() => {
 
 // Watch filters to reset page to 1
 watch(
-	() => [filters.search, filters.repo, filters.status],
+	() => [filters.search, filters.repo, filters.status, filters.author],
 	() => {
 		currentPage.value = 1
 	},
 )
+watch(totalPages, (n) => {
+	if (currentPage.value > n) currentPage.value = n
+})
 
 // Dynamic Dashboard Analytics Computed Properties
 const authorStats = computed(() => {
 	const statsMap = {}
 
 	for (const pr of allFilteredPRs.value) {
-		const username = pr.user.login
+		const username = pr.user?.login
+		if (!username) continue
 		if (["Gee-thu2000", "Keerthana-tecize"].includes(username)) continue
 
 		if (!statsMap[username]) {
 			statsMap[username] = {
 				username,
-				avatar_url: pr.user.avatar_url,
+				avatar_url: pr.user?.avatar_url,
 				total: 0,
 				merged: 0,
 				open: 0,
@@ -1584,18 +1389,267 @@ const overallDashboardTotals = computed(() => {
 		closed,
 	}
 })
+
+/* ---------------- UI helpers ---------------- */
+const STATUS_COLORS = {
+	Open: "#22c55e",
+	Merged: "#8250df",
+	Draft: "#94a3b8",
+	Closed: "#ef4444",
+}
+
+const STATUS_KEYS = [
+	{ key: "merged", label: "Merged", color: STATUS_COLORS.Merged },
+	{ key: "open", label: "Open", color: STATUS_COLORS.Open },
+	{ key: "draft", label: "Draft", color: STATUS_COLORS.Draft },
+	{ key: "closed", label: "Closed", color: STATUS_COLORS.Closed },
+]
+
+function statusColor(label) {
+	return STATUS_COLORS[label] || "#94a3b8"
+}
+
+// tinted pill (works in light & dark)
+function statusPillStyle(pr) {
+	const c = statusColor(getPRStatusLabel(pr))
+	return { color: c, background: c + "1a", boxShadow: `inset 0 0 0 1px ${c}33` }
+}
+
+function statusIconStyle(pr) {
+	const c = statusColor(getPRStatusLabel(pr))
+	return { color: c, background: c + "14" }
+}
+
+function formatFullDate(dateString) {
+	if (!dateString) return ""
+	return new Date(dateString).toLocaleString(undefined, {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	})
+}
+
+function pctOf(n) {
+	const total = overallDashboardTotals.value.total
+	return total ? Math.round((n / total) * 100) : 0
+}
+
+const donutSegments = computed(() => {
+	const t = overallDashboardTotals.value
+	const total = Math.max(1, t.total)
+	let offset = 0
+	return STATUS_KEYS.map((s) => {
+		const pct = (t[s.key] / total) * 100
+		const seg = { ...s, value: t[s.key], pct, offset }
+		offset += pct
+		return seg
+	}).filter((s) => s.value > 0)
+})
+
+function tabClass(tab) {
+	return [
+		"flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors",
+		activeTab.value === tab
+			? "bg-surface-white text-[color:var(--brand-text,#0A84D0)] shadow-sm"
+			: "text-ink-gray-5 hover:text-ink-gray-8",
+	]
+}
 </script>
 
 <style scoped>
-div {
-  animation: fadeIn 0.3s ease-out;
+.kpi[role="button"] {
+	cursor: pointer;
+	user-select: none;
+}
+.kpi[role="button"]:focus-visible {
+	outline: 2px solid var(--brand, #29adff);
+	outline-offset: 2px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ---- Cards & panels ---- */
+.panel,
+.toolbar-card {
+	border: 1px solid var(--outline-gray-1, #ededed);
+	border-radius: 12px;
+	background: var(--surface-cards, #fff);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.toolbar-card {
+	padding: 10px 12px;
+	border-radius: 10px;
+}
+.kpi {
+	padding: 10px 12px;
+	border: 1px solid var(--outline-gray-1, #ededed);
+	border-radius: 10px;
+	background: var(--surface-cards, #fff);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+.kpi:hover {
+	border-color: var(--brand-border, #a6dcff);
+}
+.kpi.is-active {
+	border-color: var(--brand, #29adff);
+	background: var(--brand-soft, #e9f6ff);
+	box-shadow: 0 0 0 1px var(--brand, #29adff) inset;
 }
 
+/* ---- Toolbar ---- */
+.qf {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	height: 28px;
+	padding: 0 8px;
+	border: 1px dashed var(--outline-gray-3, #d4d4d4);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--ink-gray-6, #6b6b6b);
+	font-size: 12px;
+	cursor: pointer;
+	transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.qf:hover {
+	background: var(--surface-gray-2, #f3f3f3);
+	color: var(--ink-gray-8, #383838);
+}
+.qf.on {
+	border-style: solid;
+	border-color: var(--brand-border, #a6dcff);
+	background: var(--brand-soft, #e9f6ff);
+	color: var(--brand-text, #0a84d0);
+	font-weight: 500;
+}
+.kbd {
+	display: inline-flex;
+	align-items: center;
+	height: 18px;
+	padding: 0 5px;
+	border: 1px solid var(--outline-gray-2, #e2e2e2);
+	border-radius: 4px;
+	background: var(--surface-gray-1, #f8f8f8);
+	color: var(--ink-gray-5, #7c7c7c);
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 10.5px;
+	line-height: 1;
+	pointer-events: none;
+}
+
+/* ---- List ---- */
+.status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 18px;
+	white-space: nowrap;
+}
+.pg-btn {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 5px;
+	color: var(--ink-gray-5, #7c7c7c);
+}
+.pg-btn:hover:not(:disabled) {
+	background: var(--surface-gray-2, #f3f3f3);
+	color: var(--ink-gray-8, #383838);
+}
+.pg-btn:disabled {
+	opacity: 0.3;
+	cursor: not-allowed;
+}
+.busy-bar {
+	position: absolute;
+	inset: 0 0 auto 0;
+	z-index: 20;
+	height: 2px;
+	overflow: hidden;
+	border-radius: 12px 12px 0 0;
+}
+.busy-bar::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	width: 35%;
+	background: var(--brand, #29adff);
+	animation: busy 1s ease-in-out infinite;
+}
+@keyframes busy {
+	from { transform: translateX(-100%); }
+	to { transform: translateX(300%); }
+}
+.skeleton {
+	border-radius: 5px;
+	background: var(--surface-gray-2, #f3f3f3);
+	animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+	50% { opacity: 0.5; }
+}
+
+/* ---- Analytics ---- */
+.track {
+	height: 6px;
+	width: 100%;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--surface-gray-2, #f3f3f3);
+}
+.fill {
+	height: 100%;
+	border-radius: 999px;
+	transition: width 0.5s ease;
+}
+.rank {
+	display: grid;
+	flex-shrink: 0;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+	background: var(--surface-gray-2, #f3f3f3);
+	color: var(--ink-gray-6, #6b6b6b);
+	font-size: 11px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+.rank-1 {
+	background: #fef3c7;
+	color: #b45309;
+	box-shadow: 0 0 0 1px #fcd34d inset;
+}
+.rank-2 {
+	background: #f1f5f9;
+	color: #475569;
+	box-shadow: 0 0 0 1px #cbd5e1 inset;
+}
+.rank-3 {
+	background: #ffedd5;
+	color: #c2410c;
+	box-shadow: 0 0 0 1px #fdba74 inset;
+}
+
+/* ---- Toasts (only these animate in; the old rule animated every div on the page) ---- */
+.toast-enter-active,
+.toast-leave-active {
+	transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+	opacity: 0;
+	transform: translateY(8px);
+}
+
+/* ---- Scrollbars ---- */
 .custom-scrollbar::-webkit-scrollbar,
 :deep(*::-webkit-scrollbar) {
 	height: 5px !important;
@@ -1603,7 +1657,7 @@ div {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb,
 :deep(*::-webkit-scrollbar-thumb) {
-	background: #cbd5e1 !important;
+	background: var(--outline-gray-3, #cbd5e1) !important;
 	border-radius: 10px !important;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
