@@ -1,12 +1,12 @@
 <template>
   <div class="h-full w-full min-h-0 flex flex-col">
     <!-- Access Restricted View for External Clients (Ticket Raisers) -->
-    <div v-if="session.isTicketRaiser" class="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 m-2 shadow-xs">
-    <div class="p-4 bg-rose-50 dark:bg-rose-950/40 rounded-3xl mb-4 border border-rose-100 dark:border-rose-900/40">
+    <div v-if="session.isTicketRaiser" class="flex flex-col items-center justify-center h-full p-8 text-center bg-surface-white rounded-xl border border-outline-gray-2 m-2 shadow-xs">
+    <div class="p-4 bg-rose-50 dark:bg-rose-950/40 rounded-xl mb-4 border border-rose-100 dark:border-rose-900/40">
       <IconLock class="w-12 h-12 text-rose-500" />
     </div>
-    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Access Restricted</h2>
-    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 leading-relaxed">
+    <h2 class="text-base font-bold text-ink-gray-8">Access Restricted</h2>
+    <p class="text-xs text-ink-gray-5 max-w-sm mt-1 leading-relaxed">
       The Document Drive is available exclusively for internal organization members.
     </p>
   </div>
@@ -19,42 +19,46 @@
     <!-- Window Drag & Drop Overlay (Strict Z-index: z-40, hidden during preview/modal) -->
     <div
       v-if="dragActive && !previewModal.show && !shareModal.show && !deleteConfirm.show && !showNewFolderModal"
-      class="fixed inset-0 z-40 bg-blue-600/15 backdrop-blur-md border-4 border-dashed border-blue-500 rounded-3xl m-3 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer pointer-events-auto"
+      class="fixed inset-0 z-40 bg-[color:var(--brand-soft,#E9F6FF)] backdrop-blur-md border-4 border-dashed border-[color:var(--brand,#29ADFF)] rounded-xl m-3 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer pointer-events-auto"
       @dragleave.prevent="onWindowDragLeave"
       @dragover.prevent
       @drop.prevent="handleDrop"
     >
-      <div class="p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm pointer-events-none">
-        <div class="p-4 bg-blue-50 dark:bg-blue-950/60 rounded-2xl">
-          <IconUploadCloud class="w-12 h-12 text-blue-600 dark:text-blue-400 animate-bounce" />
+      <div class="p-8 bg-surface-white rounded-xl shadow-2xl flex flex-col items-center gap-4 text-center max-w-sm pointer-events-none">
+        <div class="p-4 bg-[color:var(--brand-soft,#E9F6FF)] rounded-xl">
+          <IconUploadCloud class="w-12 h-12 text-[color:var(--brand-text,#0A84D0)] animate-bounce" />
         </div>
         <div>
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Drop files to upload to Drive</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Files will be stored securely in <span class="font-bold text-blue-600 dark:text-blue-400">{{ currentPathName }}</span>
+          <h3 class="text-lg font-bold text-ink-gray-9">Drop files to upload to Drive</h3>
+          <p class="text-xs text-ink-gray-5 mt-1 font-medium">
+            Files will be stored securely in <span class="font-bold text-[color:var(--brand-text,#0A84D0)]">{{ currentPathName }}</span>
           </p>
+          <p class="text-[11px] text-ink-gray-4 mt-2">Press Esc to cancel</p>
         </div>
       </div>
     </div>
 
     <!-- Top Action & Filter Bar -->
-    <div class="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-2.5 flex-shrink-0">
+    <div class="toolbar-card flex flex-col gap-2.5 flex-shrink-0">
       <!-- Top Row: Search & Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-800/80">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-outline-gray-1">
 
         <!-- Search Bar with Clear Icon -->
         <div class="relative w-full sm:w-80">
-          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+          <IconSearch class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-gray-4" />
           <input
+            ref="searchInputEl"
             v-model="searchQuery"
             type="text"
-            placeholder="Search files and folders in Drive…"
-            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            placeholder="Search files in this folder…"
+            class="h-8 w-full rounded-md border border-outline-gray-2 bg-surface-gray-1 pl-9 pr-9 text-[13px] text-ink-gray-8 outline-none transition focus:border-[color:var(--brand,#29ADFF)] focus:bg-surface-white focus:ring-2 focus:ring-[color:var(--brand-soft,#E9F6FF)]"
           />
+          <kbd v-if="!searchQuery" class="kbd absolute right-2 top-1/2 -translate-y-1/2" title="Press / to search">/</kbd>
           <button
             v-if="searchQuery"
+            title="Clear search"
             @click="searchQuery = ''"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-gray-4 hover:text-ink-gray-6 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
           >
             <IconX class="w-3.5 h-3.5" />
           </button>
@@ -63,8 +67,9 @@
         <!-- Right Side Action Group: Upload File, New Folder, View Mode & Refresh -->
         <div class="flex items-center gap-2 ml-auto sm:ml-0 flex-wrap justify-end">
           <!-- View Mode Toggle -->
-          <div class="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md border border-slate-200/60 dark:border-slate-700">
+          <div class="flex bg-surface-gray-2 p-0.5 rounded-md border border-outline-gray-2">
             <button
+              type="button"
               @click="viewMode = 'grid'"
               :class="viewBtnClass('grid')"
               title="Grid View"
@@ -72,6 +77,7 @@
               <IconLayoutGrid class="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               @click="viewMode = 'list'"
               :class="viewBtnClass('list')"
               title="List View"
@@ -88,24 +94,24 @@
                 :class="[
                   '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
                   activeFilterCount > 0
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
-                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'border-[color:var(--brand,#29ADFF)] text-[color:var(--brand-text,#0A84D0)] bg-[color:var(--brand-soft,#E9F6FF)]'
+                    : '!text-ink-gray-6 border-outline-gray-2 hover:bg-surface-gray-1'
                 ]"
                 @click="syncActiveFilterRules(); togglePopover()"
                 title="Filter Drive Files"
               >
-                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-[color:var(--brand-text,#0A84D0)]' : 'text-ink-gray-5'" /></template>
                 <span>Filter</span>
-                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+                <span v-if="activeFilterCount > 0" class="bg-[color:var(--brand,#29ADFF)] text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
                   {{ activeFilterCount }}
                 </span>
               </Button>
             </template>
             <template #body-main="{ close }">
-              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
-                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
+              <div class="w-80 p-3 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 text-xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-outline-gray-1">
+                  <div class="flex items-center gap-1.5 font-semibold text-ink-gray-8 text-xs">
+                    <IconFilter class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
                     <span>Filter Drive Files</span>
                   </div>
                   <button 
@@ -122,7 +128,7 @@
                   <div 
                     v-for="rule in activeFilterRules" 
                     :key="rule.id"
-                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                    class="flex items-center gap-1.5 bg-surface-gray-1 p-1.5 rounded-md border border-outline-gray-2"
                   >
                     <div class="w-1/3 shrink-0">
                       <Select 
@@ -135,7 +141,7 @@
                       />
                     </div>
 
-                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+                    <span class="text-[10px] font-semibold text-ink-gray-4 shrink-0">=</span>
 
                     <div class="flex-1 min-w-0">
                       <Select
@@ -150,7 +156,7 @@
 
                     <button 
                       @click="removeFilterRule(rule.id)"
-                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-ink-gray-4 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                       title="Remove Filter"
                     >
                       <IconX class="w-3.5 h-3.5" />
@@ -158,17 +164,17 @@
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between pt-2 border-t border-outline-gray-1">
                   <button
                     @click="addFilterRule"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--brand-text,#0A84D0)] hover:text-[color:var(--brand-hover,#0F9EF5)] px-2 py-1 rounded transition-colors cursor-pointer"
                   >
                     <IconPlus class="w-3.5 h-3.5" /> Add Filter
                   </button>
 
                   <Button 
                     variant="solid" 
-                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+                    class="brand-btn !px-3 !h-7 text-xs font-medium rounded-md"
                     @click="applyFilterRules(); close()"
                   >
                     Apply
@@ -181,21 +187,21 @@
           <!-- Refresh Button -->
           <Button
             variant="outline"
-            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md"
+            class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all rounded-md"
             @click="refresh"
             title="Refresh drive"
           >
-            <template #prefix><IconRefreshCcw class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" :class="{ 'animate-spin': loading }" /></template>
+            <template #prefix><IconRefreshCcw class="w-3.5 h-3.5 text-ink-gray-5" :class="{ 'animate-spin': loading }" /></template>
           </Button>
 
           <!-- Up Button -->
           <Button
             v-if="currentPath !== '/'"
             variant="outline"
-            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md text-xs font-medium"
+            class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all rounded-md text-xs font-medium"
             @click="navigateUp"
           >
-            <template #prefix><IconArrowLeft class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></template>
+            <template #prefix><IconArrowLeft class="w-3.5 h-3.5 text-ink-gray-5" /></template>
             Up
           </Button>
 
@@ -203,7 +209,7 @@
           <Button
             v-if="uploadAllowed"
             variant="outline"
-            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md text-xs font-medium"
+            class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all rounded-md text-xs font-medium"
             @click="showNewFolderModal = true"
           >
             <template #prefix><IconFolderPlus class="w-3.5 h-3.5 text-amber-500" /></template>
@@ -214,8 +220,7 @@
           <Button
             v-if="uploadAllowed"
             variant="solid"
-            class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
-            style="background-color: var(--primary-color);"
+            class="brand-btn !text-xs !px-4 !h-8 rounded-md font-medium"
             @click="fileInput.click()"
           >
             <template #prefix><IconUploadCloud class="w-3.5 h-3.5" /></template>
@@ -238,15 +243,10 @@
               <button
                 type="button"
                 @click="() => fileTypeAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  fileTypeFilter !== 'All'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', fileTypeFilter !== 'All' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('fileTypeFilter', fileTypeFilter, 'File Type') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -264,15 +264,10 @@
               <button
                 type="button"
                 @click="() => sourceAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  sourceFilter !== 'All'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', sourceFilter !== 'All' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('sourceFilter', sourceFilter, 'Source') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -290,15 +285,10 @@
               <button
                 type="button"
                 @click="() => accessAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  accessFilter !== 'All'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', accessFilter !== 'All' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('accessFilter', accessFilter, 'Access') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -320,21 +310,21 @@
     <input ref="fileInput" type="file" class="hidden" multiple @change="handleFileSelect" />
 
     <!-- Breadcrumb Trail & Storage Details Header Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 py-2 flex-shrink-0 shadow-xs">
-      <div class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-semibold overflow-x-auto whitespace-nowrap custom-scrollbar">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-surface-white border border-outline-gray-2 rounded-xl px-4 py-2 flex-shrink-0 shadow-xs">
+      <div class="flex items-center gap-1.5 text-xs text-ink-gray-6 font-semibold overflow-x-auto whitespace-nowrap custom-scrollbar">
         <button
-          class="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 font-bold tracking-wide text-xs px-2 py-1 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors border-none bg-transparent cursor-pointer"
+          class="flex items-center gap-1.5 hover:text-[color:var(--brand-text,#0A84D0)] font-bold tracking-wide text-xs px-2 py-1 rounded-xl hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors border-none bg-transparent cursor-pointer"
           @click="fetchPath('/')"
         >
-          <IconHome class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <IconHome class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
           Organization Drive
         </button>
 
         <template v-for="(part, idx) in rawPathParts" :key="idx">
-          <IconChevronRight class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+          <IconChevronRight class="w-3.5 h-3.5 text-ink-gray-3 shrink-0" />
           <button
-            class="hover:text-blue-600 dark:hover:text-blue-400 font-semibold px-2 py-1 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs transition-colors border-none bg-transparent cursor-pointer"
-            :class="{ 'text-slate-900 dark:text-white font-bold bg-slate-100 dark:bg-slate-800': idx === rawPathParts.length - 1 }"
+            class="hover:text-[color:var(--brand-text,#0A84D0)] font-semibold px-2 py-1 rounded-xl hover:bg-[color:var(--brand-soft,#E9F6FF)] text-xs transition-colors border-none bg-transparent cursor-pointer"
+            :class="{ 'text-ink-gray-9 font-bold bg-surface-gray-2': idx === rawPathParts.length - 1 }"
             @click="navigateToBreadcrumb(idx)"
           >
             {{ getCleanName(part) }}
@@ -342,20 +332,20 @@
         </template>
       </div>
 
-      <div class="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+      <div class="flex items-center gap-3 text-xs font-semibold text-ink-gray-6 shrink-0">
         <span v-if="!loading" class="flex items-center gap-1.5">
           <IconFolder class="w-3.5 h-3.5 text-amber-500" />
           {{ folders.length }} {{ folders.length === 1 ? 'folder' : 'folders' }}
         </span>
-        <span v-if="!loading" class="text-slate-300 dark:text-slate-700">•</span>
+        <span v-if="!loading" class="text-ink-gray-3">•</span>
         <span v-if="!loading" class="flex items-center gap-1.5">
-          <IconFile class="w-3.5 h-3.5 text-blue-500" />
+          <IconFile class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
           {{ filteredFiles.length }} {{ filteredFiles.length === 1 ? 'file' : 'files' }}
         </span>
         <button
           @click="toggleDetailsPanel"
-          class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border-none bg-transparent cursor-pointer transition-colors ml-1"
-          :class="{ 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40': selectedItem }"
+          class="p-1 rounded-lg text-ink-gray-4 hover:text-ink-gray-6 border-none bg-transparent cursor-pointer transition-colors ml-1"
+          :class="{ 'text-[color:var(--brand-text,#0A84D0)] bg-[color:var(--brand-soft,#E9F6FF)]': selectedItem }"
           title="Toggle Details Panel"
         >
           <IconInfo class="w-4 h-4" />
@@ -370,22 +360,22 @@
 
         <!-- Loading Spinner -->
         <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3">
-          <LoadingIndicator class="w-8 h-8 text-blue-600" />
-          <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">Loading Drive items…</span>
+          <LoadingIndicator class="w-8 h-8 text-[color:var(--brand-text,#0A84D0)]" />
+          <span class="text-xs font-semibold text-ink-gray-4">Loading Drive items…</span>
         </div>
 
         <div v-else class="space-y-5">
           <!-- Folders Section -->
           <div v-if="folders.length > 0" class="space-y-2.5">
-            <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
-              Folders ({{ folders.length }})
+            <h3 class="section-title px-1">
+              Folders <span class="count">{{ folders.length }}</span>
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               <div
                 v-for="folder in folders"
                 :key="folder.path"
-                class="group relative flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer select-none"
-                :class="{ 'ring-2 ring-blue-500 border-transparent bg-blue-50/20 dark:bg-blue-950/30': selectedItem?.path === folder.path }"
+                class="group relative flex items-center justify-between p-3.5 rounded-xl bg-surface-white border border-outline-gray-2 hover:border-[color:var(--brand,#29ADFF)] hover:shadow-md transition-all duration-200 cursor-pointer select-none"
+                :class="{ 'ring-2 ring-[color:var(--brand,#29ADFF)] border-transparent bg-[color:var(--brand-soft,#E9F6FF)]': selectedItem?.path === folder.path }"
                 @click="selectItem(folder)"
                 @dblclick="fetchPath(folder.path)"
               >
@@ -394,18 +384,23 @@
                     <IconFolder class="w-5 h-5" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate" :title="folder.name">
+                    <div class="text-xs font-bold text-ink-gray-8 group-hover:text-[color:var(--brand-text,#0A84D0)] transition-colors truncate" :title="folder.name">
                       {{ folder.name }}
                     </div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">
+                    <div class="text-[10px] text-ink-gray-4 font-medium truncate mt-0.5">
                       {{ getFolderTypeLabel(folder.path) }} Folder
                     </div>
                   </div>
                 </div>
 
-                <div class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 transition-colors">
+                <button
+                  type="button"
+                  class="p-1.5 rounded-lg bg-surface-gray-2 text-ink-gray-5 group-hover:text-[color:var(--brand-text,#0A84D0)] group-hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors cursor-pointer"
+                  title="Open folder"
+                  @click.stop="fetchPath(folder.path)"
+                >
                   <IconArrowLeft class="w-3.5 h-3.5 rotate-180" />
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -414,9 +409,9 @@
           <div class="space-y-3">
             <!-- Multi-Select Action Banner -->
             <transition name="slide-up">
-              <div v-if="selectedItems && selectedItems.length > 0" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-600 text-white p-3.5 rounded-2xl shadow-lg mb-4">
+              <div v-if="selectedItems && selectedItems.length > 0" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[color:var(--brand,#29ADFF)] text-white p-3.5 rounded-xl shadow-lg mb-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-surface-white animate-ping"></div>
                   <span class="text-xs font-bold">
                     {{ selectedItems ? selectedItems.length : 0 }} {{ selectedItems?.length === 1 ? 'file' : 'files' }} selected
                   </span>
@@ -438,21 +433,21 @@
             </transition>
 
             <div class="flex items-center justify-between px-1">
-              <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Files ({{ filteredFiles.length }})
+              <h3 class="section-title">
+                Files <span class="count">{{ filteredFiles.length }}</span>
               </h3>
             </div>
 
             <!-- Empty File Explorer Card -->
-            <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl text-center">
-              <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-3xl mb-3">
-                <IconFile class="w-10 h-10 text-slate-300 dark:text-slate-600" />
+            <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center py-16 px-4 bg-surface-white border border-dashed border-outline-gray-2 rounded-xl text-center">
+              <div class="p-4 bg-surface-gray-1 rounded-xl mb-3">
+                <IconFile class="w-10 h-10 text-ink-gray-3" />
               </div>
-              <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">No files in this location</h4>
-              <p class="text-xs text-slate-400 max-w-sm mt-1">
+              <h4 class="text-sm font-bold text-ink-gray-7">No files in this location</h4>
+              <p class="text-xs text-ink-gray-4 max-w-sm mt-1">
                 {{ searchQuery ? 'No files matched your search or filters.' : 'Drag & drop files here to upload them to Drive.' }}
               </p>
-              <button v-if="uploadAllowed" @click="fileInput.click()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold transition-colors border-none cursor-pointer flex items-center gap-2">
+              <button v-if="uploadAllowed" @click="fileInput.click()" class="mt-4 px-4 py-2 bg-[color:var(--brand,#29ADFF)] hover:bg-[color:var(--brand-hover,#0F9EF5)] text-white rounded-xl text-xs font-bold transition-colors border-none cursor-pointer flex items-center gap-2">
                 <IconUploadCloud class="w-4 h-4" />
                 Upload files
               </button>
@@ -465,8 +460,8 @@
                 <div
                   v-for="file in filteredFiles"
                   :key="file.name"
-                  class="group relative flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 cursor-pointer select-none"
-                  :class="{ 'ring-2 ring-blue-500 border-transparent bg-blue-50 dark:bg-blue-950': selectedItem?.name === file.name || isSelected(file.name) }"
+                  class="group relative flex flex-col bg-surface-white border border-outline-gray-2 rounded-xl overflow-hidden hover:shadow-xl hover:border-[color:var(--brand,#29ADFF)] transition-all duration-200 cursor-pointer select-none"
+                  :class="{ 'ring-2 ring-[color:var(--brand,#29ADFF)] border-transparent bg-[color:var(--brand-soft,#E9F6FF)]': selectedItem?.name === file.name || isSelected(file.name) }"
                   @click="selectItem(file)"
                   @dblclick="openPreview(file)"
                 >
@@ -481,15 +476,15 @@
                       type="checkbox"
                       :checked="isSelected(file.name)"
                       @change="toggleSelect(file.name)"
-                      class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer shadow-sm"
+                      class="w-4 h-4 rounded text-[color:var(--brand-text,#0A84D0)] focus:ring-[color:var(--brand,#29ADFF)] border-outline-gray-3 cursor-pointer shadow-sm"
                     />
                   </div>
 
                   <!-- Google Drive Card Top Thumbnail Region -->
-                  <div class="h-32 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 relative flex items-center justify-center overflow-hidden group-hover:bg-slate-100 dark:group-hover:bg-slate-900 transition-colors">
+                  <div class="h-32 bg-surface-gray-1 border-b border-outline-gray-1 relative flex items-center justify-center overflow-hidden group-hover:bg-surface-gray-2 transition-colors">
 
                     <!-- Image File Thumbnail Preview -->
-                    <template v-if="isImage(file.file_name)">
+                    <template v-if="isImage(file.file_name) && !file.imgError">
                       <img
                         :src="file.file_url"
                         :alt="file.file_name"
@@ -501,13 +496,13 @@
 
                     <!-- Non-Image File Icon Card Illustration -->
                     <template v-else>
-                      <div class="p-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-transform group-hover:scale-105" :class="getFileIconBg(file.file_name)">
+                      <div class="p-4 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-transform group-hover:scale-105" :class="getFileIconBg(file.file_name)">
                         <component
                           :is="getFileIcon(file.file_name)"
                           class="w-8 h-8"
                           :class="getFileIconColor(file.file_name)"
                         />
-                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-ink-gray-5">
                           {{ getExtensionLabel(file.file_name) }}
                         </span>
                       </div>
@@ -520,7 +515,7 @@
                       @click.stop
                     >
                       <button
-                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors cursor-pointer shadow-md"
                         title="Preview File"
                         @click="openPreview(file)"
                       >
@@ -528,7 +523,7 @@
                       </button>
                       <button
                         v-if="file.can_share"
-                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors cursor-pointer shadow-md"
                         title="Share File"
                         @click="openShareModal(file)"
                       >
@@ -538,14 +533,14 @@
                         :href="file.file_url"
                         target="_blank"
                         download
-                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-md flex items-center justify-center"
+                        class="p-1.5 rounded-xl bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors cursor-pointer shadow-md flex items-center justify-center"
                         title="Download File"
                       >
                         <IconDownload class="w-3.5 h-3.5" />
                       </a>
                       <button
                         v-if="isDeletable(file)"
-                        class="p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 dark:hover:text-rose-400 transition-colors cursor-pointer shadow-md"
+                        class="p-1.5 rounded-xl bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 dark:hover:text-rose-400 transition-colors cursor-pointer shadow-md"
                         title="Delete File"
                         @click="promptDelete(file)"
                       >
@@ -562,12 +557,12 @@
                         class="w-4 h-4 shrink-0"
                         :class="getFileIconColor(file.file_name)"
                       />
-                      <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" :title="file.file_name">
+                      <span class="text-xs font-bold text-ink-gray-8 truncate group-hover:text-[color:var(--brand-text,#0A84D0)] transition-colors" :title="file.file_name">
                         {{ file.file_name }}
                       </span>
                     </div>
 
-                    <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 dark:border-slate-700/40 text-[10px] text-slate-400 font-medium">
+                    <div class="flex items-center justify-between gap-1 pt-1 border-t border-outline-gray-1 text-[10px] text-ink-gray-4 font-medium">
                       <span class="font-mono">{{ formatBytes(file.file_size) }}</span>
                       <div class="flex items-center gap-1">
                         <span
@@ -576,7 +571,7 @@
                         >
                           {{ file.source }}
                         </span>
-                        <Avatar :image="file.owner_image" :label="file.owner_full_name" size="xs" class="ring-1 ring-white dark:ring-slate-800 shrink-0" :title="file.owner_full_name" />
+                        <Avatar :image="file.owner_image" :label="file.owner_full_name" size="xs" class="ring-1 ring-white shrink-0" :title="file.owner_full_name" />
                       </div>
                     </div>
                   </div>
@@ -584,16 +579,16 @@
               </div>
 
               <!-- List View -->
-              <div v-else class="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70 rounded-2xl overflow-hidden shadow-xs">
+              <div v-else class="bg-surface-white border border-outline-gray-2 rounded-xl overflow-hidden shadow-xs">
                 <table class="w-full text-left border-collapse table-fixed">
                   <thead>
-                    <tr class="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-700 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <tr class="bg-surface-gray-1 border-b border-outline-gray-2 text-[10px] font-bold text-ink-gray-4 uppercase tracking-wider">
                       <th class="w-10 py-3 pl-4 pr-1 text-center">
                         <input
                           type="checkbox"
                           :checked="isAllSelected"
                           @change="toggleSelectAll"
-                          class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                          class="w-4 h-4 rounded text-[color:var(--brand-text,#0A84D0)] focus:ring-[color:var(--brand,#29ADFF)] border-outline-gray-3 cursor-pointer"
                         />
                       </th>
                       <th class="w-1/2 py-3 px-4">Name</th>
@@ -603,12 +598,12 @@
                       <th class="w-24 py-3 px-4 text-right pr-6">Actions</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50 text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <tbody class="divide-y divide-outline-gray-1 text-xs font-medium text-ink-gray-7">
                     <tr
                       v-for="file in filteredFiles"
                       :key="file.name"
-                      class="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors cursor-pointer group"
-                      :class="{ 'bg-blue-50/50 dark:bg-blue-950/30': selectedItem?.name === file.name || isSelected(file.name) }"
+                      class="hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors cursor-pointer group"
+                      :class="{ 'bg-[color:var(--brand-soft,#E9F6FF)]': selectedItem?.name === file.name || isSelected(file.name) }"
                       @click="selectItem(file)"
                       @dblclick="openPreview(file)"
                     >
@@ -617,7 +612,7 @@
                           type="checkbox"
                           :checked="isSelected(file.name)"
                           @change="toggleSelect(file.name)"
-                          class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                          class="w-4 h-4 rounded text-[color:var(--brand-text,#0A84D0)] focus:ring-[color:var(--brand,#29ADFF)] border-outline-gray-3 cursor-pointer"
                         />
                       </td>
                       <td class="py-3 px-4 flex items-center gap-3 min-w-0">
@@ -629,7 +624,7 @@
                           />
                         </div>
                         <div class="min-w-0 flex-1">
-                          <div class="font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" :title="file.file_name">
+                          <div class="font-bold text-ink-gray-8 truncate group-hover:text-[color:var(--brand-text,#0A84D0)] transition-colors" :title="file.file_name">
                             {{ file.file_name }}
                           </div>
                         </div>
@@ -638,22 +633,22 @@
                       <td class="py-3 px-4">
                         <div class="flex items-center gap-2">
                           <Avatar :image="file.owner_image" :label="file.owner_full_name" size="xs" />
-                          <span class="text-xs font-medium text-slate-600 dark:text-slate-300 truncate max-w-[8rem]">{{ file.owner_full_name }}</span>
+                          <span class="text-xs font-medium text-ink-gray-6 truncate max-w-[8rem]">{{ file.owner_full_name }}</span>
                         </div>
                       </td>
 
-                      <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">
+                      <td class="py-3 px-4 text-ink-gray-5 font-mono text-xs">
                         {{ formatBytes(file.file_size) }}
                       </td>
 
-                      <td class="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs">
+                      <td class="py-3 px-4 text-ink-gray-5 text-xs">
                         {{ formatDate(file.creation) }}
                       </td>
 
                       <td class="py-3 px-4 text-right pr-6" @click.stop>
                         <div class="flex items-center justify-end gap-1">
                           <button
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors border-none bg-transparent cursor-pointer"
+                            class="p-1.5 rounded-lg text-ink-gray-4 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors border-none bg-transparent cursor-pointer"
                             title="Preview File"
                             @click="openPreview(file)"
                           >
@@ -661,7 +656,7 @@
                           </button>
                           <button
                             v-if="file.can_share"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors border-none bg-transparent cursor-pointer"
+                            class="p-1.5 rounded-lg text-ink-gray-4 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors border-none bg-transparent cursor-pointer"
                             title="Share File"
                             @click="openShareModal(file)"
                           >
@@ -671,14 +666,14 @@
                             :href="file.file_url"
                             target="_blank"
                             download
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors border border-transparent"
+                            class="p-1.5 rounded-lg text-ink-gray-4 hover:text-[color:var(--brand-text,#0A84D0)] hover:bg-[color:var(--brand-soft,#E9F6FF)] transition-colors border border-transparent"
                             title="Download File"
                           >
                             <IconDownload class="w-4 h-4" />
                           </a>
                           <button
                             v-if="isDeletable(file)"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border-none bg-transparent cursor-pointer"
+                            class="p-1.5 rounded-lg text-ink-gray-4 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border-none bg-transparent cursor-pointer"
                             title="Delete File"
                             @click="promptDelete(file)"
                           >
@@ -698,22 +693,22 @@
       <!-- Right Details & Metadata Drawer -->
       <div
         v-if="selectedItem"
-        class="w-80 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex flex-col p-5 flex-shrink-0 relative overflow-y-auto hidden lg:flex custom-scrollbar shadow-xs space-y-5"
+        class="w-80 bg-surface-white border border-outline-gray-2 rounded-xl flex flex-col p-5 flex-shrink-0 relative overflow-y-auto hidden lg:flex custom-scrollbar shadow-xs space-y-5"
       >
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">File Details</span>
-          <button @click="selectedItem = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 border-none bg-transparent cursor-pointer rounded-lg">
+        <div class="flex items-center justify-between border-b border-outline-gray-1 pb-3">
+          <span class="text-xs font-bold text-ink-gray-5 uppercase tracking-wider">File Details</span>
+          <button @click="selectedItem = null" class="text-ink-gray-4 hover:text-ink-gray-6 p-1 border-none bg-transparent cursor-pointer rounded-lg">
             <IconX class="w-4 h-4" />
           </button>
         </div>
 
         <!-- Preview Thumbnail Header in Details Panel -->
-        <div class="flex flex-col items-center text-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-750">
+        <div class="flex flex-col items-center text-center p-4 rounded-xl bg-surface-gray-1 border border-outline-gray-1">
           <template v-if="!selectedItem.is_folder && isImage(selectedItem.file_name)">
             <img :src="selectedItem.file_url" class="max-h-36 max-w-full rounded-xl object-contain shadow-sm mb-2" />
           </template>
           <template v-else>
-            <div class="p-4 rounded-2xl mb-2" :class="selectedItem.is_folder ? getFolderIconColorClass(selectedItem.path) : getFileIconBg(selectedItem.file_name)">
+            <div class="p-4 rounded-xl mb-2" :class="selectedItem.is_folder ? getFolderIconColorClass(selectedItem.path) : getFileIconBg(selectedItem.file_name)">
               <component
                 :is="selectedItem.is_folder ? IconFolder : getFileIcon(selectedItem.file_name)"
                 class="w-8 h-8"
@@ -722,7 +717,7 @@
             </div>
           </template>
 
-          <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 break-all mt-2 w-full px-1">
+          <h4 class="text-xs font-bold text-ink-gray-8 break-all mt-2 w-full px-1">
             {{ selectedItem.is_folder ? selectedItem.name : selectedItem.file_name }}
           </h4>
           <span
@@ -735,34 +730,44 @@
         </div>
 
         <div class="space-y-3 text-xs font-medium">
-          <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
-            <span class="text-slate-400">Path</span>
-            <span class="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[10rem]">{{ selectedItem.path || currentPath }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-outline-gray-1">
+            <span class="text-ink-gray-4">Path</span>
+            <span class="text-ink-gray-7 font-semibold truncate max-w-[10rem]">{{ selectedItem.path || currentPath }}</span>
           </div>
 
+          <button
+            v-if="selectedItem.is_folder"
+            type="button"
+            class="brand-btn flex items-center justify-center gap-2 w-full rounded-lg text-xs font-semibold py-2.5 cursor-pointer"
+            @click="fetchPath(selectedItem.path)"
+          >
+            <IconFolderOpen class="w-4 h-4" />
+            Open folder
+          </button>
+
           <template v-if="!selectedItem.is_folder">
-            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
-              <span class="text-slate-400">Size</span>
-              <span class="text-slate-700 dark:text-slate-300 font-mono">{{ formatBytes(selectedItem.file_size) }}</span>
+            <div class="flex justify-between items-center py-2 border-b border-outline-gray-1">
+              <span class="text-ink-gray-4">Size</span>
+              <span class="text-ink-gray-7 font-mono">{{ formatBytes(selectedItem.file_size) }}</span>
             </div>
 
-            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
-              <span class="text-slate-400">Created</span>
-              <span class="text-slate-700 dark:text-slate-300">{{ formatDate(selectedItem.creation) }}</span>
+            <div class="flex justify-between items-center py-2 border-b border-outline-gray-1">
+              <span class="text-ink-gray-4">Created</span>
+              <span class="text-ink-gray-7">{{ formatDate(selectedItem.creation) }}</span>
             </div>
 
-            <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
-              <span class="text-slate-400">Uploaded By</span>
+            <div class="flex justify-between items-center py-2 border-b border-outline-gray-1">
+              <span class="text-ink-gray-4">Uploaded By</span>
               <div class="flex items-center gap-1.5">
                 <Avatar :image="selectedItem.owner_image" :label="selectedItem.owner_full_name" size="xs" />
-                <span class="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[8rem]">{{ selectedItem.owner_full_name }}</span>
+                <span class="text-ink-gray-7 font-semibold truncate max-w-[8rem]">{{ selectedItem.owner_full_name }}</span>
               </div>
             </div>
 
             <div class="pt-2 space-y-2">
               <button
                 @click="openPreview(selectedItem)"
-                class="flex items-center justify-center gap-2 w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 transition-colors shadow-xs border-none cursor-pointer"
+                class="flex items-center justify-center gap-2 w-full rounded-xl bg-[color:var(--brand,#29ADFF)] hover:bg-[color:var(--brand-hover,#0F9EF5)] text-white text-xs font-bold py-2.5 transition-colors shadow-xs border-none cursor-pointer"
               >
                 <IconEye class="w-4 h-4" />
                 Preview File
@@ -771,7 +776,7 @@
                 :href="selectedItem.file_url"
                 target="_blank"
                 download
-                class="flex items-center justify-center gap-2 w-full rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 transition-colors border-none text-center cursor-pointer shadow-xs"
+                class="flex items-center justify-center gap-2 w-full rounded-xl bg-surface-gray-2 hover:bg-surface-gray-3 text-ink-gray-7 text-xs font-bold py-2.5 transition-colors border-none text-center cursor-pointer shadow-xs"
               >
                 <IconDownload class="w-4 h-4" />
                 Download
@@ -779,9 +784,9 @@
               <button
                 v-if="selectedItem.can_share"
                 @click="openShareModal(selectedItem)"
-                class="flex items-center justify-center gap-2 w-full rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 transition-colors border-none cursor-pointer shadow-xs"
+                class="flex items-center justify-center gap-2 w-full rounded-xl bg-surface-gray-2 hover:bg-surface-gray-3 text-ink-gray-7 text-xs font-bold py-2.5 transition-colors border-none cursor-pointer shadow-xs"
               >
-                <IconShare2 class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <IconShare2 class="w-4 h-4 text-[color:var(--brand-text,#0A84D0)]" />
                 Share Access ({{ selectedItem.shares_count || 0 }})
               </button>
             </div>
@@ -793,16 +798,16 @@
     <!-- Centered Spacious Lightbox Preview Modal Box (White Theme / Dark Theme Adaptive) -->
     <div
       v-if="previewModal.show && previewModal.file"
-      class="fixed inset-0 z-[60] bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fade-in select-none"
+      class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fade-in select-none"
       @click.self="closePreview"
     >
       <!-- Spacious Modal Window Container (Width: 94vw, Height: 92vh) -->
-      <div class="relative w-[96vw] max-w-[94vw] h-[92vh] max-h-[94vh] bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+      <div class="relative w-[96vw] max-w-[94vw] h-[92vh] max-h-[94vh] bg-surface-white text-ink-gray-9 rounded-xl border border-outline-gray-2 shadow-2xl flex flex-col overflow-hidden">
 
         <!-- Preview Header Bar (Clean light/dark adaptive header with full contrast) -->
-        <div class="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div class="px-6 py-3.5 bg-surface-gray-1 border-b border-outline-gray-2 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
+            <div class="p-2 rounded-xl bg-surface-white border border-outline-gray-2 shadow-xs shrink-0">
               <component
                 :is="getFileIcon(previewModal.file.file_name)"
                 class="w-5 h-5"
@@ -810,31 +815,31 @@
               />
             </div>
             <div class="min-w-0">
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-sm sm:max-w-lg" :title="previewModal.file.file_name">
+              <h3 class="text-sm font-bold text-ink-gray-9 truncate max-w-sm sm:max-w-lg" :title="previewModal.file.file_name">
                 {{ previewModal.file.file_name }}
               </h3>
-              <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+              <div class="text-xs text-ink-gray-5 flex items-center gap-2 mt-0.5">
                 <span class="font-mono font-semibold">{{ formatBytes(previewModal.file.file_size) }}</span>
-                <span v-if="imageDimensions" class="font-mono text-blue-600 dark:text-blue-400 font-bold">• {{ imageDimensions }}</span>
+                <span v-if="imageDimensions" class="font-mono text-[color:var(--brand-text,#0A84D0)] font-bold">• {{ imageDimensions }}</span>
                 <span>•</span>
-                <span class="truncate">Uploaded by <strong class="text-slate-700 dark:text-slate-200">{{ previewModal.file.owner_full_name }}</strong></span>
+                <span class="truncate">Uploaded by <strong class="text-ink-gray-7">{{ previewModal.file.owner_full_name }}</strong></span>
               </div>
             </div>
           </div>
 
           <!-- Image Control Toolbar (Zoom & Rotate for images) -->
-          <div v-if="isImage(previewModal.file.file_name)" class="hidden md:flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-2 py-1 shadow-xs">
-            <button @click="zoomOut" class="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-none bg-transparent cursor-pointer" title="Zoom Out (-)">
+          <div v-if="isImage(previewModal.file.file_name)" class="hidden md:flex items-center gap-1.5 bg-surface-white border border-outline-gray-2 rounded-xl px-2 py-1 shadow-xs">
+            <button @click="zoomOut" class="p-1.5 text-ink-gray-6 hover:text-ink-gray-9 rounded-xl hover:bg-surface-gray-2 transition-colors border-none bg-transparent cursor-pointer" title="Zoom Out (-)">
               <IconMinus class="w-4 h-4" />
             </button>
-            <span class="text-xs font-mono font-bold px-2 text-slate-700 dark:text-slate-200 select-none">{{ Math.round(imageZoom * 100) }}%</span>
-            <button @click="zoomIn" class="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-none bg-transparent cursor-pointer" title="Zoom In (+)">
+            <span class="text-xs font-mono font-bold px-2 text-ink-gray-7 select-none">{{ Math.round(imageZoom * 100) }}%</span>
+            <button @click="zoomIn" class="p-1.5 text-ink-gray-6 hover:text-ink-gray-9 rounded-xl hover:bg-surface-gray-2 transition-colors border-none bg-transparent cursor-pointer" title="Zoom In (+)">
               <IconPlus class="w-4 h-4" />
             </button>
-            <button @click="rotateImage" class="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-none bg-transparent cursor-pointer ml-1 border-l border-slate-200 dark:border-slate-700 pl-2" title="Rotate 90°">
+            <button @click="rotateImage" class="p-1.5 text-ink-gray-6 hover:text-ink-gray-9 rounded-xl hover:bg-surface-gray-2 transition-colors border-none bg-transparent cursor-pointer ml-1 border-l border-outline-gray-2 pl-2" title="Rotate 90°">
               <IconRotateCw class="w-4 h-4" />
             </button>
-            <button @click="resetZoom" class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-none bg-transparent cursor-pointer">
+            <button @click="resetZoom" class="text-[10px] font-bold text-ink-gray-5 hover:text-ink-gray-9 px-2 py-1 rounded-lg hover:bg-surface-gray-2 transition-colors border-none bg-transparent cursor-pointer">
               Reset
             </button>
           </div>
@@ -843,8 +848,8 @@
           <div class="flex items-center gap-2 shrink-0">
             <button
               @click="previewShowDetails = !previewShowDetails"
-              class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer"
-              :class="{ '!bg-blue-600 !text-white !border-blue-600': previewShowDetails }"
+              class="p-2 rounded-xl bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:bg-surface-gray-2 transition-colors cursor-pointer"
+              :class="{ '!bg-[color:var(--brand,#29ADFF)] !text-white !border-[color:var(--brand,#29ADFF)]': previewShowDetails }"
               title="Toggle File Info Sidebar"
             >
               <IconInfo class="w-4 h-4" />
@@ -853,7 +858,7 @@
               :href="previewModal.file.file_url"
               target="_blank"
               download
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs border-none cursor-pointer"
+              class="px-4 py-2 bg-[color:var(--brand,#29ADFF)] hover:bg-[color:var(--brand-hover,#0F9EF5)] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs border-none cursor-pointer"
             >
               <IconDownload class="w-4 h-4" />
               <span class="hidden sm:inline">Download</span>
@@ -861,14 +866,14 @@
             <button
               v-if="previewModal.file.can_share"
               @click="openShareModal(previewModal.file)"
-              class="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 rounded-xl transition-colors cursor-pointer"
+              class="p-2 bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:bg-surface-gray-2 rounded-xl transition-colors cursor-pointer"
               title="Share File"
             >
               <IconShare2 class="w-4 h-4" />
             </button>
             <button
               @click="closePreview"
-              class="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer ml-1"
+              class="p-2 bg-surface-white border border-outline-gray-2 text-ink-gray-7 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer ml-1"
               title="Close Preview (Esc)"
             >
               <IconX class="w-5 h-5" />
@@ -882,21 +887,21 @@
           <button
             v-if="filteredFiles.length > 1"
             @click="prevPreview"
-            class="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-white text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 shadow-2xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
+            class="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-surface-white text-ink-gray-8 border border-outline-gray-2 shadow-2xl hover:bg-[color:var(--brand,#29ADFF)] hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
             title="Previous file (Left arrow)"
           >
             <IconChevronLeft class="w-6 h-6" />
           </button>
 
           <!-- Center Stage Container (Spacious light/dark background) -->
-          <div class="flex-1 flex items-center justify-center p-6 overflow-auto min-h-0 bg-slate-100 dark:bg-slate-950 relative custom-scrollbar">
+          <div class="flex-1 flex items-center justify-center p-6 overflow-auto min-h-0 bg-surface-gray-2 relative custom-scrollbar">
             <!-- Image Viewer with Large Height & Width Constraints -->
             <template v-if="isImage(previewModal.file.file_name)">
               <div class="flex items-center justify-center min-h-full min-w-full">
                 <img
                   :src="previewModal.file.file_url"
                   :alt="previewModal.file.file_name"
-                  class="max-h-[76vh] max-w-full object-contain rounded-2xl shadow-xl transition-transform duration-200 ease-out border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  class="max-h-[76vh] max-w-full object-contain rounded-xl shadow-xl transition-transform duration-200 ease-out border border-outline-gray-2 bg-surface-white"
                   :style="{ transform: `scale(${imageZoom}) rotate(${imageRotation}deg)` }"
                   @load="onImageLoad"
                 />
@@ -907,19 +912,19 @@
             <template v-else-if="isPdf(previewModal.file.file_name)">
               <iframe
                 :src="previewModal.file.file_url"
-                class="w-full h-[76vh] rounded-2xl bg-white border border-slate-200 dark:border-slate-800 shadow-xl"
+                class="w-full h-[76vh] rounded-xl bg-surface-white border border-outline-gray-2 shadow-xl"
               ></iframe>
             </template>
 
             <!-- Code / Text File Viewer -->
             <template v-else-if="isTextFile(previewModal.file.file_name)">
-              <div class="w-full h-[76vh] bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 shadow-xl p-6 flex flex-col font-mono text-xs overflow-hidden">
+              <div class="w-full h-[76vh] bg-slate-900 text-slate-100 rounded-xl border border-slate-800 shadow-xl p-6 flex flex-col font-mono text-xs overflow-hidden">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-slate-400 text-[11px]">
-                  <span class="font-bold uppercase tracking-wider text-blue-400">{{ getExtensionLabel(previewModal.file.file_name) }} Source Code</span>
+                  <span class="font-bold uppercase tracking-wider text-[color:var(--brand-text,#0A84D0)]">{{ getExtensionLabel(previewModal.file.file_name) }} Source Code</span>
                   <span>{{ textPreviewContent.length }} characters</span>
                 </div>
                 <div v-if="loadingTextPreview" class="flex-1 flex items-center justify-center text-slate-400">
-                  <LoadingIndicator class="w-6 h-6 text-blue-500 animate-spin mr-2" />
+                  <LoadingIndicator class="w-6 h-6 text-[color:var(--brand-text,#0A84D0)] animate-spin mr-2" />
                   <span>Loading text preview…</span>
                 </div>
                 <pre v-else class="flex-1 overflow-auto p-4 bg-slate-950 rounded-xl text-slate-200 custom-scrollbar leading-relaxed whitespace-pre-wrap break-all mt-3">{{ textPreviewContent }}</pre>
@@ -932,19 +937,19 @@
                 :src="previewModal.file.file_url"
                 controls
                 autoplay
-                class="max-h-[76vh] max-w-full rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800"
+                class="max-h-[76vh] max-w-full rounded-xl shadow-xl border border-outline-gray-2"
               ></video>
             </template>
 
             <!-- Audio Viewer -->
             <template v-else-if="isAudio(previewModal.file.file_name)">
-              <div class="p-10 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center gap-5 text-center min-w-[22rem]">
+              <div class="p-10 bg-surface-white rounded-xl border border-outline-gray-2 shadow-xl flex flex-col items-center gap-5 text-center min-w-[22rem]">
                 <div class="p-6 bg-amber-500/10 rounded-full border border-amber-500/20">
                   <IconFileAudio class="w-16 h-16 text-amber-500" />
                 </div>
                 <div>
-                  <h4 class="text-base font-bold text-slate-900 dark:text-white max-w-sm truncate">{{ previewModal.file.file_name }}</h4>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">{{ formatBytes(previewModal.file.file_size) }}</p>
+                  <h4 class="text-base font-bold text-ink-gray-9 max-w-sm truncate">{{ previewModal.file.file_name }}</h4>
+                  <p class="text-xs text-ink-gray-5 mt-1 font-mono">{{ formatBytes(previewModal.file.file_size) }}</p>
                 </div>
                 <audio :src="previewModal.file.file_url" controls class="w-72 mt-2"></audio>
               </div>
@@ -952,8 +957,8 @@
 
             <!-- Generic Fallback Card -->
             <template v-else>
-              <div class="p-10 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center gap-4 text-center max-w-md">
-                <div class="p-6 bg-blue-600/10 rounded-3xl border border-blue-500/20">
+              <div class="p-10 bg-surface-white rounded-xl border border-outline-gray-2 shadow-xl flex flex-col items-center gap-4 text-center max-w-md">
+                <div class="p-6 bg-[color:var(--brand-soft,#E9F6FF)] rounded-xl border border-[color:var(--brand,#29ADFF)]">
                   <component
                     :is="getFileIcon(previewModal.file.file_name)"
                     class="w-16 h-16"
@@ -961,14 +966,14 @@
                   />
                 </div>
                 <div>
-                  <h4 class="text-base font-bold text-slate-900 dark:text-white break-all">{{ previewModal.file.file_name }}</h4>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">No direct inline viewer available for this document format.</p>
+                  <h4 class="text-base font-bold text-ink-gray-9 break-all">{{ previewModal.file.file_name }}</h4>
+                  <p class="text-xs text-ink-gray-5 mt-1">No direct inline viewer available for this document format.</p>
                 </div>
                 <a
                   :href="previewModal.file.file_url"
                   target="_blank"
                   download
-                  class="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs flex items-center gap-2 shadow-md transition-colors border-none cursor-pointer"
+                  class="mt-2 px-6 py-3 bg-[color:var(--brand,#29ADFF)] hover:bg-[color:var(--brand-hover,#0F9EF5)] text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md transition-colors border-none cursor-pointer"
                 >
                   <IconDownload class="w-4 h-4" />
                   Download Document
@@ -981,7 +986,7 @@
           <button
             v-if="filteredFiles.length > 1"
             @click="nextPreview"
-            class="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-white text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-white dark:border-slate-700 shadow-2xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
+            class="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-3.5 bg-surface-white text-ink-gray-8 border border-outline-gray-2 shadow-2xl hover:bg-[color:var(--brand,#29ADFF)] hover:text-white rounded-full transition-all cursor-pointer hover:scale-110 active:scale-95"
             title="Next file (Right arrow)"
           >
             <IconChevronRight class="w-6 h-6" />
@@ -990,47 +995,47 @@
           <!-- Toggleable Info Sidebar inside Lightbox Box -->
           <div
             v-if="previewShowDetails"
-            class="w-80 bg-slate-50 dark:bg-slate-950 border-l border-slate-200/80 dark:border-slate-800 p-6 flex flex-col gap-5 overflow-y-auto custom-scrollbar animate-fade-in shrink-0 text-slate-800 dark:text-slate-200"
+            class="w-80 bg-surface-gray-1 border-l border-outline-gray-2 p-6 flex flex-col gap-5 overflow-y-auto custom-scrollbar animate-fade-in shrink-0 text-ink-gray-8"
           >
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">File Information</h4>
-              <button @click="previewShowDetails = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 border-none bg-transparent cursor-pointer">
+            <div class="flex items-center justify-between border-b border-outline-gray-2 pb-3">
+              <h4 class="text-xs font-bold text-ink-gray-5 uppercase tracking-wider">File Information</h4>
+              <button @click="previewShowDetails = false" class="text-ink-gray-4 hover:text-ink-gray-6 p-1 border-none bg-transparent cursor-pointer">
                 <IconX class="w-4 h-4" />
               </button>
             </div>
 
             <div class="space-y-4 text-xs font-medium">
               <div>
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">File Name</span>
-                <span class="text-slate-900 dark:text-slate-100 font-bold break-all mt-0.5 block">{{ previewModal.file.file_name }}</span>
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">File Name</span>
+                <span class="text-ink-gray-9 font-bold break-all mt-0.5 block">{{ previewModal.file.file_name }}</span>
               </div>
 
               <div>
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">File Size</span>
-                <span class="text-slate-800 dark:text-slate-200 font-mono mt-0.5 block font-semibold">{{ formatBytes(previewModal.file.file_size) }}</span>
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">File Size</span>
+                <span class="text-ink-gray-8 font-mono mt-0.5 block font-semibold">{{ formatBytes(previewModal.file.file_size) }}</span>
               </div>
 
               <div v-if="imageDimensions">
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Resolution</span>
-                <span class="text-blue-600 dark:text-blue-400 font-mono mt-0.5 block font-bold">{{ imageDimensions }}</span>
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">Resolution</span>
+                <span class="text-[color:var(--brand-text,#0A84D0)] font-mono mt-0.5 block font-bold">{{ imageDimensions }}</span>
               </div>
 
               <div>
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Uploaded By</span>
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">Uploaded By</span>
                 <div class="flex items-center gap-2 mt-1">
                   <Avatar :image="previewModal.file.owner_image" :label="previewModal.file.owner_full_name" size="xs" />
-                  <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ previewModal.file.owner_full_name }}</span>
+                  <span class="text-ink-gray-8 font-semibold">{{ previewModal.file.owner_full_name }}</span>
                 </div>
               </div>
 
               <div>
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Created Date</span>
-                <span class="text-slate-800 dark:text-slate-200 mt-0.5 block font-medium">{{ formatDate(previewModal.file.creation) }}</span>
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">Created Date</span>
+                <span class="text-ink-gray-8 mt-0.5 block font-medium">{{ formatDate(previewModal.file.creation) }}</span>
               </div>
 
               <div>
-                <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Upload Source</span>
-                <span class="text-slate-800 dark:text-slate-200 font-bold px-2.5 py-1 rounded-md text-[9px] uppercase bg-slate-200 dark:bg-slate-800 mt-1 inline-block">
+                <span class="text-ink-gray-4 block text-[10px] uppercase font-bold">Upload Source</span>
+                <span class="text-ink-gray-8 font-bold px-2.5 py-1 rounded-md text-[9px] uppercase bg-surface-gray-3 mt-1 inline-block">
                   {{ previewModal.file.source }} Upload
                 </span>
               </div>
@@ -1039,21 +1044,40 @@
         </div>
 
         <!-- Preview Footer Bar inside modal -->
-        <div class="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+        <div class="px-6 py-3 bg-surface-gray-1 border-t border-outline-gray-2 flex items-center justify-between text-xs text-ink-gray-5 shrink-0">
           <span class="font-medium">File {{ previewModal.index + 1 }} of {{ filteredFiles.length }}</span>
-          <span>Use <kbd class="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px] shadow-xs">←</kbd> <kbd class="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px] shadow-xs">→</kbd> to navigate, <kbd class="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono text-[10px] shadow-xs">Esc</kbd> to close</span>
+          <span>Use <kbd class="px-1.5 py-0.5 bg-surface-white rounded border border-outline-gray-2 font-mono text-[10px] shadow-xs">←</kbd> <kbd class="px-1.5 py-0.5 bg-surface-white rounded border border-outline-gray-2 font-mono text-[10px] shadow-xs">→</kbd> to navigate, <kbd class="px-1.5 py-0.5 bg-surface-white rounded border border-outline-gray-2 font-mono text-[10px] shadow-xs">Esc</kbd> to close</span>
         </div>
       </div>
     </div>
 
+    <!-- Toast messages -->
+    <Transition name="slide-up">
+      <div
+        v-if="toast.show"
+        class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-medium shadow-xl max-w-[90vw]"
+        :class="toast.type === 'error'
+          ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/60 dark:border-red-900 dark:text-red-300'
+          : 'bg-surface-white border-outline-gray-2 text-ink-gray-8'"
+        role="status"
+      >
+        <IconAlertCircle v-if="toast.type === 'error'" class="w-4 h-4 shrink-0" />
+        <IconCheck v-else class="w-4 h-4 shrink-0 text-emerald-500" />
+        <span class="truncate">{{ toast.message }}</span>
+        <button type="button" class="ml-1 opacity-60 hover:opacity-100" title="Dismiss" @click="toast.show = false">
+          <IconX class="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </Transition>
+
     <!-- Floating Upload Queue Widget (Strict Z-index: z-40) -->
     <div
       v-if="uploadQueue.length > 0"
-      class="fixed bottom-5 right-5 z-40 w-80 md:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-xs transition-all duration-300"
+      class="fixed bottom-5 right-5 z-40 w-80 md:w-96 bg-surface-white rounded-xl shadow-2xl border border-outline-gray-2 overflow-hidden text-xs transition-all duration-300"
     >
       <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2.5 font-bold">
-          <LoadingIndicator v-if="uploading" class="w-4 h-4 text-blue-400 animate-spin" />
+          <LoadingIndicator v-if="uploading" class="w-4 h-4 text-[color:var(--brand-text,#0A84D0)] animate-spin" />
           <IconCheck v-else class="w-4 h-4 text-emerald-400" />
           <span>{{ uploading ? `Uploading ${uploadQueue.filter(x => x.status === 'uploading').length} items…` : 'Uploads complete' }}</span>
         </div>
@@ -1074,14 +1098,14 @@
         </div>
       </div>
 
-      <div v-if="!uploadWidgetMinimized" class="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 custom-scrollbar p-2">
+      <div v-if="!uploadWidgetMinimized" class="max-h-56 overflow-y-auto divide-y divide-outline-gray-1 custom-scrollbar p-2">
         <div v-for="item in uploadQueue" :key="item.id" class="p-2.5 flex items-center gap-3">
-          <component :is="getFileIcon(item.name)" class="w-5 h-5 shrink-0 text-blue-500" />
+          <component :is="getFileIcon(item.name)" class="w-5 h-5 shrink-0 text-[color:var(--brand-text,#0A84D0)]" />
           <div class="min-w-0 flex-1">
-            <div class="font-bold text-slate-800 dark:text-slate-100 truncate" :title="item.name">{{ item.name }}</div>
-            <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
+            <div class="font-bold text-ink-gray-8 truncate" :title="item.name">{{ item.name }}</div>
+            <div class="w-full bg-surface-gray-2 h-1.5 rounded-full overflow-hidden mt-1">
               <div
-                class="bg-blue-600 h-full rounded-full transition-all duration-300"
+                class="bg-[color:var(--brand,#29ADFF)] h-full rounded-full transition-all duration-300"
                 :style="{ width: `${item.progress}%` }"
                 :class="{ '!bg-emerald-500': item.status === 'completed', '!bg-rose-500': item.status === 'error' }"
               ></div>
@@ -1091,7 +1115,7 @@
           <div class="shrink-0 text-right">
             <IconCheck v-if="item.status === 'completed'" class="w-4 h-4 text-emerald-500" />
             <IconAlertCircle v-else-if="item.status === 'error'" class="w-4 h-4 text-rose-500" />
-            <span v-else class="font-mono text-[10px] font-bold text-slate-400">{{ item.progress }}%</span>
+            <span v-else class="font-mono text-[10px] font-bold text-ink-gray-4">{{ item.progress }}%</span>
           </div>
         </div>
       </div>
@@ -1122,12 +1146,12 @@
         }"
       >
         <template #body-content>
-          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed py-2">
+          <p class="text-sm text-ink-gray-6 leading-relaxed py-2">
             <span v-if="deleteConfirm.isBulk">
-              Are you sure you want to permanently delete <span class="font-bold text-slate-900 dark:text-white">{{ deleteConfirm.count }}</span> selected file(s)? This action cannot be undone.
+              Are you sure you want to permanently delete <span class="font-bold text-ink-gray-9">{{ deleteConfirm.count }}</span> selected file(s)? This action cannot be undone.
             </span>
             <span v-else>
-              Are you sure you want to permanently delete <b class="text-slate-900 dark:text-white break-all">"{{ deleteConfirm.file?.file_name }}"</b>? It will be removed from Drive.
+              Are you sure you want to permanently delete <b class="text-ink-gray-9 break-all">"{{ deleteConfirm.file?.file_name }}"</b>? It will be removed from Drive.
             </span>
           </p>
         </template>
@@ -1196,15 +1220,15 @@
       >
         <template #body-content>
           <div class="space-y-5 py-2">
-            <div v-if="!shareModal.isBulk && shareModal.file" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-2">
-              <IconFile class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" :title="shareModal.file.file_name">
+            <div v-if="!shareModal.isBulk && shareModal.file" class="p-3 bg-surface-gray-1 border border-outline-gray-2 rounded-xl flex items-center gap-2">
+              <IconFile class="w-4 h-4 text-[color:var(--brand-text,#0A84D0)] shrink-0" />
+              <span class="text-xs font-bold text-ink-gray-8 truncate" :title="shareModal.file.file_name">
                 {{ shareModal.file.file_name }}
               </span>
             </div>
 
-            <div v-else-if="shareModal.isBulk" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <div v-else-if="shareModal.isBulk" class="p-3 bg-surface-gray-1 border border-outline-gray-2 rounded-xl">
+              <span class="text-xs font-bold text-ink-gray-7">
                 Sharing {{ selectedItems ? selectedItems.length : 0 }} selected file(s)
               </span>
             </div>
@@ -1305,6 +1329,7 @@ const selectedItems = ref([])
 const loading = ref(false)
 
 const searchQuery = ref("")
+const searchInputEl = ref(null)
 const fileTypeTabIndex = ref(0)
 const fileTypeTabs = [
 	{ label: "All Types", value: "All" },
@@ -1532,8 +1557,8 @@ function viewBtnClass(mode) {
 	return [
 		"p-1 rounded-md transition-all cursor-pointer",
 		viewMode.value === mode
-			? "bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-medium"
-			: "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300",
+			? "bg-surface-white shadow-sm text-[color:var(--brand-text,#0A84D0)] font-medium"
+			: "text-ink-gray-5 hover:text-ink-gray-8",
 	]
 }
 
@@ -1627,21 +1652,19 @@ function isTextFile(filename) {
 	].includes(ext)
 }
 
+let textPreviewSeq = 0
 async function fetchTextPreview(url) {
+	const seq = ++textPreviewSeq
 	textPreviewContent.value = ""
 	loadingTextPreview.value = true
 	try {
 		const res = await fetch(url)
-		if (res.ok) {
-			const txt = await res.text()
-			textPreviewContent.value = txt.slice(0, 50000)
-		} else {
-			textPreviewContent.value = "Unable to load text preview."
-		}
+		const txt = res.ok ? (await res.text()).slice(0, 50000) : "Unable to load text preview."
+		if (seq === textPreviewSeq) textPreviewContent.value = txt
 	} catch (e) {
-		textPreviewContent.value = "Failed to load text preview content."
+		if (seq === textPreviewSeq) textPreviewContent.value = "Failed to load text preview content."
 	} finally {
-		loadingTextPreview.value = false
+		if (seq === textPreviewSeq) loadingTextPreview.value = false
 	}
 }
 
@@ -1696,7 +1719,21 @@ function prevPreview() {
 }
 
 function handleKeydown(e) {
-	if (!previewModal.show) return
+	if (e.key === "Escape" && dragActive.value) {
+		dragActive.value = false
+		return
+	}
+	const dialogOpen = shareModal.show || deleteConfirm.value.show || showNewFolderModal.value
+	if (!previewModal.show) {
+		const t = e.target
+		const typing = t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))
+		if (e.key === "/" && !typing && !dialogOpen && !e.metaKey && !e.ctrlKey) {
+			e.preventDefault()
+			searchInputEl.value?.focus()
+		}
+		return
+	}
+	if (dialogOpen) return // e.g. the share dialog opened from the preview
 	if (e.key === "Escape") closePreview()
 	if (e.key === "ArrowRight") nextPreview()
 	if (e.key === "ArrowLeft") prevPreview()
@@ -1704,9 +1741,7 @@ function handleKeydown(e) {
 
 onMounted(() => {
 	window.addEventListener("keydown", handleKeydown)
-	if (!session.isTicketRaiser) {
-		loadPathContents(currentPath.value)
-	}
+	// the folder itself is loaded by the immediate route watcher below
 })
 
 onUnmounted(() => {
@@ -2070,7 +2105,9 @@ function getCsrfToken() {
 	return cookies.get("system_csrf_token") || ""
 }
 
-function onWindowDragEnter() {
+function onWindowDragEnter(e) {
+	const types = e?.dataTransfer?.types
+	if (types && !Array.from(types).includes("Files")) return
 	if (
 		uploadAllowed.value &&
 		!previewModal.show &&
@@ -2103,8 +2140,9 @@ function handleDrop(e) {
 }
 
 function handleFileSelect(e) {
-	const filesList = e.target.files
-	if (filesList && filesList.length > 0) {
+	const filesList = Array.from(e.target.files || [])
+	e.target.value = "" // allow choosing the same file again later
+	if (filesList.length > 0) {
 		uploadFiles(filesList)
 	}
 }
@@ -2227,15 +2265,17 @@ async function confirmBulkDelete() {
 	}
 }
 
+let toastTimer = null
 function showToast(message, type = "success") {
 	toast.value = {
 		show: true,
-		message,
+		message: String(message || "").replace(/<[^>]*>/g, ""),
 		type,
 	}
-	setTimeout(() => {
+	clearTimeout(toastTimer)
+	toastTimer = setTimeout(() => {
 		toast.value.show = false
-	}, 4000)
+	}, type === "error" ? 6000 : 3500)
 }
 
 function formatBytes(bytes) {
@@ -2306,7 +2346,7 @@ function isAudio(filename) {
 
 function getSourceBadgeClass(source) {
 	if (source === "Direct" || source === "Shared")
-		return "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
+		return "bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)]"
 	if (source === "Ticket")
 		return "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
 	if (source === "Task")
@@ -2377,6 +2417,18 @@ const filteredFiles = computed(() => {
 
 	return list
 })
+
+// Never act on files that are selected but hidden by the current search / filters.
+// (Placed after filteredFiles is defined — a watcher reads it immediately on setup.)
+watch(
+	() => filteredFiles.value.map((f) => f.name),
+	(visible) => {
+		const set = new Set(visible)
+		if (selectedItems.value.some((n) => !set.has(n))) {
+			selectedItems.value = selectedItems.value.filter((n) => set.has(n))
+		}
+	},
+)
 </script>
 
 <style>
@@ -2394,6 +2446,79 @@ body div[data-dialog-backdrop],
 </style>
 
 <style scoped>
+.toolbar-card {
+  padding: 10px 12px;
+  border: 1px solid var(--outline-gray-1, #ededed);
+  border-radius: 10px;
+  background: var(--surface-cards, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.qf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px dashed var(--outline-gray-3, #d4d4d4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-gray-6, #6b6b6b);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.qf:hover {
+  background: var(--surface-gray-2, #f3f3f3);
+  color: var(--ink-gray-8, #383838);
+}
+.qf.on {
+  border-style: solid;
+  border-color: var(--brand-border, #a6dcff);
+  background: var(--brand-soft, #e9f6ff);
+  color: var(--brand-text, #0a84d0);
+  font-weight: 500;
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--outline-gray-2, #e2e2e2);
+  border-radius: 4px;
+  background: var(--surface-gray-1, #f8f8f8);
+  color: var(--ink-gray-5, #7c7c7c);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1;
+  pointer-events: none;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-gray-5, #7c7c7c);
+}
+.section-title .count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-gray-2, #f3f3f3);
+  color: var(--ink-gray-6, #6b6b6b);
+  font-size: 10.5px;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: 0;
+}
+input[type="checkbox"] {
+  accent-color: var(--brand, #29adff);
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;

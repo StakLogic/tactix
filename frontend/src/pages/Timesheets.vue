@@ -1,78 +1,56 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden font-sans min-h-0">
-    <!-- Top Stats / KPIs Header -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 p-1 flex-shrink-0">
-      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-500">Total Hours logged</span>
-          <IconClock class="w-4 h-4 text-blue-500" />
+    <!-- KPI strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 p-1 flex-shrink-0">
+      <div
+        v-for="k in kpis"
+        :key="k.label"
+        :role="k.filter ? 'button' : undefined"
+        :tabindex="k.filter ? 0 : undefined"
+        class="kpi text-left"
+        :class="[k.filter && 'is-clickable', k.filter && selectedStatus === k.filter && 'is-active']"
+        :title="k.filter ? (selectedStatus === k.filter ? 'Click to clear filter' : 'Show ' + k.filter.toLowerCase() + ' timesheets') : undefined"
+        @click="k.filter && toggleStatus(k.filter)"
+        @keydown.enter.prevent="k.filter && toggleStatus(k.filter)"
+        @keydown.space.prevent="k.filter && toggleStatus(k.filter)"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <span class="truncate text-xs font-medium text-ink-gray-6">{{ k.label }}</span>
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md" :class="k.chip">
+            <component :is="k.icon" class="h-3.5 w-3.5" />
+          </span>
         </div>
-        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
-          <template v-if="timesheetsSummary.loading">
-            <div class="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+        <div class="mt-1.5 flex h-7 items-end gap-1">
+          <div v-if="timesheetsSummary.loading" class="skeleton h-5 w-12"></div>
+          <template v-else>
+            <span class="text-[22px] font-semibold leading-none tabular-nums text-ink-gray-9">{{ k.value }}</span>
+            <span v-if="k.unit" class="pb-0.5 text-xs font-medium text-ink-gray-5">{{ k.unit }}</span>
           </template>
-          <span v-else>{{ timesheetsSummary.data?.total_hours || 0 }} hrs</span>
         </div>
-      </Card>
-
-      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-500">Active Days Logged</span>
-          <IconCalendar class="w-4 h-4 text-indigo-500" />
-        </div>
-        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
-          <template v-if="timesheetsSummary.loading">
-            <div class="w-4 h-4 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin"></div>
-          </template>
-          <span v-else>{{ timesheetsSummary.data?.active_days || 0 }} days</span>
-        </div>
-      </Card>
-
-      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-500">Submitted Timesheets</span>
-          <IconCheckCircle class="w-4 h-4 text-green-500" />
-        </div>
-        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
-          <template v-if="timesheetsSummary.loading">
-            <div class="w-4 h-4 border-2 border-slate-200 border-t-green-500 rounded-full animate-spin"></div>
-          </template>
-          <span v-else>{{ timesheetsSummary.data?.submitted_count || 0 }}</span>
-        </div>
-      </Card>
-
-      <Card class="!shadow-xs bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-500">Draft Timesheets</span>
-          <IconAlertCircle class="w-4 h-4 text-orange-500" />
-        </div>
-        <div class="text-xl font-bold mt-1 text-slate-900 flex items-center h-7">
-          <template v-if="timesheetsSummary.loading">
-            <div class="w-4 h-4 border-2 border-slate-200 border-t-orange-500 rounded-full animate-spin"></div>
-          </template>
-          <span v-else>{{ timesheetsSummary.data?.draft_count || 0 }}</span>
-        </div>
-      </Card>
+      </div>
     </div>
 
     <!-- Actions & Filter Header -->
-    <div class="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-2.5 mx-2 my-2 flex-shrink-0">
+    <div class="toolbar-card flex flex-col gap-2.5 mx-1 my-2 flex-shrink-0">
       <!-- Top Row: Search & Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-slate-100 dark:border-slate-800/80">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full pb-2 border-b border-outline-gray-1">
 
         <!-- Search Bar with Clear Icon -->
         <div class="relative w-full sm:w-80">
-          <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+          <IconSearch class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-gray-4" />
           <input
+            ref="searchInputEl"
             v-model="searchQuery"
             type="text"
-            placeholder="Search timesheets…"
-            class="w-full pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            placeholder="Search this page: ID, employee, status…"
+            class="h-8 w-full rounded-md border border-outline-gray-2 bg-surface-gray-1 pl-9 pr-9 text-[13px] text-ink-gray-8 outline-none transition focus:border-[color:var(--brand,#29ADFF)] focus:bg-surface-white focus:ring-2 focus:ring-[color:var(--brand-soft,#E9F6FF)]"
           />
+          <kbd v-if="!searchQuery" class="kbd absolute right-2 top-1/2 -translate-y-1/2" title="Press / to search">/</kbd>
           <button
             v-if="searchQuery"
+            title="Clear search"
             @click="searchQuery = ''"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-gray-4 hover:text-ink-gray-6 p-0.5 rounded-full border-none bg-transparent cursor-pointer"
           >
             <IconX class="w-3.5 h-3.5" />
           </button>
@@ -88,24 +66,24 @@
                 :class="[
                   '!px-2.5 !h-8 border transition-all flex items-center gap-1.5 rounded-md text-xs font-medium',
                   activeFilterCount > 0
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
-                    : '!text-slate-600 dark:!text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'border-[color:var(--brand,#29ADFF)] text-[color:var(--brand-text,#0A84D0)] bg-[color:var(--brand-soft,#E9F6FF)]'
+                    : '!text-ink-gray-6 border-outline-gray-2 hover:bg-surface-gray-1'
                 ]"
                 @click="syncActiveFilterRules(); togglePopover()"
                 title="Filter Timesheets"
               >
-                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-blue-600' : 'text-slate-500'" /></template>
+                <template #prefix><IconFilter class="w-3.5 h-3.5" :class="activeFilterCount > 0 ? 'text-[color:var(--brand-text,#0A84D0)]' : 'text-ink-gray-5'" /></template>
                 <span>Filter</span>
-                <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
+                <span v-if="activeFilterCount > 0" class="bg-[color:var(--brand,#29ADFF)] text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 leading-none">
                   {{ activeFilterCount }}
                 </span>
               </Button>
             </template>
             <template #body-main="{ close }">
-              <div class="w-80 p-3 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 text-xs space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-xs">
-                    <IconFilter class="w-3.5 h-3.5 text-blue-600" />
+              <div class="w-80 p-3 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 text-xs space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-outline-gray-1">
+                  <div class="flex items-center gap-1.5 font-semibold text-ink-gray-8 text-xs">
+                    <IconFilter class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
                     <span>Filter Timesheets</span>
                   </div>
                   <button 
@@ -122,7 +100,7 @@
                   <div 
                     v-for="rule in activeFilterRules" 
                     :key="rule.id"
-                    class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                    class="flex items-center gap-1.5 bg-surface-gray-1 p-1.5 rounded-md border border-outline-gray-2"
                   >
                     <div class="w-1/3 shrink-0">
                       <Select 
@@ -135,7 +113,7 @@
                       />
                     </div>
 
-                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">=</span>
+                    <span class="text-[10px] font-semibold text-ink-gray-4 shrink-0">=</span>
 
                     <div class="flex-1 min-w-0">
                       <Select
@@ -150,7 +128,7 @@
 
                     <button 
                       @click="removeFilterRule(rule.id)"
-                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      class="p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded text-ink-gray-4 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                       title="Remove Filter"
                     >
                       <IconX class="w-3.5 h-3.5" />
@@ -158,17 +136,17 @@
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between pt-2 border-t border-outline-gray-1">
                   <button
                     @click="addFilterRule"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors cursor-pointer"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--brand-text,#0A84D0)] hover:text-[color:var(--brand-hover,#0F9EF5)] px-2 py-1 rounded transition-colors cursor-pointer"
                   >
                     <IconPlus class="w-3.5 h-3.5" /> Add Filter
                   </button>
 
                   <Button 
                     variant="solid" 
-                    class="!bg-blue-600 !text-white !px-3 !h-7 text-xs font-medium rounded-md shadow-xs"
+                    class="brand-btn !px-3 !h-7 text-xs font-medium rounded-md"
                     @click="applyFilterRules(); close()"
                   >
                     Apply
@@ -181,12 +159,20 @@
           <!-- Refresh Button -->
           <Button
             variant="outline"
-            class="!text-slate-600 dark:!text-slate-200 !px-2.5 !h-8 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-md"
+            class="!text-ink-gray-6 !px-2.5 !h-8 border border-outline-gray-2 hover:bg-surface-gray-1 transition-all rounded-md"
             @click="reloadTimesheets"
             title="Refresh timesheets"
           >
-            <template #prefix><IconRefresh class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /></template>
+            <template #prefix><IconRefresh class="w-3.5 h-3.5 text-ink-gray-5" :class="timesheets.loading && 'animate-spin'" /></template>
           </Button>
+
+          <!-- Selection info -->
+          <div v-if="employeeInfoResource.data?.is_system_manager && selectedTimesheets.size > 0" class="flex h-8 items-center gap-1 rounded-md bg-surface-gray-2 pl-2.5 pr-1 text-xs text-ink-gray-7">
+            <span class="font-medium tabular-nums">{{ selectedTimesheets.size }} selected</span>
+            <button type="button" class="rounded p-1 text-ink-gray-5 hover:bg-surface-gray-3 hover:text-ink-gray-8" title="Clear selection" @click="selectedTimesheets = new Set()">
+              <IconX class="h-3.5 w-3.5" />
+            </button>
+          </div>
 
           <!-- Actions Dropdown -->
           <Dropdown
@@ -195,7 +181,7 @@
           >
             <Button
               variant="solid"
-              class="!bg-slate-800 !text-white !text-xs !px-4 !h-8 rounded-md hover:!bg-slate-900 transition-all font-medium"
+              class="!text-xs !px-3 !h-8 rounded-md font-medium"
             >
               Actions
               <template #suffix><FeatherIcon name="chevron-down" class="w-3.5 h-3.5 shrink-0" /></template>
@@ -205,8 +191,7 @@
           <!-- New Timesheet Button -->
           <Button
             variant="solid"
-            class="!text-xs !px-4 !h-8 rounded-md transition-all font-medium"
-            style="background-color: var(--primary-color);"
+            class="brand-btn !text-xs !px-4 !h-8 rounded-md font-medium"
             @click="openCreateDialog"
           >
             <template #prefix><IconPlus class="w-3.5 h-3.5" /></template>
@@ -230,15 +215,10 @@
               <button
                 type="button"
                 @click="() => statusAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  selectedStatus !== ''
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', selectedStatus !== '' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('selectedStatus', selectedStatus, 'Status') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -257,15 +237,10 @@
               <button
                 type="button"
                 @click="() => timespanAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  selectedTimespan !== ''
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', selectedTimespan !== '' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('selectedTimespan', selectedTimespan, 'Timespan') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -285,15 +260,10 @@
               <button
                 type="button"
                 @click="() => employeeAutocomplete?.togglePopover()"
-                :class="[
-                  'inline-flex items-center justify-between gap-2 outline-none text-xs rounded min-h-7 h-7 px-2 border transition-colors w-full cursor-pointer',
-                  selectedEmployee !== ''
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 font-medium dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'border-[--surface-gray-2] bg-surface-gray-2 hover:border-outline-gray-modals hover:bg-surface-gray-3 text-ink-gray-7 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200'
-                ]"
+                :class="['qf', selectedEmployee !== '' && 'on']"
               >
                 <span class="truncate">{{ getFilterLabel('selectedEmployee', selectedEmployee, 'Employee') }}</span>
-                <FeatherIcon name="chevron-down" class="size-4 text-ink-gray-4 ml-auto shrink-0" />
+                <FeatherIcon name="chevron-down" class="size-3.5 opacity-60 ml-auto shrink-0" />
               </button>
             </template>
           </Autocomplete>
@@ -313,8 +283,13 @@
     </div>
 
     <!-- Timesheets List Table -->
-    <div class="flex-1 overflow-y-auto md:overflow-hidden px-2 pb-4 flex flex-col min-h-0">
-      <div class="bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
+    <div class="flex-1 overflow-y-auto md:overflow-hidden px-1 pb-2 flex flex-col min-h-0">
+      <p v-if="pageError" class="mb-2 flex items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <span class="flex items-center gap-2"><IconAlertCircle class="h-4 w-4 shrink-0" />{{ pageError }}</span>
+        <button type="button" class="opacity-60 hover:opacity-100" title="Dismiss" @click="pageError = ''"><IconX class="h-3.5 w-3.5" /></button>
+      </p>
+      <div class="relative bg-surface-white rounded-xl border border-outline-gray-2 shadow-sm flex-col overflow-hidden min-h-[420px] md:min-h-0 md:flex-1 md:overflow-hidden flex">
+        <div v-if="timesheets.loading" class="busy-bar" aria-hidden="true"></div>
         <ListView
           class="h-full flex flex-col min-h-0"
           :columns="columns"
@@ -323,15 +298,19 @@
             selectable: employeeInfoResource.data?.is_system_manager,
             showTooltip: true,
             resizeColumn: true,
-            onRowClick: (row) => openTimesheetDetails(row)
+            onRowClick: (row) => openTimesheetDetails(row),
+            emptyState: {
+              title: hasActiveFilters ? 'No timesheets match your filters' : 'No timesheets yet',
+              description: hasActiveFilters ? 'Try another status or timespan, or clear the filters.' : 'Log your first hours with the New Timesheet button.',
+            },
           }"
           row-key="name"
           v-model:selections="selectedTimesheets"
         >
-          <ListHeader class="shrink-0 bg-slate-50 border-b border-slate-200 shadow-sm">
+          <ListHeader class="shrink-0 bg-surface-gray-1 border-b border-outline-gray-2 shadow-sm">
             <ListHeaderItem v-for="col in columns" :key="col.key" :item="col">
               <template #prefix="{ item }">
-                <component :is="item.icon" class="size-3.5 text-slate-400" />
+                <component :is="item.icon" class="size-3.5 text-ink-gray-4" />
               </template>
             </ListHeaderItem>
           </ListHeader>
@@ -340,35 +319,35 @@
             <ListRows>
               <ListRow
                 v-slot="{ column, item }"
-                v-for="row in (timesheets.data?.timesheets || [])"
+                v-for="row in filteredTimesheets"
                 :key="row.name"
                 :row="row"
               >
                 <ListRowItem :item="item">
                   <template v-if="column.key === 'name'">
-                    <span class="font-bold text-blue-600 font-medium">#{{ row.name }}</span>
+                    <span class="font-mono text-[12px] font-semibold text-[color:var(--brand-text,#0A84D0)]">#{{ row.name }}</span>
+                  </template>
+
+                  <template v-if="column.key === 'employee_name'">
+                    <span class="truncate text-sm text-ink-gray-8">{{ row.employee_name || row.employee || '—' }}</span>
                   </template>
 
                   <template v-if="column.key === 'start_date'">
-                    <span class="text-xs text-slate-700 font-medium">
+                    <span class="text-xs text-ink-gray-7 font-medium">
                       {{ row.start_date ? formatDate(row.start_date) : '' }}
                     </span>
                   </template>
 
                   <template v-if="column.key === 'total_hours'">
-                    <Badge theme="blue" variant="subtle" class="font-semibold !px-2.5 !py-1 text-xs">
-                      {{ row.total_hours }} hrs
-                    </Badge>
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold tabular-nums text-ink-gray-8">
+                      <IconClock class="h-3.5 w-3.5 text-ink-gray-4" />{{ fmtHours(row.total_hours) }} hrs
+                    </span>
                   </template>
 
                   <template v-if="column.key === 'status'">
-                    <Badge
-                      :theme="row.status === 'Submitted' ? 'green' : 'orange'"
-                      variant="subtle"
-                      class="font-semibold !px-2.5 !py-1 text-xs"
-                    >
-                      {{ row.status }}
-                    </Badge>
+                    <span class="status-pill" :class="row.status === 'Submitted' ? 'is-submitted' : row.status === 'Cancelled' ? 'is-cancelled' : 'is-draft'">
+                      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>{{ row.status }}
+                    </span>
                   </template>
 
                   <template v-if="column.key === 'actions'">
@@ -376,6 +355,7 @@
                       <Button 
                         variant="ghost" 
                         class="!text-red-600 hover:!bg-red-50 !p-1.5 rounded-lg"
+                        title="Delete timesheet"
                         @click.stop="confirmSingleDelete(row.name)"
                       >
                         <template #prefix><IconTrash class="w-3.5 h-3.5" /></template>
@@ -389,7 +369,7 @@
         </ListView>
 
         <!-- Pagination Bar -->
-        <div class="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-2 shrink-0">
+        <div class="flex items-center justify-between border-t border-outline-gray-1 bg-surface-white px-4 py-2 shrink-0">
           <div class="flex items-center gap-1">
             <!-- First Page (<<) -->
             <Button
@@ -398,7 +378,7 @@
               :disabled="currentPage === 1"
               @click="currentPage = 1"
               title="First Page"
-              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+              class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
             >
               <template #prefix><IconChevronsLeft class="w-3.5 h-3.5" /></template>
             </Button>
@@ -410,7 +390,7 @@
               :disabled="currentPage === 1"
               @click="currentPage = Math.max(1, currentPage - 1)"
               title="Previous Page"
-              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+              class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
             >
               <template #prefix><IconChevronLeft class="w-3.5 h-3.5" /></template>
             </Button>
@@ -420,14 +400,14 @@
               <template #target="{ togglePopover }">
                 <button
                   @click="togglePopover"
-                  class="h-6 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 rounded border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                  class="h-6 px-2 text-[11px] font-bold text-ink-gray-7 hover:bg-surface-gray-2 rounded border border-outline-gray-2 transition-all flex items-center gap-1 cursor-pointer shrink-0"
                 >
                   <span>{{ currentPage }} / {{ totalPages }}</span>
-                  <IconChevronDown class="w-3 h-3 text-slate-400" />
+                  <IconChevronDown class="w-3 h-3 text-ink-gray-4" />
                 </button>
               </template>
               <template #body="{ close }">
-                <div class="p-1 max-h-48 overflow-y-auto w-32 bg-white rounded-lg shadow-lg border border-slate-200 custom-scrollbar">
+                <div class="p-1 max-h-48 overflow-y-auto w-32 bg-surface-white rounded-lg shadow-lg border border-outline-gray-2 custom-scrollbar">
                   <button
                     v-for="p in totalPages"
                     :key="p"
@@ -435,8 +415,8 @@
                     :class="[
                       'w-full text-left px-2 py-1 text-xs rounded transition-colors cursor-pointer flex items-center justify-between',
                       currentPage === p
-                        ? 'bg-slate-900 text-white font-bold'
-                        : 'text-slate-700 hover:bg-slate-100'
+                        ? 'bg-[color:var(--brand,#29ADFF)] text-white font-semibold'
+                        : 'text-ink-gray-7 hover:bg-surface-gray-2'
                     ]"
                   >
                     <span>Page {{ p }}</span>
@@ -453,7 +433,7 @@
               :disabled="currentPage >= totalPages"
               @click="currentPage = Math.min(totalPages, currentPage + 1)"
               title="Next Page"
-              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+              class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
             >
               <template #prefix><IconChevronRight class="w-3.5 h-3.5" /></template>
             </Button>
@@ -465,21 +445,21 @@
               :disabled="currentPage >= totalPages"
               @click="currentPage = totalPages"
               title="Last Page"
-              class="!p-1 !h-6 text-slate-500 hover:text-slate-800 disabled:opacity-30"
+              class="!p-1 !h-6 text-ink-gray-5 hover:text-ink-gray-8 disabled:opacity-30"
             >
               <template #prefix><IconChevronsRight class="w-3.5 h-3.5" /></template>
             </Button>
           </div>
 
-          <div class="text-xs text-slate-500 font-medium">
-            Showing <span class="font-bold text-slate-800">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-slate-800">{{ totalCount }}</span>
+          <div class="text-xs text-ink-gray-5 font-medium">
+            Showing <span class="font-bold text-ink-gray-8">{{ totalCount > 0 ? (currentPage - 1) * pageLength + 1 : 0 }} - {{ Math.min(currentPage * pageLength, totalCount) }}</span> of <span class="font-bold text-ink-gray-8">{{ totalCount }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Create Timesheet Dialog -->
-    <Dialog v-model="showCreateDialog" :disable-outside-click-to-close="true" :options="dialogOptions">
+    <Dialog v-model="showCreateDialog" :disable-outside-click-to-close="true" :options="{ title: dialogOptions.title, size: dialogOptions.size }">
       <template #body-content>
         <div class="space-y-6 py-2">
           <p v-if="formError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 shadow-sm font-semibold flex items-center gap-2">
@@ -519,8 +499,8 @@
             </template>
             <template v-else>
               <div class="space-y-1.5">
-                <label class="block text-xs text-slate-600 font-medium">Employee *</label>
-                <div class="px-3 h-[2.25rem] bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium flex items-center gap-2">
+                <label class="block text-xs text-ink-gray-6 font-medium">Employee *</label>
+                <div class="px-3 h-[2.25rem] bg-surface-gray-1 border border-outline-gray-2 rounded-lg text-xs text-ink-gray-8 font-medium flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                   {{ employeeInfoResource.data?.employee_name || 'Loading profile...' }}
                 </div>
@@ -531,22 +511,22 @@
           <!-- Dynamic Time Logs Table -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                <IconClock class="w-4 h-4 text-slate-400" /> Time Log Rows
+              <label class="text-xs font-black text-ink-gray-5 uppercase tracking-widest flex items-center gap-1.5">
+                <IconClock class="w-4 h-4 text-ink-gray-4" /> Time Log Rows
               </label>
               <Button
                 variant="outline"
                 size="sm"
-                class="!text-blue-600 hover:!bg-blue-50 !px-4 !h-8 font-semibold border-blue-200 hover:border-blue-300 rounded-lg transition-all"
+                class="!text-[color:var(--brand-text,#0A84D0)] hover:!bg-[color:var(--brand-soft,#E9F6FF)] !px-4 !h-8 font-semibold border-[color:var(--brand-border,#A6DCFF)] hover:border-[color:var(--brand,#29ADFF)] rounded-lg transition-all"
                 @click="addRow"
               >
                 <template #prefix><IconPlus class="w-3.5 h-3.5" /></template> Add Task Row
               </Button>
             </div>
 
-            <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
+            <div class="border border-outline-gray-2 rounded-xl overflow-x-auto shadow-sm max-h-[300px] overflow-y-auto custom-scrollbar">
               <table class="w-full text-left text-xs border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold sticky top-0 z-10">
+                <thead class="bg-surface-gray-1 border-b border-outline-gray-2 text-ink-gray-5 uppercase font-semibold sticky top-0 z-10">
                   <tr>
                     <th class="px-4 py-3 w-1/3">Task</th>
                     <th class="px-4 py-3 w-1/4">Activity *</th>
@@ -555,8 +535,8 @@
                     <th class="px-4 py-3 w-10 text-right"></th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
-                  <tr v-for="(row, idx) in timesheetForm.time_logs" :key="idx" class="hover:bg-slate-50/20 transition-colors">
+                <tbody class="divide-y divide-outline-gray-1 bg-surface-white">
+                  <tr v-for="(row, idx) in timesheetForm.time_logs" :key="idx" class="hover:bg-surface-gray-1 transition-colors">
                     <td class="px-2 py-2">
                       <Autocomplete
                         :ref="el => setTaskRef(el, idx)"
@@ -570,10 +550,10 @@
                           <button
                             type="button"
                             @click="() => taskRowRefs[idx]?.togglePopover()"
-                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-surface-gray-1 hover:bg-surface-gray-2 focus:bg-surface-white border border-outline-gray-2 hover:border-outline-gray-3 focus:border-[color:var(--brand,#29ADFF)] focus:ring-2 focus:ring-[color:var(--brand,#29ADFF)] px-2.5 py-1.5 text-xs font-medium text-ink-gray-7 transition-all cursor-pointer"
                           >
                             <span class="truncate">{{ getTaskLabel(row.task) }}</span>
-                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-ink-gray-4 shrink-0 ml-1" />
                           </button>
                         </template>
                       </Autocomplete>
@@ -590,10 +570,10 @@
                           <button
                             type="button"
                             @click="() => activityRowRefs[idx]?.togglePopover()"
-                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-all cursor-pointer"
+                            class="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg bg-surface-gray-1 hover:bg-surface-gray-2 focus:bg-surface-white border border-outline-gray-2 hover:border-outline-gray-3 focus:border-[color:var(--brand,#29ADFF)] focus:ring-2 focus:ring-[color:var(--brand,#29ADFF)] px-2.5 py-1.5 text-xs font-medium text-ink-gray-7 transition-all cursor-pointer"
                           >
                             <span class="truncate">{{ row.activity_type || 'Select Activity' }}</span>
-                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+                            <FeatherIcon name="chevron-down" class="h-3.5 w-3.5 text-ink-gray-4 shrink-0 ml-1" />
                           </button>
                         </template>
                       </Autocomplete>
@@ -604,19 +584,21 @@
                         type="number" 
                         step="0.5" 
                         min="0.1" 
-                        class="w-full h-9 px-2.5 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs font-semibold text-slate-800 text-right transition-all" 
+                        class="w-full h-9 px-2.5 bg-surface-gray-1 hover:bg-surface-gray-2 focus:bg-surface-white border border-outline-gray-2 hover:border-outline-gray-3 focus:border-[color:var(--brand,#29ADFF)] focus:ring-2 focus:ring-[color:var(--brand,#29ADFF)] rounded-lg outline-none text-xs font-semibold text-ink-gray-8 text-right transition-all" 
                       />
                     </td>
                     <td class="px-2 py-2">
                       <input 
                         v-model="row.description" 
                         placeholder="Provide details..." 
-                        class="w-full h-9 px-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 rounded-lg outline-none text-xs text-slate-700 transition-all" 
+                        class="w-full h-9 px-3 bg-surface-gray-1 hover:bg-surface-gray-2 focus:bg-surface-white border border-outline-gray-2 hover:border-outline-gray-3 focus:border-[color:var(--brand,#29ADFF)] focus:ring-2 focus:ring-[color:var(--brand,#29ADFF)] rounded-lg outline-none text-xs text-ink-gray-7 transition-all" 
                       />
                     </td>
                     <td class="px-2 py-2 text-right">
                       <button 
-                        class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        class="p-1.5 text-ink-gray-4 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        type="button"
+                        title="Remove row"
                         @click="removeRow(idx)"
                       >
                         <IconX class="w-3.5 h-3.5" />
@@ -624,7 +606,7 @@
                     </td>
                   </tr>
                   <tr v-if="timesheetForm.time_logs.length === 0">
-                    <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic font-semibold">
+                    <td colspan="6" class="px-4 py-8 text-center text-ink-gray-4 italic font-semibold">
                       No rows added yet. Add a row to get started.
                     </td>
                   </tr>
@@ -632,17 +614,33 @@
               </table>
             </div>
 
-            <div class="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/50 text-xs font-bold">
-              <span class="text-blue-700 uppercase tracking-wider font-extrabold">Total Logged Hours</span>
-              <span class="text-sm font-black text-blue-800 bg-blue-100/50 px-3.5 py-1 rounded-lg">{{ computedTotalHours }} hrs</span>
+            <div class="flex items-center justify-between p-3.5 bg-[color:var(--brand-soft,#E9F6FF)] rounded-xl border border-[color:var(--brand-border,#A6DCFF)] text-xs font-bold">
+              <span class="text-[color:var(--brand-text,#0A84D0)] uppercase tracking-wider font-extrabold">Total Logged Hours</span>
+              <span class="text-sm font-black text-[color:var(--brand-text,#0A84D0)] bg-[color:var(--brand-soft,#E9F6FF)] px-3.5 py-1 rounded-lg">{{ fmtHours(computedTotalHours) }} hrs</span>
             </div>
           </div>
+        </div>
+      </template>
+      <template #actions>
+        <div class="dialog-actions">
+          <Button
+            v-for="a in [...dialogOptions.actions].reverse()"
+            :key="a.label"
+            :variant="a.variant"
+            :theme="a.theme"
+            :loading="a.loading"
+            :disabled="a.disabled"
+            :class="a.class"
+            @click="a.onClick"
+          >
+            {{ a.label }}
+          </Button>
         </div>
       </template>
     </Dialog>
 
     <!-- View Timesheet Details Dialog -->
-    <Dialog v-model="showViewDialog" :disable-outside-click-to-close="true" :options="viewDialogOptions">
+    <Dialog v-model="showViewDialog" :disable-outside-click-to-close="true" :options="{ title: viewDialogOptions.title, size: viewDialogOptions.size }">
       <template #body-content>
         <div class="space-y-6 py-2" v-if="selectedTimesheet">
           <p v-if="viewError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 shadow-sm font-semibold flex items-center gap-2">
@@ -651,27 +649,27 @@
           <!-- Summary Cards Row -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <!-- Date Card -->
-            <div class="bg-blue-50/40 border border-blue-100 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+            <div class="bg-[color:var(--brand-soft,#E9F6FF)] border border-[color:var(--brand-border,#A6DCFF)] rounded-xl p-2 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Date</span>
-                <div class="p-1.5 rounded-lg bg-blue-100/50">
-                  <IconCalendar class="w-3.5 h-3.5 text-blue-600" />
+                <span class="text-[10px] font-semibold text-[color:var(--brand-text,#0A84D0)] uppercase tracking-wider">Date</span>
+                <div class="p-1.5 rounded-lg bg-[color:var(--brand-soft,#E9F6FF)]">
+                  <IconCalendar class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
                 </div>
               </div>
-              <div class="text-lg font-black text-blue-800 leading-none">
+              <div class="text-lg font-black text-[color:var(--brand-text,#0A84D0)] leading-none">
                 {{ formatDate(selectedTimesheet.start_date) }}
               </div>
             </div>
 
             <!-- Employee Card -->
-            <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-2 flex flex-col justify-between shadow-sm">
+            <div class="bg-[color:var(--brand-soft,#E9F6FF)] border border-[color:var(--brand-border,#A6DCFF)] rounded-xl p-2 flex flex-col justify-between shadow-sm">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider">Employee</span>
-                <div class="p-1.5 rounded-lg bg-indigo-100/50">
-                  <IconUser class="w-3.5 h-3.5 text-indigo-600" />
+                <span class="text-[10px] font-semibold text-[color:var(--brand-text,#0A84D0)] uppercase tracking-wider">Employee</span>
+                <div class="p-1.5 rounded-lg bg-[color:var(--brand-soft,#E9F6FF)]">
+                  <IconUser class="w-3.5 h-3.5 text-[color:var(--brand-text,#0A84D0)]" />
                 </div>
               </div>
-              <div class="text-sm font-black text-indigo-800 truncate leading-none">
+              <div class="text-sm font-black text-[color:var(--brand-text,#0A84D0)] truncate leading-none">
                 {{ selectedTimesheet.employee_name || selectedTimesheet.employee || '—' }}
               </div>
             </div>
@@ -685,15 +683,15 @@
                 </div>
               </div>
               <div class="text-lg font-black text-emerald-800 leading-none">
-                {{ selectedTimesheet.total_hours }} hrs
+                {{ fmtHours(selectedTimesheet.total_hours) }} hrs
               </div>
             </div>
           </div>
 
           <!-- Time Logs Details Table -->
-          <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+          <div class="border border-outline-gray-2 rounded-xl overflow-x-auto shadow-sm">
             <table class="w-full text-left text-xs border-collapse">
-              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+              <thead class="bg-surface-gray-1 border-b border-outline-gray-2 text-ink-gray-5 uppercase font-semibold">
                 <tr>
                   <th class="px-4 py-3.5">Task</th>
                   <th class="px-4 py-3.5">Activity</th>
@@ -701,21 +699,37 @@
                   <th class="px-4 py-3.5">Description</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 bg-white">
-                <tr v-for="(log, idx) in selectedTimesheet.time_logs" :key="idx" class="hover:bg-slate-50/40 transition-colors duration-150">
-                  <td class="px-4 py-3.5 font-bold text-slate-800">
+              <tbody class="divide-y divide-outline-gray-1 bg-surface-white">
+                <tr v-for="(log, idx) in selectedTimesheet.time_logs" :key="idx" class="hover:bg-surface-gray-1 transition-colors duration-150">
+                  <td class="px-4 py-3.5 font-bold text-ink-gray-8">
                     {{ log.task ? (log.task_subject ? `${log.task_subject} (${log.task})` : log.task) : '—' }}
                   </td>
                   <td class="px-4 py-3.5">
                     <Badge theme="gray" variant="subtle" class="!px-2.5 !py-1 text-[11px] font-semibold">{{ log.activity_type }}</Badge>
                   </td>
-                  <td class="px-4 py-3.5 text-right font-black text-slate-700">{{ log.hours }} hrs</td>
-                  <td class="px-4 py-3.5 text-slate-500 whitespace-pre-wrap leading-relaxed">{{ log.description || '—' }}</td>
+                  <td class="px-4 py-3.5 text-right font-semibold tabular-nums text-ink-gray-7">{{ fmtHours(log.hours) }} hrs</td>
+                  <td class="px-4 py-3.5 text-ink-gray-5 whitespace-pre-wrap leading-relaxed">{{ log.description || '—' }}</td>
 
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+      </template>
+      <template #actions>
+        <div class="dialog-actions">
+          <Button
+            v-for="a in [...viewDialogOptions.actions].reverse()"
+            :key="a.label"
+            :variant="a.variant"
+            :theme="a.theme"
+            :loading="a.loading"
+            :disabled="a.disabled"
+            :class="a.class"
+            @click="a.onClick"
+          >
+            {{ a.label }}
+          </Button>
         </div>
       </template>
     </Dialog>
@@ -724,24 +738,36 @@
     <Dialog 
       v-model="deleteConfirm.show" 
       :disable-outside-click-to-close="true"
-      :options="{
-        title: deleteConfirm.isBulk ? 'Delete Selected Timesheets' : 'Delete Timesheet',
-        size: 'sm',
-        actions: [
-          { label: 'Delete', variant: 'solid', theme: 'red', loading: deleteConfirm.loading, onClick: executeTimesheetDelete },
-          { label: 'Cancel', variant: 'ghost', onClick: () => (deleteConfirm.show = false) }
-        ]
-      }"
+      :options="{ title: deleteConfirm.isBulk ? 'Delete Selected Timesheets' : 'Delete Timesheet', size: 'sm' }"
     >
       <template #body-content>
-        <p class="text-sm text-slate-600 leading-relaxed py-2">
+        <p class="text-sm text-ink-gray-6 leading-relaxed py-2">
           <span v-if="deleteConfirm.isBulk">
-            This will permanently remove <span class="font-bold text-slate-900">{{ deleteConfirm.count }}</span> selected timesheet(s). This action cannot be undone.
+            This will permanently remove <span class="font-bold text-ink-gray-9">{{ deleteConfirm.count }}</span> selected timesheet(s). This action cannot be undone.
           </span>
           <span v-else>
-            This will permanently remove timesheet <span class="font-bold text-slate-900">#{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
+            This will permanently remove timesheet <span class="font-bold text-ink-gray-9">#{{ deleteConfirm.targetName }}</span>. This action cannot be undone.
           </span>
         </p>
+        <p v-if="deleteConfirm.error" class="mt-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 whitespace-pre-line">
+          {{ deleteConfirm.error }}
+        </p>
+      </template>
+      <template #actions>
+        <div class="dialog-actions">
+          <Button
+            v-for="a in [...deleteDialogActions].reverse()"
+            :key="a.label"
+            :variant="a.variant"
+            :theme="a.theme"
+            :loading="a.loading"
+            :disabled="a.disabled"
+            :class="a.class"
+            @click="a.onClick"
+          >
+            {{ a.label }}
+          </Button>
+        </div>
       </template>
     </Dialog>
   </div>
@@ -768,7 +794,7 @@ import {
 	Select,
 	createResource,
 } from "frappe-ui"
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 
 import IconAlertCircle from "~icons/lucide/alert-circle"
 import IconCalendar from "~icons/lucide/calendar"
@@ -789,6 +815,20 @@ import IconSearch from "~icons/lucide/search"
 import IconTrash from "~icons/lucide/trash-2"
 import IconUser from "~icons/lucide/user"
 import IconX from "~icons/lucide/x"
+
+// Local date as YYYY-MM-DD (toISOString is UTC and gives yesterday's date early in the morning)
+function localToday() {
+	return dayjs().format("YYYY-MM-DD")
+}
+
+// 7.5, 8, 0.25 — never 7.499999999
+function fmtHours(h) {
+	const n = Number(h) || 0
+	return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0$/, "")
+}
+
+const searchInputEl = ref(null)
+const pageError = ref("")
 
 // State variables
 const showCreateDialog = ref(false)
@@ -1048,6 +1088,7 @@ const deleteConfirm = reactive({
 	targetName: null,
 	count: 0,
 	loading: false,
+	error: "",
 })
 
 const actionsOptions = computed(() => [
@@ -1058,7 +1099,19 @@ const actionsOptions = computed(() => [
 	},
 ])
 
+const deleteDialogActions = computed(() => [
+	{
+		label: deleteConfirm.isBulk ? `Delete ${deleteConfirm.count} timesheets` : "Delete",
+		variant: "solid",
+		theme: "red",
+		loading: deleteConfirm.loading,
+		onClick: executeTimesheetDelete,
+	},
+	{ label: "Cancel", variant: "ghost", onClick: () => (deleteConfirm.show = false) },
+])
+
 function confirmSingleDelete(name) {
+	deleteConfirm.error = ""
 	deleteConfirm.isBulk = false
 	deleteConfirm.targetName = name
 	deleteConfirm.count = 1
@@ -1066,6 +1119,7 @@ function confirmSingleDelete(name) {
 }
 
 function confirmBulkDelete() {
+	deleteConfirm.error = ""
 	deleteConfirm.isBulk = true
 	deleteConfirm.targetName = null
 	deleteConfirm.count = selectedTimesheets.value.size
@@ -1074,31 +1128,49 @@ function confirmBulkDelete() {
 
 async function executeTimesheetDelete() {
 	deleteConfirm.loading = true
-	try {
-		if (deleteConfirm.isBulk) {
-			for (const name of Array.from(selectedTimesheets.value)) {
-				await createResource({
-					url: "frappe.client.delete",
-					params: { doctype: "Timesheet", name },
-				}).submit()
-			}
-			selectedTimesheets.value.clear()
-		} else if (deleteConfirm.targetName) {
+	deleteConfirm.error = ""
+	const names = deleteConfirm.isBulk
+		? Array.from(selectedTimesheets.value)
+		: deleteConfirm.targetName
+			? [deleteConfirm.targetName]
+			: []
+	const failed = []
+	for (const name of names) {
+		try {
 			await createResource({
 				url: "frappe.client.delete",
-				params: { doctype: "Timesheet", name: deleteConfirm.targetName },
+				params: { doctype: "Timesheet", name },
 			}).submit()
-			selectedTimesheets.value.delete(deleteConfirm.targetName)
+			selectedTimesheets.value.delete(name)
+		} catch (err) {
+			console.error("Error deleting timesheet", name, err)
+			failed.push(`#${name}: ${parseError(err)}`)
 		}
-		deleteConfirm.show = false
-		timesheets.reload()
-		timesheetsSummary.reload()
-	} catch (err) {
-		console.error("Error deleting timesheet(s):", err)
-		alert("Failed to delete timesheet(s).")
-	} finally {
-		deleteConfirm.loading = false
 	}
+	selectedTimesheets.value = new Set(selectedTimesheets.value)
+	timesheets.reload()
+	timesheetsSummary.reload()
+	deleteConfirm.loading = false
+	if (failed.length) {
+		deleteConfirm.error = `Could not delete ${failed.length} of ${names.length}:\n` + failed.join("\n")
+	} else {
+		deleteConfirm.show = false
+	}
+}
+
+// KPI cards (Submitted / Draft also act as a status filter)
+const kpis = computed(() => {
+	const d = timesheetsSummary.data || {}
+	return [
+		{ label: "Total hours logged", value: fmtHours(d.total_hours), unit: "hrs", icon: IconClock, chip: "bg-[color:var(--brand-soft,#E9F6FF)] text-[color:var(--brand-text,#0A84D0)]" },
+		{ label: "Active days", value: d.active_days || 0, unit: "days", icon: IconCalendar, chip: "bg-surface-gray-2 text-ink-gray-6" },
+		{ label: "Submitted", value: d.submitted_count || 0, icon: IconCheckCircle, chip: "bg-green-50 text-green-600", filter: "Submitted" },
+		{ label: "Draft", value: d.draft_count || 0, icon: IconAlertCircle, chip: "bg-amber-50 text-amber-600", filter: "Draft" },
+	]
+})
+
+function toggleStatus(status) {
+	selectedStatus.value = selectedStatus.value === status ? "" : status
 }
 
 // Selected timesheet for viewing
@@ -1136,7 +1208,7 @@ const parseError = (err) => {
 
 // Form states
 const timesheetForm = reactive({
-	date: new Date().toISOString().split("T")[0],
+	date: localToday(),
 	employee: "",
 	time_logs: [],
 })
@@ -1237,18 +1309,32 @@ function reloadTimesheets() {
 	fetchSummary()
 }
 
+function handleSlashKey(e) {
+	if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+	const t = e.target
+	if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return
+	if (showCreateDialog.value || showViewDialog.value || deleteConfirm.show) return
+	e.preventDefault()
+	searchInputEl.value?.focus()
+}
+
 // Initial fetch
 onMounted(() => {
 	reloadTimesheets()
+	window.addEventListener("keydown", handleSlashKey)
+})
+
+onUnmounted(() => {
+	window.removeEventListener("keydown", handleSlashKey)
 })
 
 // Watch filters
 watch(
 	timesheetFilters,
 	() => {
-		currentPage.value = 1
-		fetchTimesheets()
 		fetchSummary()
+		if (currentPage.value !== 1) currentPage.value = 1 // the page watcher fetches
+		else fetchTimesheets()
 	},
 	{ deep: true },
 )
@@ -1326,7 +1412,7 @@ function openCreateDialog() {
 	editTimesheetName.value = ""
 	formError.value = ""
 	viewError.value = ""
-	timesheetForm.date = new Date().toISOString().split("T")[0]
+	timesheetForm.date = localToday()
 	timesheetForm.employee = employeeInfoResource.data?.name || ""
 	timesheetForm.time_logs = []
 	addRow()
@@ -1426,6 +1512,7 @@ async function openTimesheetDetails(row) {
 		showViewDialog.value = true
 	} catch (err) {
 		console.error("Failed to load timesheet details", err)
+		pageError.value = "Could not open timesheet #" + row.name + ": " + parseError(err)
 	}
 }
 
@@ -1458,6 +1545,7 @@ const dialogOptions = computed(() => {
 		actions.push({
 			label: isEditMode.value ? "Submit Changes" : "Submit Timesheet",
 			variant: "solid",
+			class: "brand-btn",
 			loading: saving.value,
 			onClick: () => saveTimesheet(true),
 		})
@@ -1466,6 +1554,7 @@ const dialogOptions = computed(() => {
 	actions.push({
 		label: isEditMode.value ? "Save Draft" : "Save as Draft",
 		variant: hasSubmitPermission ? "outline" : "solid",
+		class: hasSubmitPermission ? undefined : "brand-btn",
 		loading: saving.value,
 		onClick: () => saveTimesheet(false),
 	})
@@ -1498,7 +1587,7 @@ const viewDialogOptions = computed(() => {
 			actions.push({
 				label: "Submit",
 				variant: "solid",
-				theme: "green",
+				class: "brand-btn",
 				loading: saving.value,
 				onClick: () => submitTimesheet(selectedTimesheet.value.name),
 			})
@@ -1523,6 +1612,143 @@ const formatDate = (dateStr) => {
 </script>
 
 <style scoped>
+.kpi[role="button"] {
+	cursor: pointer;
+	user-select: none;
+}
+.kpi[role="button"]:focus-visible {
+	outline: 2px solid var(--brand, #29adff);
+	outline-offset: 2px;
+}
+
+/* Dialog footer: buttons in one row on the right — primary action right-most */
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.kpi {
+  padding: 10px 12px;
+  border: 1px solid var(--outline-gray-1, #ededed);
+  border-radius: 10px;
+  background: var(--surface-cards, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+.kpi.is-clickable {
+  cursor: pointer;
+}
+.kpi.is-clickable:hover {
+  border-color: var(--brand-border, #a6dcff);
+}
+.kpi.is-active {
+  border-color: var(--brand, #29adff);
+  background: var(--brand-soft, #e9f6ff);
+  box-shadow: 0 0 0 1px var(--brand, #29adff) inset;
+}
+.toolbar-card {
+  padding: 10px 12px;
+  border: 1px solid var(--outline-gray-1, #ededed);
+  border-radius: 10px;
+  background: var(--surface-cards, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.qf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px dashed var(--outline-gray-3, #d4d4d4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-gray-6, #6b6b6b);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.qf:hover {
+  background: var(--surface-gray-2, #f3f3f3);
+  color: var(--ink-gray-8, #383838);
+}
+.qf.on {
+  border-style: solid;
+  border-color: var(--brand-border, #a6dcff);
+  background: var(--brand-soft, #e9f6ff);
+  color: var(--brand-text, #0a84d0);
+  font-weight: 500;
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--outline-gray-2, #e2e2e2);
+  border-radius: 4px;
+  background: var(--surface-gray-1, #f8f8f8);
+  color: var(--ink-gray-5, #7c7c7c);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1;
+  pointer-events: none;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.status-pill.is-submitted { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.status-pill.is-draft { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+.status-pill.is-cancelled { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+:global(.dark) .status-pill.is-submitted,
+:global([data-theme="dark"]) .status-pill.is-submitted { color: #4ade80; }
+:global(.dark) .status-pill.is-draft,
+:global([data-theme="dark"]) .status-pill.is-draft { color: #fbbf24; }
+:global(.dark) .status-pill.is-cancelled,
+:global([data-theme="dark"]) .status-pill.is-cancelled { color: #f87171; }
+.busy-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 20;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+.busy-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: var(--brand, #29adff);
+  animation: busy 1s ease-in-out infinite;
+}
+@keyframes busy {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.skeleton {
+  border-radius: 5px;
+  background: var(--surface-gray-2, #f3f3f3);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% { opacity: 0.5; }
+}
+input[type="checkbox"] {
+  accent-color: var(--brand, #29adff);
+}
+
 .custom-scrollbar::-webkit-scrollbar,
 :deep(*::-webkit-scrollbar) {
   height: 5px !important;
